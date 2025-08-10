@@ -321,7 +321,6 @@ const CollectionCenters = () => {
   };
 
   const filteredCenters = getFilteredCenters();
-  console.log('Filtered centers:', filteredCenters.length, 'Search term:', searchTerm);
 
   const clearAllFilters = () => {
     setSearchTerm('');
@@ -392,10 +391,7 @@ const CollectionCenters = () => {
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  console.log('Search term:', e.target.value);
-                }}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by center name, district, province, manager, or services..."
                 className="w-full px-6 py-4 pl-14 text-lg bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-2xl focus:border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300"
               />

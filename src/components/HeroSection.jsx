@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from '../utils/scroll';
 
 /**
  * HeroSection Component
@@ -81,7 +82,7 @@ const HeroSection = () => {
    * Changes the active slide every 5 seconds with varied transition styles
    */
   useEffect(() => {
-    const ROTATION_INTERVAL = 5000; // 5 seconds per slide for better viewing
+    const ROTATION_INTERVAL = 8000; // slower rotation for a calmer feel
     
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => {
@@ -122,7 +123,7 @@ const HeroSection = () => {
   const currentSlide = backgroundImages[currentImageIndex];
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
+    <section className="relative h-[100svh] flex items-center overflow-hidden overscroll-none">
       {/* Background Image Carousel */}
       {renderBackgroundImages()}
       
@@ -148,7 +149,7 @@ const HeroSection = () => {
    * @returns {JSX.Element} Background image elements
    */
   function renderBackgroundImages() {
-    return backgroundImages.map((bg, index) => {
+  return backgroundImages.map((bg, index) => {
       const isActive = index === currentImageIndex;
       
       return (
@@ -166,17 +167,12 @@ const HeroSection = () => {
             backgroundRepeat: 'no-repeat'
           }}
         >
-          {/* Professional overlay for text readability */}
-          <div className="absolute inset-0 bg-black/40" />
-          
-          {/* Subtle gradient overlay for visual depth */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${bg.gradient} opacity-30`} />
-          
-          {/* Bottom gradient for better text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          
-          {/* Subtle vignette effect */}
-          <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/20" />
+      {/* Subtle dark overlays for professional contrast */}
+      <div className="absolute inset-0 bg-black/15 md:bg-black/20" />
+      <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+      {/* Stronger bottom gradient for legibility */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/15 to-transparent" />
         </div>
       );
     });
@@ -195,38 +191,7 @@ const HeroSection = () => {
    * @returns {JSX.Element} Decorative elements
    */
   function renderFloatingDecorations() {
-    return (
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Left side rice grains */}
-        <div className="absolute top-20 left-16 w-6 h-14 bg-white/20 rounded-full animate-float-slow transform rotate-12 backdrop-blur-sm" />
-        <div className="absolute top-32 left-32 w-4 h-10 bg-white/15 rounded-full animate-float transform -rotate-45 backdrop-blur-sm" />
-        <div className="absolute top-48 left-20 w-5 h-12 bg-white/25 rounded-full animate-float-delayed transform rotate-30 backdrop-blur-sm" />
-        
-        {/* Right side rice grains */}
-        <div className="absolute top-24 right-20 w-6 h-14 bg-white/20 rounded-full animate-float transform -rotate-12 backdrop-blur-sm" />
-        <div className="absolute top-40 right-32 w-4 h-10 bg-white/15 rounded-full animate-float-delayed transform rotate-45 backdrop-blur-sm" />
-        <div className="absolute top-56 right-16 w-5 h-12 bg-white/25 rounded-full animate-float-slow transform -rotate-30 backdrop-blur-sm" />
-
-        {/* Animated wheat stems for agricultural theme */}
-        <div className="absolute top-16 left-1/4 w-40 h-40 animate-float-reverse opacity-30">
-          <svg viewBox="0 0 100 100" className="w-full h-full text-white">
-            <path d="M50,90 Q48,70 50,50 Q52,30 50,10" stroke="currentColor" strokeWidth="2" fill="none"/>
-            <path d="M45,15 Q50,10 55,15" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-            <path d="M45,25 Q50,20 55,25" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-            <path d="M45,35 Q50,30 55,35" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-          </svg>
-        </div>
-        
-        <div className="absolute bottom-24 right-1/4 w-36 h-36 animate-float opacity-25">
-          <svg viewBox="0 0 100 100" className="w-full h-full text-white">
-            <path d="M50,90 Q48,70 50,50 Q52,30 50,10" stroke="currentColor" strokeWidth="2" fill="none"/>
-            <path d="M45,15 Q50,10 55,15" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-            <path d="M45,25 Q50,20 55,25" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-            <path d="M45,35 Q50,30 55,35" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-          </svg>
-        </div>
-      </div>
-    );
+    return null; // Remove busy floating decorations for a calm, professional look
   }
 
   /**
@@ -235,40 +200,30 @@ const HeroSection = () => {
    */
   function renderMainContent() {
     return (
-      <div className="container mx-auto px-4 relative z-10 h-screen flex items-center justify-center">
-        <div className="text-white space-y-6 text-center max-w-4xl mt-16">
-          {/* Dynamic title based on current slide */}
-          <div className="space-y-3">
-            <div className="text-sm font-medium opacity-80 animate-slide-fade-in">
-              {currentSlide.title}
-            </div>
-            <h2 className="text-5xl md:text-6xl font-bold leading-normal animate-slide-up transition-all duration-1000">
-              {currentSlide.mainTitle}<br />
-              <span className={`${currentSlide.accent} animate-pulse font-extrabold text-gradient-rainbow transition-colors duration-1000`}>
-                {currentSlide.mainSubtitle}
-              </span>
-            </h2>
-            <p className="text-xl md:text-2xl font-medium animate-slide-up-delayed bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/20 mt-4 transition-all duration-1000">
-              {currentSlide.subtitle.toUpperCase()}
-            </p>
+  <div className="container mx-auto px-6 relative z-10 h-full flex items-center md:items-start justify-center md:justify-start pt-6 sm:pt-8 md:pt-24 lg:pt-32 xl:pt-36">
+        <div className="max-w-4xl w-full text-center md:text-left mx-auto md:mx-0">
+          <div className="inline-flex items-center rounded-full bg-emerald-400/20 px-3 py-1 text-[11px] font-semibold text-emerald-100 ring-1 ring-emerald-300/40 shadow-sm mb-3 animate-fade-in">
+            {currentSlide.title}
           </div>
-          
-          {/* Description and call-to-action */}
-          <div className="space-y-6 animate-fade-in-delayed">
-            <p className="text-lg opacity-90 transition-all duration-1000 animate-slide-fade-in">
-              {currentSlide.description}
-            </p>
-            
-            {/* Modern Action Buttons - Contemporary Design */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              {/* Primary CTA - Modern glassmorphism style */}
+          <h2 className="text-[2.75rem] md:text-6xl font-extrabold tracking-tight text-white leading-[1.1] drop-shadow-md animate-slide-up">
+            {currentSlide.mainTitle}
+            <br />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-lime-200">{currentSlide.mainSubtitle}</span>
+          </h2>
+          <p className="text-lg md:text-2xl text-white/90 mt-4 leading-relaxed animate-fade-in-delayed">
+            {currentSlide.subtitle}
+          </p>
+          <p className="text-base md:text-xl text-white/85 mt-3 leading-relaxed animate-fade-in">
+            {currentSlide.description}
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center md:items-start">
               <button 
                 onClick={() => {
                   // Add click feedback
                   console.log('Explore Services button clicked');
                   
                   // Navigate to "Our Key Services" section in About component
-                  const aboutSection = document.getElementById('about');
+                   const aboutSection = document.getElementById('about');
                   if (aboutSection) {
                     // Find the "Our Key Services" section within About
                     const servicesHeading = Array.from(aboutSection.querySelectorAll('h3')).find(
@@ -277,89 +232,55 @@ const HeroSection = () => {
                     
                     if (servicesHeading) {
                       console.log('Our Key Services section found, scrolling...');
-                      const headerHeight = 80;
-                      const elementPosition = servicesHeading.offsetTop - headerHeight - 50; // Extra offset for better view
-                      
-                      window.scrollTo({
-                        top: elementPosition,
-                        behavior: 'smooth'
-                      });
+                       const headerHeight = getHeaderHeight(80);
+                       const elementPosition = servicesHeading.offsetTop - headerHeight - 50; // Extra offset for better view
+                       smoothScrollTo(elementPosition);
                     } else {
                       // Fallback: scroll to about section
                       console.log('Scrolling to About section as fallback');
-                      const headerHeight = 80;
-                      const elementPosition = aboutSection.offsetTop - headerHeight;
-                      window.scrollTo({
-                        top: elementPosition,
-                        behavior: 'smooth'
-                      });
+                       const headerHeight = getHeaderHeight(80);
+                       const elementPosition = aboutSection.offsetTop - headerHeight;
+                       smoothScrollTo(elementPosition);
                     }
                   } else {
                     console.log('About section not found, scrolling to approximate position');
                     // Fallback: scroll to approximate position
-                    window.scrollTo({
-                      top: window.innerHeight,
-                      behavior: 'smooth'
-                    });
+                     smoothScrollTo(window.innerHeight);
                   }
                 }}
-                className="group relative overflow-hidden bg-white/10 backdrop-blur-md border border-white/20 hover:border-white/40 text-white px-8 py-4 rounded-2xl font-semibold text-sm tracking-wide uppercase transition-all duration-500 hover:bg-white/20 hover:shadow-2xl hover:shadow-rice-gold/20 transform hover:scale-[1.02] w-full sm:w-auto flex items-center justify-center gap-3 min-w-[200px]">
-                {/* Animated background gradient */}
-                <div className="absolute inset-0 bg-gradient-to-r from-rice-gold/0 via-rice-gold/10 to-rice-gold/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                
-                {/* Icon with animation */}
-                <div className="relative z-10 p-2 bg-rice-gold/20 rounded-full group-hover:bg-rice-gold/30 transition-all duration-300">
-                  <svg className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  className="group relative overflow-hidden text-white px-6 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 w-full sm:w-auto flex items-center justify-center gap-2.5 min-w-[180px] bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 shadow-md">
+                <div className="relative z-10 p-2 bg-white/10 rounded-full group-hover:bg-white/20 transition-all duration-300">
+                  <svg className="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                
-                <span className="relative z-10 group-hover:text-rice-gold transition-colors duration-300">{t('hero.explore_services')}</span>
-                
-                {/* Subtle arrow indicator */}
-                <svg className="w-4 h-4 relative z-10 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span className="relative z-10">{t('hero.explore_services')}</span>
+                <svg className="w-4 h-4 relative z-10 opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
-
-              {/* Secondary CTA - Modern solid design */}
-              <button 
+              {/* Secondary CTA - Live Prices scroll */}
+              <button
                 onClick={() => {
-                  console.log('Join as Partner button clicked');
-                  
-                  // Try multiple approaches to open the modal
-                  if (window.openMillRegistration) {
-                    console.log('Using global function');
-                    window.openMillRegistration();
-                  } else {
-                    console.log('Dispatching custom event');
-                    const event = new CustomEvent('openMillRegistration');
-                    window.dispatchEvent(event);
+                  const el = document.getElementById('live-paddy-prices');
+                  if (el) {
+                    const headerHeight = getHeaderHeight(60);
+                    scrollIntoViewWithOffset(el, headerHeight);
                   }
                 }}
-                className="group relative overflow-hidden bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-8 py-4 rounded-2xl font-semibold text-sm tracking-wide uppercase transition-all duration-500 shadow-lg hover:shadow-2xl hover:shadow-green-500/25 transform hover:scale-[1.02] w-full sm:w-auto flex items-center justify-center gap-3 min-w-[200px] border border-transparent hover:border-green-300/30"
+                  className="group relative overflow-hidden px-6 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 w-full sm:w-auto flex items-center justify-center gap-2.5 min-w-[180px] border border-white/30 text-white bg-white/10 hover:bg-white/15"
               >
-                {/* Shine effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                
-                {/* Modern mill icon */}
-                <div className="relative z-10 p-2 bg-white/10 rounded-full group-hover:bg-white/20 transition-all duration-300">
-                  <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z"/>
-                    <path d="M8 11h8v2H8v-2zm0 4h8v2H8v-2z" fill="none" stroke="currentColor" strokeWidth="1"/>
+                <div className="relative z-10 p-2 bg-white/20 rounded-full group-hover:bg-white/30 transition-all duration-300">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3v18h18M7 15l3-3 4 4 2-2 3 3" />
                   </svg>
                 </div>
-                
-                <span className="relative z-10">{t('hero.join_partner')}</span>
-                
-                {/* Modern plus icon */}
-                <div className="relative z-10 w-5 h-5 flex items-center justify-center">
-                  <div className="w-3 h-0.5 bg-current absolute"></div>
-                  <div className="w-0.5 h-3 bg-current absolute group-hover:rotate-90 transition-transform duration-300"></div>
-                </div>
+                <span className="relative z-10">{t('header.live_prices')}</span>
+                <svg className="w-4 h-4 relative z-10 opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             </div>
-          </div>
         </div>
       </div>
     );
@@ -371,15 +292,15 @@ const HeroSection = () => {
    */
   function renderNavigationDots() {
     return (
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 z-20">
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
         {backgroundImages.map((_, index) => (
           <button
             key={index}
             onClick={() => handleSlideNavigation(index)}
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
               index === currentImageIndex 
-                ? 'bg-rice-gold scale-125' 
-                : 'bg-white bg-opacity-50 hover:bg-opacity-80'
+                ? 'bg-emerald-600 scale-110' 
+                : 'bg-emerald-300/60 hover:bg-emerald-400'
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />

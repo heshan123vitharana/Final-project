@@ -11,8 +11,8 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onAdminClick = ()
   const navigationItems = [
     { name: t('header.home'), id: 'home', icon: '🏠' },
     { name: t('header.about'), id: 'about', icon: 'ℹ️' },
-    { name: t('header.collection_centers'), id: 'collection-centers', icon: '🏢' },
-    { name: t('header.live_prices'), id: 'live-paddy-prices', icon: '💰' },
+  { name: t('header.collection_centers'), id: 'collection-centers', icon: '🏢' },
+  { name: t('header.live_prices'), id: 'live-paddy-prices', icon: '💰' },
     { name: t('header.contact'), id: 'contact', icon: '📞' }
   ];
 
@@ -55,59 +55,62 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onAdminClick = ()
   };
 
   return (
-    <header className={`fixed w-full z-40 top-0 transition-all duration-300 ${
-      isScrolled ? 'bg-white/95 backdrop-blur-md shadow-elevation' : 'bg-white shadow-lg'
+    <header className={`fixed w-full z-40 top-0 transition-all duration-300 border-b ${
+      isScrolled ? 'bg-white/85 backdrop-blur-xl border-emerald-100 shadow-[0_10px_30px_-12px_rgba(16,185,129,0.15)]' : 'bg-white/95 backdrop-blur-md border-transparent'
     }`}>
       {/* Enhanced Colorful Top Banner - Reduced Height */}
-      <div className="gradient-bg-vibrant text-white text-center py-2 relative overflow-hidden">
+  <div className={`bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 text-white text-center relative overflow-hidden ${isScrolled ? 'py-1' : 'py-1.5'}`}>
         <div className="absolute inset-0 bg-black/10"></div>
-        <div className="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-        <p className="text-xs font-medium relative z-10 animate-fade-in">
+        <p className="text-[11px] font-medium relative z-10">
           <span className="inline-block text-sm">🌾</span> 
           <span className="mx-2">{t('header.serving_farmers')}</span>
           <span className="mx-4">|</span>
           <span className="font-semibold">
-            <span className="inline-block animate-pulse-glow text-sm">📞</span> 
+            <span className="inline-block text-sm">📞</span> 
             <span className="ml-2">{t('header.hotline')}</span>
           </span>
         </p>
       </div>
 
-      {/* Enhanced Main Header - Reduced Padding */}
-      <div className="container mx-auto px-4 py-2">
+    {/* Enhanced Main Header - dynamic padding for shrink */}
+  <div className={`container mx-auto px-4 ${isScrolled ? 'py-1.5' : 'py-2.5'}`}>
         <div className="flex items-center justify-between">
-          {/* Logo Section - Compact */}
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <div className="w-12 h-12 gradient-bg-primary rounded-lg flex items-center justify-center shadow-glow overflow-hidden">
-                <img 
-                  src={logoP} 
-                  alt="PMB Logo" 
-                  className="w-10 h-10 object-contain"
-                />
-              </div>
+          {/* Logo Section - larger PNG with glow highlight; brand on two lines */}
+          <div className="flex items-center space-x-2">
+      <div className={`relative rounded-lg bg-gradient-to-br from-emerald-600 to-green-600 ring-1 ring-emerald-300/40 shadow-md flex items-center justify-center overflow-hidden ${isScrolled ? 'w-10 h-10 md:w-11 md:h-11' : 'w-11 h-11 md:w-12 md:h-12'}`}>
+              <img 
+                src={logoP} 
+                alt="PMB Logo" 
+                className="w-9 h-9 md:w-10 md:h-10 object-contain"
+              />
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-gradient-primary">
-                Paddy Marketing Board
+            <div className="leading-tight">
+              <h1 className="text-sm md:text-base font-bold text-gradient-primary leading-[1.05]">
+                <span className="block">Paddy Marketing</span>
+                <span className="block">Board</span>
               </h1>
-              <p className="text-xs text-gray-600">Ministry of Agriculture - Sri Lanka</p>
+              <p className="text-[10px] md:text-[11px] text-gray-600 leading-none mt-0.5">Ministry of Agriculture - Sri Lanka</p>
             </div>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-6">
-            <nav className="flex space-x-6">
+          <div className="hidden lg:flex items-center space-x-4">
+            <nav className="flex space-x-1">
               {navigationItems.map((item) => (
                 <button
                   key={item.name}
                   onClick={() => handleNavClick(item.id)}
-                  className={`px-3 py-1 font-semibold text-sm transition-all duration-300 flex items-center gap-2 nav-btn-${item.id} ${
-                    currentPage === item.id ? 'text-paddy-green' : 'text-gray-700 hover:text-paddy-green'
+                  className={`relative px-2.5 py-2 rounded-md font-medium text-sm transition-all duration-200 flex items-center gap-1.5 nav-btn-${item.id} ${
+                    currentPage === item.id ? 'text-emerald-700 bg-emerald-50' : 'text-gray-700 hover:text-emerald-700 hover:bg-emerald-50'
                   }`}
                 >
                   <span className="text-base">{item.icon}</span>
                   {item.name}
+                  <span
+                    className={`absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full origin-left transition-transform duration-300 ease-out ${
+                      currentPage === item.id ? 'bg-emerald-600 scale-x-100' : 'bg-transparent scale-x-0'
+                    }`}
+                  />
                 </button>
               ))}
             </nav>
@@ -121,16 +124,16 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onAdminClick = ()
                 console.log('Header Register button clicked - using prop function');
                 onMillRegistrationClick();
               }}
-              className="px-3 py-2 font-semibold text-sm transition-all duration-300 flex items-center gap-2 text-gray-700 hover:text-paddy-green border border-gray-300 hover:border-paddy-green rounded-md hover:bg-green-50"
+              className="px-3 py-2 rounded-md font-medium text-sm transition-all duration-200 flex items-center gap-2 text-gray-700 hover:text-emerald-700 border border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50"
             >
               <span className="text-base">🏭</span>
-              <span className="text-xs">{t('header.register')}</span>
+              <span className="text-[11px]">{t('header.register')}</span>
             </button>
             
             {/* Admin Login Button */}
             <button
               onClick={handleAdminClick}
-              className={`${isAdminLoggedIn ? 'bg-green-600 hover:bg-green-700 btn-admin-success' : 'bg-orange-500 hover:bg-orange-600 btn-admin-warning'} px-4 py-2 rounded-lg text-white font-medium flex items-center gap-2 hover:scale-105 transition-all duration-300`}
+              className={`${isAdminLoggedIn ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'} px-3.5 py-2 rounded-md text-white font-medium flex items-center gap-2 transition-all duration-200`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -156,14 +159,14 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onAdminClick = ()
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden mt-4 py-4 border-t border-gray-200 space-y-4">
+          <div className="lg:hidden mt-4 py-4 border-t border-emerald-100 space-y-4">
             <nav className="space-y-2">
               {navigationItems.map((item) => (
                 <button
                   key={item.name}
                   onClick={() => handleNavClick(item.id)}
-                  className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 nav-btn-${item.id} ${
-                    currentPage === item.id ? 'bg-paddy-green text-white' : 'text-gray-700 hover:bg-gray-100'
+                  className={`w-full text-left px-4 py-3 rounded-md font-medium transition-colors flex items-center gap-3 nav-btn-${item.id} ${
+                    currentPage === item.id ? 'bg-emerald-600 text-white' : 'text-gray-700 hover:bg-emerald-50'
                   }`}
                 >
                   <span className="text-lg">{item.icon}</span>
@@ -181,7 +184,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onAdminClick = ()
             <div className="px-4">
               <button
                 onClick={handleAdminClick}
-                className={`${isAdminLoggedIn ? 'bg-green-600 hover:bg-green-700 btn-admin-success' : 'bg-orange-500 hover:bg-orange-600 btn-admin-warning'} w-full px-4 py-3 rounded-lg text-white font-medium flex items-center justify-center gap-2 transition-all duration-300`}
+                className={`${isAdminLoggedIn ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'} w-full px-4 py-3 rounded-md text-white font-medium flex items-center justify-center gap-2 transition-all duration-200`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />

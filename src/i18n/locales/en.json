@@ -15,39 +15,39 @@
   "hero": {
     "slides": {
       "premium": {
-        "title": "Premium Rice Varieties",
-        "main_title": "PREMIUM",
-        "main_subtitle": "QUALITY",
-        "subtitle": "Finest rice varieties from across Sri Lanka",
-        "description": "Experience the exceptional quality of our premium rice varieties, carefully selected from the best paddy fields across the island. Each grain represents our commitment to excellence."
+  "title": "Premium Sri Lankan Rice",
+  "main_title": "PREMIUM",
+  "main_subtitle": "RICE",
+  "subtitle": "Handpicked varieties from trusted local farmers",
+  "description": "Sourced from the best paddy fields, our premium selection delivers consistent taste and nutrition for your family."
       },
       "quality": {
-        "title": "Golden Quality Guarantee",
-        "main_title": "QUALITY",
-        "main_subtitle": "ASSURANCE",
-        "subtitle": "Certified excellence in every grain",
-        "description": "Our rigorous quality control ensures that every batch meets the highest standards. From farm to table, we guarantee excellence in every grain of rice."
+  "title": "Quality You Can Trust",
+  "main_title": "QUALITY",
+  "main_subtitle": "ASSURANCE",
+  "subtitle": "Certified excellence, batch by batch",
+  "description": "Every batch is tested and graded to strict standards so you always receive safe, high‑quality rice."
       },
       "sustainable": {
-        "title": "Sustainable Farming",
+  "title": "Growing Sustainably",
         "main_title": "SUSTAINABLE",
         "main_subtitle": "FARMING",
-        "subtitle": "Environment-friendly agricultural practices",
-        "description": "Supporting eco-friendly farming methods that preserve our environment while ensuring sustainable rice production for future generations."
+  "subtitle": "Protecting soil, water, and our future",
+  "description": "We champion eco‑friendly practices and support farmers to adopt climate‑smart cultivation."
       },
       "farm_to_table": {
-        "title": "Farm to Table Excellence",
+  "title": "From Farm to Table",
         "main_title": "FARM TO",
         "main_subtitle": "TABLE",
-        "subtitle": "Direct from Sri Lankan farmers",
-        "description": "Bridging the gap between farmers and consumers with our direct procurement system, ensuring fair prices for farmers and fresh rice for families."
+  "subtitle": "Fair prices for farmers, fresh rice for families",
+  "description": "Our direct procurement model shortens the path from paddy fields to your table."
       },
       "distribution": {
-        "title": "Island-wide Distribution",
-        "main_title": "ISLAND-WIDE",
+  "title": "Island‑wide Availability",
+  "main_title": "ISLAND‑WIDE",
         "main_subtitle": "DISTRIBUTION",
-        "subtitle": "Reaching every corner of Sri Lanka",
-        "description": "Our extensive distribution network ensures that quality rice reaches every household across Sri Lanka, from bustling cities to remote villages."
+  "subtitle": "Serving every district of Sri Lanka",
+  "description": "With a robust network and storage, we deliver reliably—from bustling cities to rural villages."
       }
     },
     "explore_services": "Explore Services",

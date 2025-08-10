@@ -1,28 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import PageTitle from './PageTitle';
+import Card from './ui/Card';
 
 const Features = () => {
   const [activeFeature, setActiveFeature] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
 
-  // Intersection observer for animations
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.2 }
-    );
-
-    const section = document.getElementById('features');
-    if (section) {
-      observer.observe(section);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+  // (Animations handled globally by SectionTransition)
 
   const features = [
     {
@@ -156,7 +139,7 @@ const Features = () => {
         </div>
       </div>
 
-      <div className="relative container mx-auto px-4 max-w-7xl">
+  <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         {/* Page Title Component */}
         <PageTitle 
           subtitle="Our Core Services"
@@ -209,7 +192,7 @@ const Features = () => {
 
           {/* Active Feature Display */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
+            <Card className="bg-white rounded-3xl p-8 shadow-xl border-gray-100">
               <div className="flex items-start gap-6 mb-8">
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-r ${getColorClasses(features[activeFeature].color).bg} text-white shadow-lg`}>
                   {features[activeFeature].icon}
@@ -233,7 +216,7 @@ const Features = () => {
 
               {/* Feature Benefits */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border border-gray-100">
+                <Card className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border-gray-100">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                       <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,9 +226,9 @@ const Features = () => {
                     <span className="font-semibold text-gray-900">Reliability</span>
                   </div>
                   <p className="text-sm text-gray-600">Consistent service delivery</p>
-                </div>
+                </Card>
 
-                <div className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border border-gray-100">
+                <Card className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border-gray-100">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                       <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,9 +238,9 @@ const Features = () => {
                     <span className="font-semibold text-gray-900">Innovation</span>
                   </div>
                   <p className="text-sm text-gray-600">Latest technology integration</p>
-                </div>
+                </Card>
 
-                <div className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border border-gray-100">
+                <Card className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border-gray-100">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                       <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -267,9 +250,9 @@ const Features = () => {
                     <span className="font-semibold text-gray-900">24/7 Support</span>
                   </div>
                   <p className="text-sm text-gray-600">Round-the-clock assistance</p>
-                </div>
+                </Card>
 
-                <div className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border border-gray-100">
+                <Card className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border-gray-100">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
                       <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -279,9 +262,9 @@ const Features = () => {
                     <span className="font-semibold text-gray-900">Quality</span>
                   </div>
                   <p className="text-sm text-gray-600">Premium standards guaranteed</p>
-                </div>
+                </Card>
               </div>
-            </div>
+            </Card>
           </div>
         </div>
 
