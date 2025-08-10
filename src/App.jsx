@@ -12,6 +12,7 @@ import MillOwnerRegistration from './components/MillOwnerRegistration'
 import AuthPage from './components/AuthPage'
 import MillDashboard from './components/MillDashboard'
 import { SectionTransition } from './components/PageTransition'
+import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from './utils/scroll'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home')
@@ -26,10 +27,10 @@ function App() {
   const [sectionsVisible, setSectionsVisible] = useState({
     home: true,
     about: false,
-    features: false,
-    'collection-centers': false,
-    'live-paddy-prices': false,
-    contact: false
+  features: false,
+  'collection-centers': false,
+  'live-paddy-prices': false,
+  contact: false
   })
 
   // Check for existing user session on app load
@@ -83,31 +84,35 @@ function App() {
   }
 
   const handleNavigation = (page) => {
-    if (userFlowState !== 'home') return // Prevent navigation when in user flow
-    
-    setIsNavigating(true)
-    setCurrentPage(page)
-    
-    if (page === 'home') {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    } else {
-      const element = document.getElementById(page)
-      if (element) {
-        const headerHeight = 60
-        const elementPosition = element.offsetTop - headerHeight
-        window.scrollTo({
-          top: elementPosition,
-          behavior: 'smooth'
-        })
+    const doScroll = () => {
+      setIsNavigating(true)
+      setCurrentPage(page)
+      // Compute dynamic header height (top banner + header)
+      const headerHeight = getHeaderHeight(80)
+
+      if (page === 'home') {
+        smoothScrollTo(0)
+      } else {
+        const element = document.getElementById(page)
+        if (element) {
+          scrollIntoViewWithOffset(element, headerHeight)
+        }
       }
+      setTimeout(() => setIsNavigating(false), 800)
     }
-    
-    // Reset navigation state after transition
-    setTimeout(() => setIsNavigating(false), 800)
+
+    // If not on home flow, switch to home first, then scroll on next tick
+    if (userFlowState !== 'home') {
+      setUserFlowState('home')
+      // wait a tick for sections to mount, then scroll
+      setTimeout(doScroll, 100)
+    } else {
+      doScroll()
+    }
   }
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    smoothScrollTo(0)
   }
 
   useEffect(() => {
@@ -133,7 +138,7 @@ function App() {
     window.addEventListener('openMillRegistration', handleOpenMillRegistration)
 
     const handleScroll = () => {
-      const sections = ['home', 'about', 'collection-centers', 'live-paddy-prices', 'contact']
+  const sections = ['home', 'about', 'features', 'collection-centers', 'live-paddy-prices', 'contact']
       const headerHeight = 60
       
       for (let i = sections.length - 1; i >= 0; i--) {
@@ -167,10 +172,17 @@ function App() {
     }, observerOptions)
 
     // Observe all sections
-    const sectionElements = document.querySelectorAll('section[id]')
+  const sectionElements = document.querySelectorAll('section[id]')
     sectionElements.forEach(section => sectionObserver.observe(section))
 
     window.addEventListener('scroll', handleScroll)
+    
+    // Restore last visited section on reload (if present)
+  const lastSection = sessionStorage.getItem('lastVisitedSection')
+    if (lastSection) {
+      // Delay slightly to ensure sections are mounted
+      setTimeout(() => handleNavigation(lastSection), 50)
+    }
     
     return () => {
       window.removeEventListener('scroll', handleScroll)
@@ -180,7 +192,15 @@ function App() {
       delete window.openMillRegistration
       sectionObserver.disconnect()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Persist last visited section as it changes
+  useEffect(() => {
+    try { sessionStorage.setItem('lastVisitedSection', currentPage) } catch { /* ignore */ }
+  }, [currentPage])
+
+  // (removed) scroll speed preference control
 
   return (
     <div className="min-h-screen bg-white relative">
@@ -235,8 +255,8 @@ function App() {
           </SectionTransition>
         </section>
         
-        {/* About Section with slide-in effect */}
-        <section id="about" className="py-16 relative overflow-hidden">
+  {/* About Section with slide-in effect (id is inside component to avoid duplicate IDs) */}
+  <section className="relative overflow-hidden">
           <SectionTransition trigger={sectionsVisible.about} direction="left" delay={200}>
             <div className="relative z-10">
               <About />
@@ -257,42 +277,24 @@ function App() {
           </section>
         </SectionTransition>
         
-        {/* Collection Centers Section with enhanced animations */}
-        <section id="collection-centers" className="py-16 relative">
-          <SectionTransition trigger={sectionsVisible['collection-centers']} direction="up" delay={100}>
-            <div className="relative z-10">
-              <CollectionCenters />
-            </div>
-          </SectionTransition>
-          
-          {/* Animated background pattern */}
-          <div className="absolute inset-0 opacity-5">
-            <div className="absolute top-10 left-10 w-32 h-32 bg-green-500 rounded-full animate-pulse"></div>
-            <div className="absolute bottom-20 right-20 w-24 h-24 bg-emerald-500 rounded-full animate-pulse"></div>
-            <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-green-400 rounded-full animate-pulse"></div>
-          </div>
-        </section>
-        
-        {/* Live Paddy Prices Section with enhanced animations */}
-        <section id="live-paddy-prices" className="py-16 relative">
-          <SectionTransition trigger={sectionsVisible['live-paddy-prices']} direction="up" delay={150}>
-            <div className="relative z-10">
-              <LivePaddyPrices />
-            </div>
-          </SectionTransition>
-          
-          {/* Animated background pattern */}
-          <div className="absolute inset-0 opacity-5">
-            <div className="absolute top-20 right-10 w-40 h-40 bg-yellow-500 rounded-full animate-pulse"></div>
-            <div className="absolute bottom-10 left-20 w-28 h-28 bg-green-500 rounded-full animate-pulse"></div>
-            <div className="absolute top-1/3 right-1/3 w-20 h-20 bg-emerald-400 rounded-full animate-pulse"></div>
-          </div>
-        </section>
+        {/* Collection Centers Section */}
+        <SectionTransition trigger={sectionsVisible['collection-centers']} direction="up" delay={300}>
+          <section id="collection-centers" className="relative">
+            <CollectionCenters />
+          </section>
+        </SectionTransition>
+
+        {/* Live Paddy Prices Section */}
+        <SectionTransition trigger={sectionsVisible['live-paddy-prices']} direction="up" delay={300}>
+          <section id="live-paddy-prices" className="relative">
+            <LivePaddyPrices />
+          </section>
+        </SectionTransition>
         
         {/* Contact Section with slide-in effect */}
         <section id="contact" className="py-16 relative overflow-hidden">
           <SectionTransition trigger={sectionsVisible.contact} direction="left" delay={250}>
-            <div className="relative z-10">
+            <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
               <Contact />
             </div>
           </SectionTransition>
@@ -311,27 +313,27 @@ function App() {
       <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40">
         <button
           onClick={scrollToTop}
-          className="bg-paddy-green text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-all duration-300 hover:scale-110"
+          className="group w-14 h-14 rounded-full flex items-center justify-center bg-emerald-600 text-white shadow-lg ring-1 ring-white/20 backdrop-blur-sm transition-all duration-300 hover:bg-emerald-700 hover:shadow-xl hover:-translate-y-0.5"
           aria-label="Scroll to top"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
           </svg>
         </button>
-        
+
         <button
           onClick={() => handleNavigation('contact')}
-          className="bg-rice-gold text-white p-3 rounded-full shadow-lg hover:bg-yellow-600 transition-all duration-300 hover:scale-110"
+          className="group w-14 h-14 rounded-full flex items-center justify-center bg-amber-500 text-white shadow-lg ring-1 ring-white/20 backdrop-blur-sm transition-all duration-300 hover:bg-amber-600 hover:shadow-xl hover:-translate-y-0.5"
           aria-label="Contact us"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
         </button>
-        
+
         <a
           href="tel:+94112345678"
-          className="bg-red-600 text-white p-3 rounded-full shadow-lg hover:bg-red-700 transition-all duration-300 hover:scale-110"
+          className="group w-14 h-14 rounded-full flex items-center justify-center bg-red-600 text-white shadow-lg ring-1 ring-white/20 backdrop-blur-sm transition-all duration-300 hover:bg-red-700 hover:shadow-xl hover:-translate-y-0.5"
           aria-label="Emergency contact"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,6 +341,8 @@ function App() {
           </svg>
         </a>
       </div>
+
+  {/* removed scroll speed preference control */}
 
       {/* Modal Components */}
       <AdminLogin 
