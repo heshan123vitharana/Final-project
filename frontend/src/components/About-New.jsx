@@ -83,40 +83,42 @@ export default function AboutNew() {
     <section className="py-16 bg-gradient-to-b from-green-50 to-green-100 min-h-[60vh]">
       <div className="max-w-5xl mx-auto px-4">
         {/* Platform Features Section First */}
-        <h2 className="text-4xl font-bold text-center mb-2 text-green-900">Platform Features</h2>
-        <p className="text-center text-lg text-green-700 mb-8">Explore the key features of our platform</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-12">
-          {[{
-            title: 'Real-Time Paddy Prices',
-            description: 'Get up-to-date market prices for paddy across all districts, with trend indicators and export options.',
-            icon: '📈',
-          }, {
-            title: 'Collection Centers Map',
-            description: 'Find the nearest collection centers with contact info, location, and services offered.',
-            icon: '🗺️',
-          }, {
-            title: 'Mill Owner Registration',
-            description: 'Register your mill, manage your profile, and access exclusive features for verified owners.',
-            icon: '🏭',
-          }, {
-            title: 'Multilingual Support',
-            description: 'Switch between Sinhala, Tamil, and English for a seamless experience.',
-            icon: '🌐',
-          }, {
-            title: 'Secure Admin Login',
-            description: 'Admins can securely log in to manage data and monitor platform activity.',
-            icon: '🔒',
-          }, {
-            title: 'Advanced Analytics',
-            description: 'Gain insights with powerful analytics and reporting tools.',
-            icon: '📊',
-          }].map((feature, idx) => (
-            <div key={idx} className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col items-center transition-transform duration-300 hover:scale-105 border border-green-200">
-              <div className="text-5xl mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-bold text-green-800 mb-1">{feature.title}</h3>
-              <p className="text-gray-600 text-center px-4 mb-6">{feature.description}</p>
-            </div>
-          ))}
+        <div id="platform-features-section">
+          <h2 className="text-4xl font-bold text-center mb-2 text-green-900">Platform Features</h2>
+          <p className="text-center text-lg text-green-700 mb-8">Explore the key features of our platform</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-12">
+            {[{
+              title: 'Real-Time Paddy Prices',
+              description: 'Get up-to-date market prices for paddy across all districts, with trend indicators and export options.',
+              icon: '📈',
+            }, {
+              title: 'Collection Centers Map',
+              description: 'Find the nearest collection centers with contact info, location, and services offered.',
+              icon: '🗺️',
+            }, {
+              title: 'Mill Owner Registration',
+              description: 'Register your mill, manage your profile, and access exclusive features for verified owners.',
+              icon: '🏭',
+            }, {
+              title: 'Multilingual Support',
+              description: 'Switch between Sinhala, Tamil, and English for a seamless experience.',
+              icon: '🌐',
+            }, {
+              title: 'Secure Admin Login',
+              description: 'Admins can securely log in to manage data and monitor platform activity.',
+              icon: '🔒',
+            }, {
+              title: 'Advanced Analytics',
+              description: 'Gain insights with powerful analytics and reporting tools.',
+              icon: '📊',
+            }].map((feature, idx) => (
+              <div key={idx} className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col items-center transition-transform duration-300 hover:scale-105 border border-green-200">
+                <div className="text-5xl mb-4">{feature.icon}</div>
+                <h3 className="text-xl font-bold text-green-800 mb-1">{feature.title}</h3>
+                <p className="text-gray-600 text-center px-4 mb-6">{feature.description}</p>
+              </div>
+            ))}
+          </div>
         </div>
         {/* Leadership Section Second */}
         <div className="py-8 px-2 rounded-xl mb-12" style={{background: 'linear-gradient(90deg, #f0fdf4 0%, #e0f7fa 100%)'}}>
@@ -133,7 +135,6 @@ export default function AboutNew() {
             ))}
           </div>
         </div>
-  {/* See all button removed as requested */}
         {/* Gallery Section */}
         <h2 className="text-4xl font-bold text-center mb-2 text-green-900">Featured</h2>
         <p className="text-center text-lg text-green-700 mb-8">Explore our top-quality featured resources, chosen by us</p>
