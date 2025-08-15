@@ -12,6 +12,7 @@ const LivePaddyPrices = () => {
   const [showAll, setShowAll] = useState(false);
   const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
   const districtRef = useRef(null);
+  const [selectedType, setSelectedType] = useState(''); // wet or dry
 
   // Intersection observer for animations
   useEffect(() => {
@@ -92,7 +93,10 @@ const LivePaddyPrices = () => {
     if (selectedVariety) {
       filtered = filtered.filter(price => price.variety === selectedVariety);
     }
-
+    // Filter by type (wet/dry)
+    if (selectedType) {
+      filtered = filtered.filter(price => (price.type || '').toLowerCase() === selectedType);
+    }
     filtered.sort((a, b) => {
       let aValue, bValue;
       
@@ -142,6 +146,7 @@ const LivePaddyPrices = () => {
     setSelectedVariety('');
     setSortBy('district');
     setSortOrder('asc');
+    setSelectedType('');
   };
 
   const exportCSV = () => {
@@ -297,13 +302,7 @@ const LivePaddyPrices = () => {
               </select>
 
               <div className="mt-2 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowDistrictDropdown(v => !v)}
-                  className="px-3 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-                >
-                  + Add District
-                </button>
+                  {/* Removed '+ Add District' button as requested */}
                 {selectedDistrict && (
                   <span className="text-xs text-emerald-200">Selected: {selectedDistrict}</span>
                 )}
@@ -377,14 +376,15 @@ const LivePaddyPrices = () => {
             </div>
 
             <div>
-              <label className="block text-emerald-200 font-semibold mb-3">🔄 Order</label>
+              <label className="block text-emerald-200 font-semibold mb-3">🧪 Type</label>
               <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
+                value={selectedType}
+                onChange={e => setSelectedType(e.target.value)}
                 className="w-full px-4 py-3 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300"
               >
-                <option value="asc">Ascending</option>
-                <option value="desc">Descending</option>
+                <option value="">All Types</option>
+                <option value="wet">Wet</option>
+                <option value="dry">Dry</option>
               </select>
             </div>
           </div>

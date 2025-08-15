@@ -230,13 +230,7 @@ const CollectionCenters = () => {
               </select>
 
               <div className="mt-2 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowDistrictDropdown((v) => !v)}
-                  className="px-3 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-                >
-                  + Add District
-                </button>
+                  {/* Removed '+ Add District' button as requested */}
                 {selectedDistrict && (
                   <span className="text-xs text-emerald-200">Selected: {selectedDistrict}</span>
                 )}

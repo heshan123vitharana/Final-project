@@ -10,9 +10,20 @@ const Features = () => {
   const features = [
     {
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
+        <svg
+   className="w-8 h-8"
+   fill="none"
+   stroke="currentColor"
+   viewBox="0 0 24 24"
+   xmlns="http://www.w3.org/2000/svg"
+   >
+   <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+   ></path>
+   </svg>
       ),
       title: "Quality Assurance", 
       description: "Premium quality rice varieties meeting international standards with rigorous testing and certification processes",
@@ -21,9 +32,20 @@ const Features = () => {
     },
     {
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-        </svg>
+        <svg
+   className="w-8 h-8"
+   fill="none"
+   stroke="currentColor"
+   viewBox="0 0 24 24"
+   xmlns="http://www.w3.org/2000/svg"
+   >
+   <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.124-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.124-1.283.356-1.857m0 0a3.001 3.001 0 015.288 0M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+   ></path>
+   </svg>
       ),
       title: "Direct from Farmers",
       description: "Supporting local farmers through fair trade practices and sustainable agricultural development programs",
@@ -32,10 +54,26 @@ const Features = () => {
     },
     {
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
+        <svg
+   className="w-8 h-8"
+   fill="none"
+   stroke="currentColor"
+   viewBox="0 0 24 24"
+   xmlns="http://www.w3.org/2000/svg"
+   >
+   <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+   ></path>
+   <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+   ></path>
+   </svg>
       ),
       title: "Island-wide Network",
       description: "Efficient delivery network covering all 25 districts with advanced logistics and tracking systems",
@@ -44,9 +82,20 @@ const Features = () => {
     },
     {
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-        </svg>
+        <svg
+   className="w-8 h-8"
+   fill="none"
+   stroke="currentColor"
+   viewBox="0 0 24 24"
+   xmlns="http://www.w3.org/2000/svg"
+   >
+   <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+   ></path>
+   </svg>
       ),
       title: "Competitive Pricing",
       description: "Fair and transparent pricing model ensuring value for money while supporting farmer livelihoods",
@@ -55,9 +104,20 @@ const Features = () => {
     },
     {
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-        </svg>
+        <svg
+   className="w-8 h-8"
+   fill="none"
+   stroke="currentColor"
+   viewBox="0 0 24 24"
+   xmlns="http://www.w3.org/2000/svg"
+   >
+   <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+   ></path>
+   </svg>
       ),
       title: "Modern Facilities",
       description: "State-of-the-art collection centers and processing facilities equipped with latest technology",
@@ -66,9 +126,20 @@ const Features = () => {
     },
     {
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-        </svg>
+        <svg
+   className="w-8 h-8"
+   fill="none"
+   stroke="currentColor"
+   viewBox="0 0 24 24"
+   xmlns="http://www.w3.org/2000/svg"
+   >
+   <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+   ></path>
+   </svg>
       ),
       title: "Digital Innovation",
       description: "Cutting-edge technology solutions including mobile apps, IoT sensors, and blockchain traceability",

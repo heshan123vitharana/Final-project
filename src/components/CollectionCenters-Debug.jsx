@@ -75,12 +75,6 @@ const CollectionCentersDebug = () => {
           {filteredCenters.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-xl text-red-600">No results found for "{searchTerm}"</p>
-              <button 
-                onClick={() => setSearchTerm('')}
-                className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-              >
-                Clear Search
-              </button>
             </div>
           ) : (
             filteredCenters.map(center => (
