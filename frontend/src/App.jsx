@@ -27,7 +27,7 @@ function App() {
   const [sectionsVisible, setSectionsVisible] = useState({
     home: true,
     about: false,
-  features: false,
+  features: true,
   'collection-centers': false,
   'live-paddy-prices': false,
   contact: false
@@ -257,7 +257,7 @@ function App() {
         
   {/* About Section with slide-in effect (id is inside component to avoid duplicate IDs) */}
   <section className="relative overflow-hidden">
-          <SectionTransition trigger={sectionsVisible.about} direction="left" delay={200}>
+          <SectionTransition trigger={true} direction="left" delay={200}>
             <div className="relative z-10">
               <About />
             </div>
@@ -320,26 +320,20 @@ function App() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
           </svg>
         </button>
-
-        <button
-          onClick={() => handleNavigation('contact')}
-          className="group w-14 h-14 rounded-full flex items-center justify-center bg-amber-500 text-white shadow-lg ring-1 ring-white/20 backdrop-blur-sm transition-all duration-300 hover:bg-amber-600 hover:shadow-xl hover:-translate-y-0.5"
-          aria-label="Contact us"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-        </button>
-
+        <SectionTransition trigger={true} direction="up" delay={300}>
+          {/* Add content here if needed for transition effect */}
+        </SectionTransition>
         <a
           href="tel:+94112345678"
           className="group w-14 h-14 rounded-full flex items-center justify-center bg-red-600 text-white shadow-lg ring-1 ring-white/20 backdrop-blur-sm transition-all duration-300 hover:bg-red-700 hover:shadow-xl hover:-translate-y-0.5"
-          aria-label="Emergency contact"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
           </svg>
         </a>
+        <SectionTransition trigger={true} direction="left" delay={250}>
+          {/* Add content here if needed for transition effect */}
+        </SectionTransition>
       </div>
 
   {/* removed scroll speed preference control */}
