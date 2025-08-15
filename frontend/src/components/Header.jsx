@@ -10,7 +10,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onAdminClick = ()
 
   const navigationItems = [
     { name: t('header.home'), id: 'home', icon: '🏠' },
-    { name: t('header.about'), id: 'about', icon: 'ℹ️' },
+    { name: t('header.about'), id: 'platform-features-section', icon: 'ℹ️' },
   { name: t('header.collection_centers'), id: 'collection-centers', icon: '🏢' },
   { name: t('header.live_prices'), id: 'live-paddy-prices', icon: '💰' },
     { name: t('header.contact'), id: 'contact', icon: '📞' }
@@ -37,7 +37,15 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onAdminClick = ()
     
     // Navigate after short delay for smooth effect
     setTimeout(() => {
-      onNavigate(sectionId);
+        if (sectionId === 'platform-features-section') {
+          const section = document.getElementById('platform-features-section');
+          if (section) {
+            section.scrollIntoView({ behavior: 'smooth' });
+            return;
+          }
+        }
+        // ...existing code...
+        onNavigate(sectionId);
       setIsMenuOpen(false);
       
       // Clean up
