@@ -239,10 +239,8 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
                 >
-                  <option value="rice_mill">{t('auth.rice_mill')}</option>
-                  <option value="processing_plant">{t('auth.paddy_processor')}</option>
-                  <option value="storage_facility">{t('auth.distributor')}</option>
-                  <option value="distributor">{t('auth.retailer')}</option>
+                  <option value="private">Private</option>
+                  <option value="government">Government</option>
                 </select>
               </div>
 
