@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
 import logoP from '../assets/logo-p.png';
 
-const Header = ({ onNavigate = () => {}, currentPage = 'home', onAdminClick = () => {}, isAdminLoggedIn = false, onMillRegistrationClick = () => {} }) => {
+const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistrationClick = () => {} }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { t } = useTranslation();
@@ -58,9 +58,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onAdminClick = ()
     }, 150);
   };
 
-  const handleAdminClick = () => {
-    onAdminClick();
-  };
+  // Removed handleAdminClick and onAdminClick as Admin button is no longer used
 
   return (
     <header className={`fixed w-full z-40 top-0 transition-all duration-300 border-b ${
@@ -126,28 +124,19 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onAdminClick = ()
             {/* Language Selector */}
             <LanguageSelector />
 
-            {/* Mill Registration - styled like navigation items */}
+            {/* Sign In Button - previously Register */}
             <button
               onClick={() => {
-                console.log('Header Register button clicked - using prop function');
+                console.log('Header Sign In button clicked - using prop function');
                 onMillRegistrationClick();
               }}
               className="px-3 py-2 rounded-md font-medium text-sm transition-all duration-200 flex items-center gap-2 text-gray-700 hover:text-emerald-700 border border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50"
             >
               <span className="text-base">🏭</span>
-              <span className="text-[11px]">{t('header.register')}</span>
+              <span className="text-[11px]">Sign In</span>
             </button>
             
-            {/* Admin Login Button */}
-            <button
-              onClick={handleAdminClick}
-              className={`${isAdminLoggedIn ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'} px-3.5 py-2 rounded-md text-white font-medium flex items-center gap-2 transition-all duration-200`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              {isAdminLoggedIn ? t('header.admin_panel') : t('header.admin')}
-            </button>
+            {/* Admin Login Button removed as requested */}
           </div>
 
           {/* Mobile Menu Button */}
@@ -188,18 +177,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onAdminClick = ()
               <LanguageSelector />
             </div>
             
-            {/* Mobile Admin Button */}
-            <div className="px-4">
-              <button
-                onClick={handleAdminClick}
-                className={`${isAdminLoggedIn ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-500 hover:bg-amber-600'} w-full px-4 py-3 rounded-md text-white font-medium flex items-center justify-center gap-2 transition-all duration-200`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                {isAdminLoggedIn ? t('header.admin_panel') : t('header.admin')}
-              </button>
-            </div>
+            {/* Mobile Admin Button removed as requested */}
           </div>
         )}
       </div>
