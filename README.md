@@ -54,8 +54,10 @@ Final-project/
    ```
 
 ## Future Plans
+[blank line]
+
 - Add backend functionality (Node.js/Express, REST API)
-- Integrate database (MongoDB, PostgreSQL, etc.)
+- Integrate database (MySQL, PostgreSQL, etc.)
 - Implement advanced authentication and authorization
 - Add automated testing (Jest, React Testing Library)
 - Deploy to cloud platforms (Vercel, Netlify, Heroku)
