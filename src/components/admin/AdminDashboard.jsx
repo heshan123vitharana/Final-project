@@ -1,0 +1,151 @@
+import { useState } from 'react'
+import { 
+  FileText, 
+  BarChart3, 
+  Map, 
+  FileBarChart, 
+  DollarSign, 
+  Menu, 
+  X,
+  LogOut 
+} from 'lucide-react'
+import LicenseRequestManagement from './LicenseRequestManagement'
+import StockDashboard from './StockDashboard'
+import MillMap from './MillMap'
+import Reports from './Reports'
+import PriceManagement from './UpdatePrice'
+
+const AdminDashboard = ({ onLogout }) => {
+  const [activeSection, setActiveSection] = useState('license-requests')
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  const navigationItems = [
+     {
+      id: 'stock-dashboard',
+      label: 'Live Stock Dashboard',
+      icon: BarChart3,
+      component: StockDashboard
+    },
+    {
+      id: 'license-requests',
+      label: 'License Requests',
+      icon: FileText,
+      component: LicenseRequestManagement
+    },
+   
+    {
+      id: 'mill-map',
+      label: 'Mill Map',
+      icon: Map,
+      component: MillMap
+    },
+    {
+      id: 'reports',
+      label: 'Reports',
+      icon: FileBarChart,
+      component: Reports
+    },
+    {
+      id: 'price-management',
+      label: 'Update Price',
+      icon: DollarSign,
+      component: PriceManagement
+    }
+  ]
+
+  const ActiveComponent = navigationItems.find(item => item.id === activeSection)?.component
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex">
+      {/* Sidebar */}
+      <div className={`bg-green-800 text-white transition-all duration-300 flex flex-col relative ${
+        sidebarOpen ? 'w-64' : 'w-16'
+      }`}>
+        {/* Header */}
+        <div className="p-4 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <h2 className={`font-bold text-xl ${sidebarOpen ? 'block' : 'hidden'}`}>
+              PMB Admin
+            </h2>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-white hover:text-green-200 transition-colors"
+            >
+              {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation - takes up remaining space */}
+        <nav className="flex-1 mt-8 overflow-y-auto">
+          {navigationItems.map((item) => {
+            const IconComponent = item.icon
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={`w-full flex items-center px-4 py-3 text-left hover:bg-green-700 transition-colors ${
+                  activeSection === item.id ? 'bg-green-700 border-r-4 border-yellow-400' : ''
+                }`}
+              >
+                <IconComponent size={20} />
+                <span className={`ml-3 ${sidebarOpen ? 'block' : 'hidden'}`}>
+                  {item.label}
+                </span>
+              </button>
+            )
+          })}
+        </nav>
+
+        {/* Logout Button - fixed at bottom */}
+        <div className="p-4 flex-shrink-0">
+          <button
+            onClick={() => {
+              console.log('Logout button clicked');
+              if (onLogout) {
+                onLogout();
+              }
+            }}
+            className={`w-full flex items-center px-4 py-2 text-left bg-red-600 hover:bg-red-700 transition-colors rounded text-white font-medium ${
+              sidebarOpen ? '' : 'justify-center'
+            }`}
+          >
+            <LogOut size={20} />
+            <span className={`ml-3 ${sidebarOpen ? 'block' : 'hidden'}`}>
+              Logout
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-800">
+              {navigationItems.find(item => item.id === activeSection)?.label}
+            </h1>
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-600">
+                {new Date().toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 p-6">
+          {ActiveComponent && <ActiveComponent />}
+        </main>
+      </div>
+    </div>
+  )
+}
+
+export default AdminDashboard
