@@ -18,7 +18,58 @@ function App() {
   const [currentPage, setCurrentPage] = useState('home')
   const [isNavigating, setIsNavigating] = useState(false)
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false)
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false)
+  const [adminData, setAdminData] = useState(null)
+
+  // Admin login form state
+  const [adminFormData, setAdminFormData] = useState({ email: '', password: '' });
+  const [adminLoginErrors, setAdminLoginErrors] = useState({});
+  const [adminLoginLoading, setAdminLoginLoading] = useState(false);
+
+  // Handle admin login form input change
+  const handleAdminInputChange = (e) => {
+    const { name, value } = e.target;
+    setAdminFormData((prev) => ({ ...prev, [name]: value }));
+    setAdminLoginErrors((prev) => ({ ...prev, [name]: undefined, general: undefined }));
+  };
+
+  // Handle admin login form submit
+  const handleAdminLoginSubmit = async (e) => {
+    e.preventDefault();
+    setAdminLoginLoading(true);
+    setAdminLoginErrors({});
+    // Simple validation
+    if (!adminFormData.email || !adminFormData.password) {
+      setAdminLoginErrors({
+        email: !adminFormData.email ? 'Email is required' : undefined,
+        password: !adminFormData.password ? 'Password is required' : undefined,
+      });
+      setAdminLoginLoading(false);
+      return;
+    }
+    try {
+      // Use correct backend API route for admin login
+      const response = await fetch('http://localhost:5000/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: adminFormData.email,
+          password: adminFormData.password
+        }),
+      });
+      const result = await response.json();
+      if (response.ok && result.message === 'Login successful') {
+        setAdminData(result.admin);
+        setUserFlowState('adminDashboard');
+        setIsAdminLoginOpen(false);
+  setAdminFormData({ email: '', password: '' });
+      } else {
+    setAdminLoginErrors({ general: result.message || 'Login failed' });
+      }
+    } catch {
+  setAdminLoginErrors({ general: 'Server error. Please try again.' });
+    }
+    setAdminLoginLoading(false);
+  };
   
   // User authentication and flow state
   const [userFlowState, setUserFlowState] = useState('home') // 'home', 'auth', 'dashboard', 'pmb_registration'
@@ -54,10 +105,22 @@ function App() {
     setUserFlowState('dashboard')
   }
 
+  // Handle successful admin login
+  const handleAdminLogin = (data) => {
+    setAdminData(data)
+    setUserFlowState('adminDashboard')
+  }
+
   // Handle user logout
   const handleLogout = () => {
     sessionStorage.removeItem('millOwnerData')
     setUserData(null)
+    setUserFlowState('home')
+  }
+  // Handle admin logout
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem('adminData')
+    setAdminData(null)
     setUserFlowState('home')
   }
 
@@ -204,6 +267,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-white relative">
+  
       {/* Render different flows based on user state */}
       {userFlowState === 'auth' && (
         <AuthPage 
@@ -217,6 +281,12 @@ function App() {
           userData={userData}
           onStartPMBRegistration={handleStartPMBRegistration}
           onLogout={handleLogout}
+        />
+      )}
+      {userFlowState === 'adminDashboard' && adminData && (
+        <MillDashboard 
+          userData={adminData}
+          onLogout={handleAdminLogout}
         />
       )}
       
@@ -242,7 +312,6 @@ function App() {
           <Header 
             onNavigate={handleNavigation} 
             currentPage={currentPage}
-            isAdminLoggedIn={isAdminLoggedIn}
             onAdminClick={() => setIsAdminLoginOpen(true)}
             onMillRegistrationClick={handleMillRegistrationClick}
           />
@@ -339,11 +408,22 @@ function App() {
   {/* removed scroll speed preference control */}
 
       {/* Modal Components */}
-      <AdminLogin 
-        isOpen={isAdminLoginOpen}
-        onClose={() => setIsAdminLoginOpen(false)}
-        onLogin={setIsAdminLoggedIn}
-      />
+      {isAdminLoginOpen && (
+        <AdminLogin
+          onClose={() => setIsAdminLoginOpen(false)}
+          onLogin={handleAdminLogin}
+          isLoading={adminLoginLoading}
+          errors={adminLoginErrors}
+          formData={adminFormData}
+          handleInputChange={handleAdminInputChange}
+          handleSubmit={handleAdminLoginSubmit}
+          onBackToHome={() => {
+            setIsAdminLoginOpen(false);
+            setUserFlowState('home');
+            handleNavigation('home');
+          }}
+        />
+      )}
       </>
       )}
     </div>

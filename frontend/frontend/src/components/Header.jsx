@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
 import logoP from '../assets/logo-p.png';
 
-const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistrationClick = () => {} }) => {
+const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistrationClick = () => {}, onAdminClick = () => {} }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { t } = useTranslation();
@@ -75,6 +75,14 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
             <span className="inline-block text-sm">📞</span> 
             <span className="ml-2">{t('header.hotline')}</span>
           </span>
+          {/* Smallest lock icon for admin login */}
+          <button
+            title="Admin Login"
+            onClick={onAdminClick}
+            style={{ background: 'transparent', border: 'none', padding: 0, marginLeft: 8, cursor: 'pointer', verticalAlign: 'middle' }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 24 24"><path d="M17 8V7a5 5 0 0 0-10 0v1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2zm-8-1a3 3 0 0 1 6 0v1h-6zm9 12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zm-6-3a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1z"/></svg>
+          </button>
         </p>
       </div>
 

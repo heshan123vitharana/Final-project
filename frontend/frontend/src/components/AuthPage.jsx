@@ -12,7 +12,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
     lastName: '',
     phoneNumber: '',
     businessName: '',
-    businessType: 'rice_mill'
+    business_type: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState({})
@@ -77,78 +77,97 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
     if (!validateForm()) {
       return
     }
-
     setIsSubmitting(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false)
-      
-      // Create user session data
-      const userData = {
-        id: Date.now(),
-        email: formData.email,
-        firstName: formData.firstName || 'User',
-        lastName: formData.lastName || '',
-        businessName: formData.businessName || 'My Business',
-        businessType: formData.businessType,
-        phoneNumber: formData.phoneNumber || '',
-        isNewUser: !isLogin,
-        registrationDate: new Date().toISOString()
+    try {
+      let url, payload;
+      if (isLogin) {
+        url = 'http://localhost:5000/api/auth/login';
+        payload = {
+          email: formData.email,
+          password: formData.password,
+        };
+      } else {
+        url = 'http://localhost:5000/api/auth/register';
+        payload = {
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          business_name: formData.businessName,
+          business_type: formData.businessType,
+          phone: formData.phoneNumber,
+          email: formData.email,
+          password: formData.password,
+          confirm_password: formData.confirmPassword,
+        };
       }
-
-      // Store in sessionStorage
-      sessionStorage.setItem('millOwnerData', JSON.stringify(userData))
-      
-      // Call success callback
-      onAuthSuccess(userData)
-    }, 2000)
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      setIsSubmitting(false);
+      if (response.ok) {
+        onAuthSuccess(result);
+      } else {
+        setErrors({ api: result.errors ? result.errors.join(', ') : result.message || (isLogin ? 'Sign in failed' : 'Registration failed') });
+      }
+    } catch {
+      setIsSubmitting(false);
+      setErrors({ api: 'Network error. Please try again.' });
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
-      {/* Exit Button */}
-      <button
-        onClick={onExit}
-        className="absolute top-6 right-6 z-50 p-3 rounded-full bg-white/80 hover:bg-white transition-all duration-300 group shadow-lg"
-        aria-label={t('auth.exit_tooltip')}
-      >
-        <svg className="w-6 h-6 text-gray-600 group-hover:text-gray-800 transform group-hover:rotate-90 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mx-auto h-20 w-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl flex items-center justify-center mb-6 shadow-xl">
-            <svg className="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">
-            {isLogin ? t('auth.welcome_back') : t('auth.create_account')}
-          </h2>
-          <p className="text-lg text-gray-600">
-            {isLogin 
-              ? t('auth.sign_in_subtitle')
-              : t('auth.join_pmb_subtitle')
-            }
-          </p>
+    <>
+      {errors.api && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-xl text-center font-semibold">
+          {errors.api}
         </div>
+      )}
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+        {/* Exit Button */}
+        <button
+          onClick={onExit}
+          className="absolute top-6 right-6 z-50 p-3 rounded-full bg-white/80 hover:bg-white transition-all duration-300 group shadow-lg"
+          aria-label={t('auth.exit_tooltip')}
+        >
+          <svg className="w-6 h-6 text-gray-600 group-hover:text-gray-800 transform group-hover:rotate-90 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
 
-        {/* Auth Toggle */}
-        <div className="flex bg-gray-100 rounded-2xl p-1">
-          <button
-            type="button"
-            onClick={() => setIsLogin(true)}
-            className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-200 ${
-              isLogin
-                ? 'bg-white text-emerald-600 shadow-sm'
+        <div className="max-w-md w-full space-y-8">
+          {/* Header */}
+          <div className="text-center">
+            <div className="mx-auto h-20 w-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl flex items-center justify-center mb-6 shadow-xl">
+              <svg className="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <h2 className="text-4xl font-bold text-gray-900 mb-2">
+              {isLogin ? t('auth.welcome_back') : t('auth.create_account')}
+            </h2>
+            <p className="text-lg text-gray-600">
+              {isLogin 
+                ? t('auth.sign_in_subtitle')
+                : t('auth.join_pmb_subtitle')
+              }
+            </p>
+          </div>
+
+          {/* Auth Toggle */}
+          <div className="flex bg-gray-100 rounded-2xl p-1">
+            <button
+              type="button"
+              onClick={() => setIsLogin(true)}
+              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                isLogin
+                  ? 'bg-white text-emerald-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -358,7 +377,8 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
         </div>
       </div>
     </div>
-  )
+    </>
+  );
 }
 
 export default AuthPage
