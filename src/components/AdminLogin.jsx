@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 
 import React from 'react';
 
@@ -679,7 +679,7 @@ const AdminLogin = ({ isOpen, onClose, onLogin }) => {
               </div>
             </div>
           )}
->>>>>>> 11172fac6621c27fbbff6f642c33a7a2ab704aeb
+
         </div>
       </div>
     </div>
