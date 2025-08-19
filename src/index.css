@@ -1,3 +1,4 @@
+/* VS Code may show 'Unknown at rule @tailwind' warnings. These are safe to ignore if using Tailwind CSS. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -124,6 +125,8 @@ body {
     rgba(6, 95, 70, 0.05) 75%,
     rgba(20, 184, 166, 0.08) 100%
   );
+  -webkit-backdrop-filter: blur(0.5px);
+  -webkit-backdrop-filter: blur(0.5px);
   backdrop-filter: blur(0.5px);
 }
 
@@ -135,6 +138,8 @@ body {
     rgba(6, 95, 70, 0.08) 75%,
     rgba(20, 184, 166, 0.12) 100%
   );
+  -webkit-backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
   backdrop-filter: blur(1px);
 }
 
@@ -146,6 +151,8 @@ body {
     rgba(6, 95, 70, 0.10) 75%,
     rgba(20, 184, 166, 0.15) 100%
   );
+  -webkit-backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
 }
 
@@ -158,6 +165,8 @@ body {
     rgba(30, 58, 138, 0.05) 75%,
     rgba(79, 70, 229, 0.08) 100%
   );
+  -webkit-backdrop-filter: blur(0.5px);
+  -webkit-backdrop-filter: blur(0.5px);
   backdrop-filter: blur(0.5px);
 }
 
@@ -169,6 +178,8 @@ body {
     rgba(91, 33, 182, 0.05) 75%,
     rgba(168, 85, 247, 0.08) 100%
   );
+  -webkit-backdrop-filter: blur(0.5px);
+  -webkit-backdrop-filter: blur(0.5px);
   backdrop-filter: blur(0.5px);
 }
 

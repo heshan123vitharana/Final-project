@@ -12,7 +12,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
     lastName: '',
     phoneNumber: '',
     businessName: '',
-    business_type: ''
+    businessType: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState({})
