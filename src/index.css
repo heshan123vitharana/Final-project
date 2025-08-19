@@ -647,47 +647,6 @@ body {
   border: none;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
-}
-
-.btn-secondary:hover {
-  background: linear-gradient(135deg, #b8941f 0%, #d4c589 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
-}
-
-<<<<<<< HEAD
-=======
-.btn-outline {
-  background: transparent;
-  color: #4A6741;
-  font-weight: 600;
-  padding: 12px 24px;
-  border-radius: 8px;
-  border: 2px solid #4A6741;
-  transition: all 0.3s ease;
-}
-
-.btn-outline:hover {
-  background: #4A6741;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 103, 65, 0.3);
-}
-
-/* Enhanced Professional Button Enhancements */
-.btn-primary-enhanced {
-  background: linear-gradient(135deg, #4A6741 0%, #6b8f47 100%);
-  border: none;
-  box-shadow: 
-    0 4px 15px rgba(74, 103, 65, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-primary-enhanced::before {
-  content: '';
   position: absolute;
   top: 0;
   left: -100%;
