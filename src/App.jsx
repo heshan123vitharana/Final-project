@@ -52,7 +52,6 @@ function App() {
       const response = await fetch('http://localhost:5000/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
           email: adminFormData.email,
           password: adminFormData.password
         }),
@@ -113,12 +112,7 @@ function App() {
   }
 
   // Handle user logout
-  const handleLogout = () => {
-    sessionStorage.removeItem('millOwnerData')
-    setUserData(null)
-    setUserFlowState('home')
-  }
-  // Handle admin logout
+        export default App
   const handleAdminLogout = () => {
     sessionStorage.removeItem('adminData')
     setAdminData(null)
