@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; // ✅ need useEffect import
 
 const ViewStock = () => {
   // Dummy Stock Data (quantity in kg)
@@ -29,6 +29,7 @@ const ViewStock = () => {
     },
   ];
 
+  // Store filters in state
   const [filters, setFilters] = useState({
     farmerId: "",
     paddyType: "",
@@ -36,27 +37,35 @@ const ViewStock = () => {
     date: "",
   });
 
+  // Set page title on mount
+  useEffect(() => {
+    document.title = "Dashboard | View Stock";
+  }, []);
+
+  // Handle filter input changes
   const handleChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
-  // Filter logic: exact match for select fields, partial for text
+  // Filter logic
   const filteredData = stockData.filter(
     (stock) =>
-      stock.farmerId.toLowerCase().includes(filters.farmerId.toLowerCase()) &&
-      (filters.paddyType === "" || stock.paddyType === filters.paddyType) &&
-      (filters.condition === "" || stock.condition === filters.condition) &&
-      stock.date.includes(filters.date)
+      stock.farmerId.toLowerCase().includes(filters.farmerId.toLowerCase()) && // partial match
+      (filters.paddyType === "" || stock.paddyType === filters.paddyType) &&   // exact match
+      (filters.condition === "" || stock.condition === filters.condition) &&  // exact match
+      stock.date.includes(filters.date)                                       // date filter
   );
 
   return (
     <div className="p-6 bg-green-50 min-h-screen">
+      {/* Page Title */}
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
         📦 View Stock Records
       </h1>
 
-      {/* Filters */}
+      {/* Filters Section */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-white p-4 rounded-lg shadow-md border border-green-200">
+        {/* Farmer ID filter */}
         <input
           type="text"
           name="farmerId"
@@ -65,6 +74,8 @@ const ViewStock = () => {
           placeholder="Search by Farmer ID"
           className="border border-green-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400"
         />
+
+        {/* Paddy Type filter */}
         <select
           name="paddyType"
           value={filters.paddyType}
@@ -77,6 +88,8 @@ const ViewStock = () => {
           <option value="Samba">Samba</option>
           <option value="Kiri Samba">Kiri Samba</option>
         </select>
+
+        {/* Condition filter */}
         <select
           name="condition"
           value={filters.condition}
@@ -87,6 +100,8 @@ const ViewStock = () => {
           <option value="Dry">Dry</option>
           <option value="Wet">Wet</option>
         </select>
+
+        {/* Date filter */}
         <input
           type="date"
           name="date"
@@ -96,7 +111,7 @@ const ViewStock = () => {
         />
       </div>
 
-      {/* Table */}
+      {/* Stock Table */}
       <div className="overflow-x-auto rounded-lg shadow-md border border-green-200 bg-white">
         <table className="w-full table-auto">
           <thead className="bg-green-200 text-green-900">
@@ -111,9 +126,9 @@ const ViewStock = () => {
           </thead>
           <tbody>
             {filteredData.length > 0 ? (
-              filteredData.map((stock, index) => (
+              filteredData.map((stock) => (
                 <tr
-                  key={index}
+                  key={stock.farmerId} // ✅ better than using index
                   className="odd:bg-white even:bg-green-50 hover:bg-green-100 text-center transition-colors"
                 >
                   <td className="border px-4 py-2">{stock.farmerId}</td>
@@ -121,7 +136,9 @@ const ViewStock = () => {
                   <td className="border px-4 py-2">{stock.paddyType}</td>
                   <td className="border px-4 py-2">{stock.condition}</td>
                   {/* Convert kg → MT (divide by 1000) */}
-                  <td className="border px-4 py-2">{(stock.quantity / 1000).toFixed(2)}</td>
+                  <td className="border px-4 py-2">
+                    {(stock.quantity / 1000).toFixed(2)}
+                  </td>
                   <td className="border px-4 py-2">{stock.date}</td>
                 </tr>
               ))

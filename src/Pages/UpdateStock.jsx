@@ -38,6 +38,11 @@ const UpdateStock = () => {
     date: new Date().toISOString().split("T")[0],
   });
 
+  // Set page title on mount
+  useEffect(() => {
+    document.title = "Dashboard | Update Stock";
+  }, []);
+
   const [unitPrice, setUnitPrice] = useState(0);
   const [showPopup, setShowPopup] = useState(false);
   const [notification, setNotification] = useState("");

@@ -18,7 +18,7 @@ const PaddyPrice = () => {
 
   // Set page title on mount
   useEffect(() => {
-    document.title = "Paddy Prices";
+    document.title = "Dashboard | Paddy Prices";
   }, []);
 
   // Filter prices based on selected type and condition

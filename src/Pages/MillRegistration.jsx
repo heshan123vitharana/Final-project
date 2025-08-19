@@ -68,7 +68,39 @@ const MillRegistration = () => {
       {/* Page heading */}
       <h1 className="text-2xl font-bold mb-6 text-green-700">Mill Registration</h1>
 
-      {/* Widget 1: Apply Licence */}
+      {/* Widget 1: Status of Licence */}
+      <div className="bg-white shadow p-4 rounded mb-6 border border-green-200">
+        <button
+          onClick={toggleStatusSection}
+          className="text-lg font-semibold text-green-700 hover:text-green-800"
+        >
+          {showStatusSection ? '▼' : '▶'} Status of Licence
+        </button>
+
+        {showStatusSection && (
+          <div className="mt-4 text-gray-700">
+            <p><strong>Apply Date:</strong> 2025-08-01</p>
+            <p><strong>Status:</strong> Approved</p>
+            <p><strong>Deadline:</strong> 2026-08-01</p>
+            <div className="mt-4 flex space-x-4">
+              <button
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
+                onClick={handleViewCertificate}
+              >
+                View Certificate
+              </button>
+              <button
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+                onClick={handleDownloadCertificate}
+              >
+                Download Certificate
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Widget 2: Apply Licence */}
       <div className="bg-white shadow p-4 rounded mb-6 border border-green-200">
         <button
           onClick={toggleApplySection}
@@ -97,38 +129,6 @@ const MillRegistration = () => {
                 onClick={() => handleOpenForm('Renew')}
               >
                 Renew Licence
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Widget 2: Status of Licence */}
-      <div className="bg-white shadow p-4 rounded mb-6 border border-green-200">
-        <button
-          onClick={toggleStatusSection}
-          className="text-lg font-semibold text-green-700 hover:text-green-800"
-        >
-          {showStatusSection ? '▼' : '▶'} Status of Licence
-        </button>
-
-        {showStatusSection && (
-          <div className="mt-4 text-gray-700">
-            <p><strong>Apply Date:</strong> 2025-08-01</p>
-            <p><strong>Status:</strong> Approved</p>
-            <p><strong>Deadline:</strong> 2026-08-01</p>
-            <div className="mt-4 flex space-x-4">
-              <button
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-                onClick={handleViewCertificate}
-              >
-                View Certificate
-              </button>
-              <button
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
-                onClick={handleDownloadCertificate}
-              >
-                Download Certificate
               </button>
             </div>
           </div>
