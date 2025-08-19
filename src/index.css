@@ -1,13 +1,7 @@
-<<<<<<< HEAD
 /* VS Code may show 'Unknown at rule @tailwind' warnings. These are safe to ignore if using Tailwind CSS. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-=======
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
->>>>>>> 11172fac6621c27fbbff6f642c33a7a2ab704aeb
 
 /* Global Styles with Enhanced Transitions */
 html {
@@ -71,7 +65,7 @@ body {
   100% { width: 100%; }
 }
 
-<<<<<<< HEAD
+/* VS Code may show 'Unknown at rule @tailwind' warnings. These are safe to ignore if using Tailwind CSS. */
 /* Professional typography enhancements */
 .professional-title {
   font-weight: 700;
@@ -205,8 +199,8 @@ body {
   line-height: clamp(1.5rem, 3vw, 1.875rem);
 }
 
-=======
->>>>>>> 11172fac6621c27fbbff6f642c33a7a2ab704aeb
+/* ...existing code... */
+/* ...existing code... */
 /* Animation delay utilities */
 .animation-delay-1000 {
   animation-delay: 1s;
