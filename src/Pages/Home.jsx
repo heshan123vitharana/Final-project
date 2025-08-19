@@ -1,42 +1,48 @@
+// Import React hooks and chart components
 import { useEffect, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, ResponsiveContainer
 } from 'recharts';
 
+// Home page component: dashboard overview with paddy stock chart
 const Home = () => {
+  // Set page title on mount
   useEffect(() => {
     document.title = "Dashboard | Home";
   }, []);
 
-  // State to track selected chart
+  // State to track which chart type is selected (dry/wet)
   const [selectedType, setSelectedType] = useState('dry');
 
-  // Sample data for dry and wet paddy stock
+  // Sample data for dry paddy stock
   const dryPaddyData = [
     { variety: 'Nadu', stock: 1200 },
     { variety: 'Samba', stock: 800 },
     { variety: 'Red Rice', stock: 450 },
   ];
 
+  // Sample data for wet paddy stock
   const wetPaddyData = [
     { variety: 'Nadu', stock: 600 },
     { variety: 'Samba', stock: 950 },
     { variety: 'Red Rice', stock: 300 },
   ];
 
+  // Select chart data based on current type
   const chartData = selectedType === 'dry' ? dryPaddyData : wetPaddyData;
 
   return (
     <div className="p-6">
-      {/* Bigger heading */}
+      {/* Dashboard heading */}
       <h1 className="text-5xl font-bold mb-4 text-green-700">
         Welcome to the Paddy Mill Dashboard
       </h1>
+      {/* Dashboard description */}
       <p className="text-xl-gray-700 mb-6">
         Use the sidebar to navigate through the system and manage mill operations effectively.
       </p>
 
-      {/* Button Controls */}
+      {/* Chart type selection buttons */}
       <div className="flex space-x-4 mb-6">
         <button
           onClick={() => setSelectedType('dry')}
@@ -56,7 +62,7 @@ const Home = () => {
         </button>
       </div>
 
-      {/* Chart */}
+      {/* Paddy stock bar chart */}
       <div className="bg-white rounded-lg shadow-md p-4">
         <h2 className="text-xl font-semibold text-gray-800 mb-4 capitalize">
           {selectedType} Paddy Stock Levels by Variety
@@ -65,11 +71,11 @@ const Home = () => {
           <BarChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="variety" />
-            {/* YAxis shows MT */}
+            {/* YAxis displays stock in metric tons (MT) */}
             <YAxis 
               label={{ value: 'Stock (MT)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }} 
             />
-            {/* Tooltip with MT */}
+            {/* Tooltip shows stock value with MT unit */}
             <Tooltip formatter={(value) => [`${value} MT`, 'Stock']} />
             <Legend />
             <Bar dataKey="stock" fill="#38a169" name="Stock (MT)" />

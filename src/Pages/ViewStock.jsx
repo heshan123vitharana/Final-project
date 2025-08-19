@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 const ViewStock = () => {
-  // Dummy Stock Data
+  // Dummy Stock Data (quantity in kg)
   const stockData = [
     {
       farmerId: "F001",
@@ -14,7 +14,7 @@ const ViewStock = () => {
     {
       farmerId: "F002",
       farmerName: "Nimal Silva",
-      paddyType: "Nadu",
+      paddyType: "Nadu - White",
       condition: "Wet",
       quantity: 1000, // kg
       date: "2025-08-05",
@@ -40,11 +40,12 @@ const ViewStock = () => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
+  // Filter logic: exact match for select fields, partial for text
   const filteredData = stockData.filter(
     (stock) =>
       stock.farmerId.toLowerCase().includes(filters.farmerId.toLowerCase()) &&
-      stock.paddyType.toLowerCase().includes(filters.paddyType.toLowerCase()) &&
-      stock.condition.toLowerCase().includes(filters.condition.toLowerCase()) &&
+      (filters.paddyType === "" || stock.paddyType === filters.paddyType) &&
+      (filters.condition === "" || stock.condition === filters.condition) &&
       stock.date.includes(filters.date)
   );
 

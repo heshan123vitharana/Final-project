@@ -1,15 +1,30 @@
 import { useState, useEffect } from "react";
 
-// ✅ Simulated DB prices (PaddyType + Condition)
+// Simulated DB prices (Region + PaddyType + Condition)
 const paddyPrices = {
-  "Nadu - White": { Wet: 80, Dry: 85 },
-  "Nadu - Red": { Wet: 85, Dry: 90 },
-  "Samba": { Wet: 95, Dry: 100 },
-  "Kiri Samba": { Wet: 115, Dry: 120 },
+  North: {
+    "Nadu - White": { Wet: 82, Dry: 87 },
+    "Nadu - Red": { Wet: 88, Dry: 92 },
+    Samba: { Wet: 97, Dry: 102 },
+    "Kiri Samba": { Wet: 118, Dry: 123 },
+  },
+  South: {
+    "Nadu - White": { Wet: 80, Dry: 85 },
+    "Nadu - Red": { Wet: 85, Dry: 90 },
+    Samba: { Wet: 95, Dry: 100 },
+    "Kiri Samba": { Wet: 115, Dry: 120 },
+  },
+  Central: {
+    "Nadu - White": { Wet: 83, Dry: 88 },
+    "Nadu - Red": { Wet: 86, Dry: 91 },
+    Samba: { Wet: 96, Dry: 101 },
+    "Kiri Samba": { Wet: 116, Dry: 121 },
+  },
 };
 
 const paddyTypes = ["Nadu - White", "Nadu - Red", "Samba", "Kiri Samba"];
 const paddyStates = ["Wet", "Dry"];
+const regions = ["North", "South", "Central"];
 
 const UpdateStock = () => {
   const [formData, setFormData] = useState({
@@ -17,6 +32,7 @@ const UpdateStock = () => {
     farmerName: "",
     accountNumber: "",
     quantity: "",
+    region: "",
     paddyType: "",
     paddyState: "",
     date: new Date().toISOString().split("T")[0],
@@ -30,18 +46,18 @@ const UpdateStock = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Update unit price automatically when PaddyType & PaddyState are selected
+  // Update unit price automatically when Region + PaddyType + PaddyState are selected
   useEffect(() => {
-    if (formData.paddyType && formData.paddyState) {
+    if (formData.region && formData.paddyType && formData.paddyState) {
       const price =
-        paddyPrices[formData.paddyType]?.[formData.paddyState] || 0;
+        paddyPrices[formData.region]?.[formData.paddyType]?.[formData.paddyState] || 0;
       setUnitPrice(price);
     } else {
       setUnitPrice(0);
     }
-  }, [formData.paddyType, formData.paddyState]);
+  }, [formData.region, formData.paddyType, formData.paddyState]);
 
-  // ✅ Calculate total amount
+  // Calculate total amount
   const totalAmount =
     formData.quantity && unitPrice
       ? parseFloat(formData.quantity) * unitPrice
@@ -56,7 +72,6 @@ const UpdateStock = () => {
     setShowPopup(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    // Simulate successful submission
     const success = Math.random() > 0.3;
 
     if (success) {
@@ -68,6 +83,7 @@ const UpdateStock = () => {
         farmerName: "",
         accountNumber: "",
         quantity: "",
+        region: "",
         paddyType: "",
         paddyState: "",
         date: new Date().toISOString().split("T")[0],
@@ -84,7 +100,7 @@ const UpdateStock = () => {
 
   return (
     <div className="p-6 bg-green-50 min-h-screen">
-      {/* Top Notification */}
+      {/* Notification */}
       {notification && (
         <div
           className={`fixed top-2 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded shadow-md z-50
@@ -112,7 +128,7 @@ const UpdateStock = () => {
             onChange={handleChange}
             placeholder="Enter Farmer ID"
             required
-            className="w-full p-3 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
+            className="w-full p-3 border border-green-300 rounded-lg"
           />
         </div>
 
@@ -126,7 +142,7 @@ const UpdateStock = () => {
             onChange={handleChange}
             placeholder="Enter Farmer Name"
             required
-            className="w-full p-3 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
+            className="w-full p-3 border border-green-300 rounded-lg"
           />
         </div>
 
@@ -143,7 +159,7 @@ const UpdateStock = () => {
             }}
             placeholder="Enter Account Number"
             required
-            className="w-full p-3 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
+            className="w-full p-3 border border-green-300 rounded-lg"
           />
         </div>
 
@@ -160,8 +176,25 @@ const UpdateStock = () => {
             }}
             placeholder="Enter Quantity in MT"
             required
-            className="w-full p-3 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
+            className="w-full p-3 border border-green-300 rounded-lg"
           />
+        </div>
+
+        {/* Region */}
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-green-800">Region</label>
+          <select
+            name="region"
+            value={formData.region}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border border-green-300 rounded-lg"
+          >
+            <option value="">Select Region</option>
+            {regions.map((reg) => (
+              <option key={reg} value={reg}>{reg}</option>
+            ))}
+          </select>
         </div>
 
         {/* Paddy Type */}
@@ -172,7 +205,7 @@ const UpdateStock = () => {
             value={formData.paddyType}
             onChange={handleChange}
             required
-            className="w-full p-3 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
+            className="w-full p-3 border border-green-300 rounded-lg"
           >
             <option value="">Select Paddy Type</option>
             {paddyTypes.map((type) => (
@@ -189,7 +222,7 @@ const UpdateStock = () => {
             value={formData.paddyState}
             onChange={handleChange}
             required
-            className="w-full p-3 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
+            className="w-full p-3 border border-green-300 rounded-lg"
           >
             <option value="">Select Condition</option>
             {paddyStates.map((state) => (
@@ -207,7 +240,7 @@ const UpdateStock = () => {
             value={formData.date}
             onChange={handleChange}
             required
-            className="w-full p-3 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
+            className="w-full p-3 border border-green-300 rounded-lg"
           />
         </div>
 
@@ -218,7 +251,7 @@ const UpdateStock = () => {
             type="text"
             value={unitPrice ? unitPrice.toFixed(2) : ""}
             readOnly
-            className="w-full p-3 border border-green-300 rounded-lg bg-gray-100 text-green-800 font-semibold"
+            className="w-full p-3 border border-green-300 rounded-lg bg-gray-100 font-semibold"
           />
         </div>
 
@@ -229,11 +262,11 @@ const UpdateStock = () => {
             type="text"
             value={totalAmount.toFixed(2)}
             readOnly
-            className="w-full p-3 border border-green-300 rounded-lg bg-gray-100 text-green-800 font-semibold"
+            className="w-full p-3 border border-green-300 rounded-lg bg-gray-100 font-semibold"
           />
         </div>
 
-        {/* Submit Button */}
+        {/* Submit */}
         <div className="md:col-span-2">
           <button
             type="submit"
@@ -244,7 +277,7 @@ const UpdateStock = () => {
         </div>
       </form>
 
-      {/* Confirmation Popup */}
+      {/* Popup */}
       {showPopup && (
         <div className="fixed inset-0 bg-green-200 bg-opacity-90 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md border border-green-300">
@@ -254,6 +287,7 @@ const UpdateStock = () => {
               <li><strong>Farmer Name:</strong> {formData.farmerName}</li>
               <li><strong>Account Number:</strong> {formData.accountNumber}</li>
               <li><strong>Quantity:</strong> {formData.quantity} MT</li>
+              <li><strong>Region:</strong> {formData.region}</li>
               <li><strong>Paddy Type:</strong> {formData.paddyType}</li>
               <li><strong>Condition:</strong> {formData.paddyState}</li>
               <li><strong>Date:</strong> {formData.date}</li>
@@ -263,13 +297,13 @@ const UpdateStock = () => {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={handleCancel}
-                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg transition"
+                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirm}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
               >
                 Confirm
               </button>

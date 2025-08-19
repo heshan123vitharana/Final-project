@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
+// Dummy payment data for demonstration
 const dummyPayments = [
   {
     id: "PMT001",
@@ -30,18 +31,20 @@ const dummyPayments = [
 ];
 
 const Payment = () => {
+  // State for date filter input
   const [dateFilter, setDateFilter] = useState("");
 
+  // Set page title on mount
   useEffect(() => {
     document.title = `Dashboard | Payments`;
   }, []);
 
-  // Filter payments by date
+  // Filter payments by selected date
   const filteredPayments = dummyPayments.filter((payment) =>
     dateFilter ? payment.date === dateFilter : true
   );
 
-  // Generate PDF report with total amount
+  // Generate PDF report for filtered payments
   const generatePDF = () => {
     if (filteredPayments.length === 0) {
       alert("No records to generate PDF.");
@@ -54,11 +57,13 @@ const Payment = () => {
     doc.setFontSize(12);
     doc.setTextColor(100);
 
+    // Table columns and rows
     const tableColumn = ["Payment ID", "Farmer ID", "Account No", "Amount (LKR)", "Date", "Status"];
     const tableRows = [];
 
     let totalAmount = 0;
 
+    // Prepare table rows and calculate total amount
     filteredPayments.forEach((payment) => {
       totalAmount += payment.amount;
       tableRows.push([
@@ -71,6 +76,7 @@ const Payment = () => {
       ]);
     });
 
+    // Generate table in PDF
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
@@ -80,6 +86,7 @@ const Payment = () => {
       alternateRowStyles: { fillColor: [240, 255, 240] },
     });
 
+    // Add total amount below table
     const finalY = doc.lastAutoTable.finalY || 40;
     doc.setFontSize(14);
     doc.setTextColor(0);
@@ -90,18 +97,21 @@ const Payment = () => {
 
   return (
     <div className="p-6 bg-green-50 min-h-screen">
+      {/* Page heading */}
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
         💰 Payment History
       </h1>
 
       {/* Date Filter & PDF Button */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-white p-4 rounded-lg shadow-md border border-green-200">
+        {/* Date filter input */}
         <input
           type="date"
           className="border border-green-300 rounded px-3 py-2 w-full focus:ring-2 focus:ring-green-400 focus:outline-none"
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
         />
+        {/* PDF download button */}
         <button
           onClick={generatePDF}
           className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800 transition"
@@ -110,7 +120,7 @@ const Payment = () => {
         </button>
       </div>
 
-      {/* Table */}
+      {/* Payments table */}
       <div className="overflow-x-auto rounded-lg shadow-md border border-green-200 bg-white">
         <table className="w-full table-auto">
           <thead className="bg-green-200 text-green-900">

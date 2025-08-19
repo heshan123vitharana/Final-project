@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 
+// Profile component: allows user to view and edit their profile details
 const Profile = () => {
+  // Initial empty profile structure
   const emptyProfile = {
     firstName: "",
     lastName: "",
@@ -13,11 +15,13 @@ const Profile = () => {
     profilePhoto: "", // base64 string for image preview
   };
 
+  // State for form data, original data, edit mode, and feedback message
   const [formData, setFormData] = useState(emptyProfile);
   const [originalData, setOriginalData] = useState(emptyProfile);
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState(null);
 
+  // Load profile data from sessionStorage on mount
   useEffect(() => {
     const savedProfile = sessionStorage.getItem("profileData");
     if (savedProfile) {
@@ -27,6 +31,7 @@ const Profile = () => {
     }
   }, []);
 
+  // Handle input changes for text fields
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -34,6 +39,7 @@ const Profile = () => {
     });
   };
 
+  // Handle profile photo upload and preview
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -48,17 +54,20 @@ const Profile = () => {
     }
   };
 
+  // Switch to edit mode
   const handleEdit = () => {
     setIsEditing(true);
     setMessage(null);
   };
 
+  // Cancel editing and revert changes
   const handleCancel = () => {
     setFormData(originalData);
     setIsEditing(false);
     setMessage(null);
   };
 
+  // Save profile changes to sessionStorage
   const handleSave = (e) => {
     e.preventDefault();
     const confirmSave = window.confirm("Are you sure you want to save changes?");
@@ -73,10 +82,12 @@ const Profile = () => {
   return (
     <div className="p-8 bg-green-50 min-h-screen flex justify-center">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-3xl">
+        {/* Profile page heading */}
         <h1 className="text-3xl font-bold mb-6 text-center text-green-700">
           My Profile
         </h1>
 
+        {/* Profile photo section */}
         <div className="flex flex-col items-center mb-6">
           <img
             src={formData.profilePhoto || "https://via.placeholder.com/150"}
@@ -93,6 +104,7 @@ const Profile = () => {
           )}
         </div>
 
+        {/* Profile details: view or edit mode */}
         {!isEditing ? (
           // VIEW MODE
           <div className="space-y-3 text-lg">
@@ -104,6 +116,7 @@ const Profile = () => {
             <p><strong>State:</strong> {formData.state}</p>
             <p><strong>Password:</strong> {formData.password ? "********" : "-"}</p>
 
+            {/* Edit button */}
             <div className="flex justify-center mt-6">
               <button
                 onClick={handleEdit}
@@ -190,6 +203,7 @@ const Profile = () => {
               className="p-2 border rounded w-full focus:ring-2 focus:ring-green-400"
             />
 
+            {/* Save and Cancel buttons */}
             <div className="flex justify-center space-x-4">
               <button
                 type="button"
@@ -208,6 +222,7 @@ const Profile = () => {
           </form>
         )}
 
+        {/* Success message */}
         {message && (
           <p className="text-green-600 mt-6 text-center font-medium">{message}</p>
         )}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-// Dummy Licence History Data
+// Dummy Licence History Data for demonstration
 const dummyHistory = [
   { id: 1, date: '2025-05-01', status: 'Approved' },
   { id: 2, date: '2025-06-15', status: 'Pending' },
@@ -9,58 +9,60 @@ const dummyHistory = [
 ];
 
 const MillRegistration = () => {
+  // Set page title on mount
   useEffect(() => {
     document.title = "Dashboard | Mill Registration";
   }, []);
 
+  // UI state for showing/hiding sections and form
   const [showApplySection, setShowApplySection] = useState(false);
   const [showStatusSection, setShowStatusSection] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState('');
   const [showHistorySection, setShowHistorySection] = useState(false);
 
+  // Licence history and filter state
   const [history] = useState(dummyHistory);
   const [filteredHistory, setFilteredHistory] = useState(dummyHistory);
   const [statusFilter, setStatusFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
+  // Section toggles
   const toggleApplySection = () => setShowApplySection(!showApplySection);
   const toggleStatusSection = () => setShowStatusSection(!showStatusSection);
   const toggleHistorySection = () => setShowHistorySection(!showHistorySection);
 
+  // Open/close licence form
   const handleOpenForm = (type) => {
     setFormType(type);
     setShowForm(true);
   };
-
   const handleCloseForm = () => {
     setFormType('');
     setShowForm(false);
   };
 
+  // Filter licence history by status and date
   const handleFilter = () => {
     let filtered = [...history];
 
     if (statusFilter) {
       filtered = filtered.filter((item) => item.status === statusFilter);
     }
-
     if (fromDate) {
       filtered = filtered.filter((item) => new Date(item.date) >= new Date(fromDate));
     }
-
     if (toDate) {
       filtered = filtered.filter((item) => new Date(item.date) <= new Date(toDate));
     }
-
     setFilteredHistory(filtered);
   };
 
+  // Certificate actions
   const handleViewCertificate = () => {
     window.open('/certificates/sample-certificate.pdf', '_blank');
   };
-
   const handleDownloadCertificate = () => {
     const link = document.createElement('a');
     link.href = '/certificates/sample-certificate.pdf';
@@ -72,6 +74,7 @@ const MillRegistration = () => {
 
   return (
     <div>
+      {/* Page heading */}
       <h1 className="text-2xl font-bold mb-6 text-green-700">Mill Registration</h1>
 
       {/* Widget 1: Apply Licence */}
@@ -83,6 +86,7 @@ const MillRegistration = () => {
           {showApplySection ? '▼' : '▶'} Apply Licence
         </button>
 
+        {/* Licence application requirements and actions */}
         {showApplySection && (
           <div className="mt-4 space-y-4">
             <ul className="list-disc list-inside text-gray-700">
@@ -91,7 +95,6 @@ const MillRegistration = () => {
               <li>No pending violations or penalties.</li>
               <li>Agree to terms and conditions.</li>
             </ul>
-
             <div className="flex space-x-4">
               <button
                 className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
@@ -119,12 +122,12 @@ const MillRegistration = () => {
           {showStatusSection ? '▼' : '▶'} Status of Licence
         </button>
 
+        {/* Licence status details and certificate actions */}
         {showStatusSection && (
           <div className="mt-4 text-gray-700">
             <p><strong>Apply Date:</strong> 2025-08-01</p>
             <p><strong>Status:</strong> Approved</p>
             <p><strong>Deadline:</strong> 2026-08-01</p>
-
             <div className="mt-4 flex space-x-4">
               <button
                 className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
@@ -132,7 +135,6 @@ const MillRegistration = () => {
               >
                 View Certificate
               </button>
-
               <button
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
                 onClick={handleDownloadCertificate}
@@ -153,9 +155,10 @@ const MillRegistration = () => {
           {showHistorySection ? '▼' : '▶'} View Licence History
         </button>
 
+        {/* Licence history filter and table */}
         {showHistorySection && (
           <div className="mt-4">
-            {/* Filters */}
+            {/* Filters for history table */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">From Date</label>
@@ -198,7 +201,7 @@ const MillRegistration = () => {
               </div>
             </div>
 
-            {/* Table */}
+            {/* Licence history table */}
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="bg-green-100 text-green-800 uppercase text-xs tracking-wider">
@@ -251,11 +254,13 @@ const MillRegistration = () => {
             {formType} Licence Form
           </h2>
           <form className="space-y-4">
+            {/* Form fields for mill registration */}
             <input type="text" placeholder="Mill Name" className="w-full p-2 border rounded" required />
             <input type="text" placeholder="Owner Name" className="w-full p-2 border rounded" required />
             <input type="text" placeholder="Licence Number (if renewing)" className="w-full p-2 border rounded" />
             <textarea placeholder="Reason / Comments" className="w-full p-2 border rounded" rows="4" />
 
+            {/* Form action buttons */}
             <div className="flex space-x-4">
               <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                 Submit
