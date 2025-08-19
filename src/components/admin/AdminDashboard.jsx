@@ -14,6 +14,7 @@ import StockDashboard from './StockDashboard'
 import MillMap from './MillMap'
 import Reports from './Reports'
 import PriceManagement from './UpdatePrice'
+import rainbowNature from '../../assets/beautiful-rainbow-nature.jpg'
 
 const AdminDashboard = ({ onLogout }) => {
   const [activeSection, setActiveSection] = useState('license-requests')
@@ -56,72 +57,89 @@ const AdminDashboard = ({ onLogout }) => {
   const ActiveComponent = navigationItems.find(item => item.id === activeSection)?.component
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <div className={`bg-green-800 text-white transition-all duration-300 flex flex-col relative ${
-        sidebarOpen ? 'w-64' : 'w-16'
-      }`}>
-        {/* Header */}
-        <div className="p-4 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <h2 className={`font-bold text-xl ${sidebarOpen ? 'block' : 'hidden'}`}>
-              PMB Admin
-            </h2>
+    <div className="min-h-screen bg-gray-100 flex overflow-hidden">
+      {/* Sidebar - Fixed */}
+      <div 
+        className={`text-white transition-all duration-300 flex flex-col relative flex-shrink-0 ${
+          sidebarOpen ? 'w-64' : 'w-16'
+        }`}
+        style={{
+          backgroundImage: `url(${rainbowNature})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          height: '100vh',
+          position: 'sticky',
+          top: 0
+        }}
+      >
+        {/* Overlay for better text readability */}
+        <div className="absolute inset-0 bg-green-900 bg-opacity-30"></div>
+        
+        {/* Content wrapper */}
+        <div className="relative z-10 flex flex-col h-full">
+          {/* Header */}
+          <div className="p-4 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <h2 className={`font-bold text-xl text-white drop-shadow-lg ${sidebarOpen ? 'block' : 'hidden'}`}>
+                PMB Admin
+              </h2>
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="text-white hover:text-green-200 transition-colors drop-shadow-lg"
+              >
+                {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Navigation - takes up remaining space */}
+          <nav className="flex-1 mt-8 overflow-y-auto">
+            {navigationItems.map((item) => {
+              const IconComponent = item.icon
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`w-full flex items-center px-4 py-3 text-left hover:bg-white hover:bg-opacity-15 transition-colors backdrop-blur-sm ${
+                    activeSection === item.id ? 'bg-white bg-opacity-20 border-r-4 border-yellow-400 shadow-lg' : ''
+                  }`}
+                >
+                  <IconComponent size={20} className="drop-shadow-lg" />
+                  <span className={`ml-3 drop-shadow-lg ${sidebarOpen ? 'block' : 'hidden'}`}>
+                    {item.label}
+                  </span>
+                </button>
+              )
+            })}
+          </nav>
+
+          {/* Logout Button - fixed at bottom */}
+          <div className="p-4 flex-shrink-0">
             <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-white hover:text-green-200 transition-colors"
+              onClick={() => {
+                console.log('Logout button clicked');
+                if (onLogout) {
+                  onLogout();
+                }
+              }}
+              className={`w-full flex items-center px-4 py-2 text-left bg-red-600 bg-opacity-70 hover:bg-red-700 hover:bg-opacity-80 transition-colors rounded text-white font-medium backdrop-blur-sm shadow-lg ${
+                sidebarOpen ? '' : 'justify-center'
+              }`}
             >
-              {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+              <LogOut size={20} className="drop-shadow-lg" />
+              <span className={`ml-3 drop-shadow-lg ${sidebarOpen ? 'block' : 'hidden'}`}>
+                Logout
+              </span>
             </button>
           </div>
-        </div>
-
-        {/* Navigation - takes up remaining space */}
-        <nav className="flex-1 mt-8 overflow-y-auto">
-          {navigationItems.map((item) => {
-            const IconComponent = item.icon
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center px-4 py-3 text-left hover:bg-green-700 transition-colors ${
-                  activeSection === item.id ? 'bg-green-700 border-r-4 border-yellow-400' : ''
-                }`}
-              >
-                <IconComponent size={20} />
-                <span className={`ml-3 ${sidebarOpen ? 'block' : 'hidden'}`}>
-                  {item.label}
-                </span>
-              </button>
-            )
-          })}
-        </nav>
-
-        {/* Logout Button - fixed at bottom */}
-        <div className="p-4 flex-shrink-0">
-          <button
-            onClick={() => {
-              console.log('Logout button clicked');
-              if (onLogout) {
-                onLogout();
-              }
-            }}
-            className={`w-full flex items-center px-4 py-2 text-left bg-red-600 hover:bg-red-700 transition-colors rounded text-white font-medium ${
-              sidebarOpen ? '' : 'justify-center'
-            }`}
-          >
-            <LogOut size={20} />
-            <span className={`ml-3 ${sidebarOpen ? 'block' : 'hidden'}`}>
-              Logout
-            </span>
-          </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex-shrink-0">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-800">
               {navigationItems.find(item => item.id === activeSection)?.label}
@@ -140,7 +158,7 @@ const AdminDashboard = ({ onLogout }) => {
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 overflow-y-auto">
           {ActiveComponent && <ActiveComponent />}
         </main>
       </div>
