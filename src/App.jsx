@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import HeroSection from './components/HeroSection'
@@ -431,3 +432,9 @@ function App() {
 }
 
 export default App
+=======
+
+export default null;
+
+
+>>>>>>> 11172fac6621c27fbbff6f642c33a7a2ab704aeb
