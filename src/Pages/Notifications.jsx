@@ -1,5 +1,5 @@
 // Import icons and React hooks
-import { BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
 
 // Initial notification data (could be replaced by API data)
@@ -39,8 +39,7 @@ const Notifications = () => {
     <div className="p-6 bg-green-50 min-h-screen">
       {/* Page Title */}
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2 flex items-center gap-3">
-        <BellIcon className="h-8 w-8 text-green-600" />
-        Notifications
+       🔔 Notifications
         {/* Count badge */}
         {notifications.length > 0 && (
           <span className="ml-2 bg-green-600 text-white text-sm px-2 py-1 rounded-full">
