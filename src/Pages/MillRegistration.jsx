@@ -9,30 +9,25 @@ const dummyHistory = [
 ];
 
 const MillRegistration = () => {
-  // Set page title on mount
   useEffect(() => {
     document.title = "Dashboard | Mill Registration";
   }, []);
 
-  // UI state for showing/hiding sections and form
   const [showApplySection, setShowApplySection] = useState(false);
   const [showStatusSection, setShowStatusSection] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState('');
   const [showHistorySection, setShowHistorySection] = useState(false);
 
-  // Licence history and filter state
   const [history] = useState(dummyHistory);
   const [statusFilter, setStatusFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
-  // Section toggles
   const toggleApplySection = () => setShowApplySection(!showApplySection);
   const toggleStatusSection = () => setShowStatusSection(!showStatusSection);
   const toggleHistorySection = () => setShowHistorySection(!showHistorySection);
 
-  // Open/close licence form
   const handleOpenForm = (type) => {
     setFormType(type);
     setShowForm(true);
@@ -42,7 +37,6 @@ const MillRegistration = () => {
     setShowForm(false);
   };
 
-  // Certificate actions
   const handleViewCertificate = () => {
     window.open('/certificates/sample-certificate.pdf', '_blank');
   };
@@ -55,7 +49,6 @@ const MillRegistration = () => {
     document.body.removeChild(link);
   };
 
-  // Auto-filtered history
   const filteredHistory = history.filter((item) => {
     const matchStatus = statusFilter ? item.status === statusFilter : true;
     const matchFromDate = fromDate ? new Date(item.date) >= new Date(fromDate) : true;
@@ -64,19 +57,20 @@ const MillRegistration = () => {
   });
 
   return (
-    <div>
-      {/* Page heading */}
-      <h1 className="text-2xl font-bold mb-6 text-green-700">Mill Registration</h1>
+    <div className="p-6 bg-green-50 min-h-screen">
+      {/* Page Heading */}
+      <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
+        🏭 Mill Registration
+      </h1>
 
-      {/* Widget 1: Status of Licence */}
-      <div className="bg-white shadow p-4 rounded mb-6 border border-green-200">
+      {/* Status of Licence */}
+      <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
         <button
           onClick={toggleStatusSection}
-          className="text-lg font-semibold text-green-700 hover:text-green-800"
+          className="text-lg font-semibold text-green-700 hover:text-green-800 flex items-center gap-2"
         >
           {showStatusSection ? '▼' : '▶'} Status of Licence
         </button>
-
         {showStatusSection && (
           <div className="mt-4 text-gray-700">
             <p><strong>Apply Date:</strong> 2025-08-01</p>
@@ -100,15 +94,14 @@ const MillRegistration = () => {
         )}
       </div>
 
-      {/* Widget 2: Apply Licence */}
-      <div className="bg-white shadow p-4 rounded mb-6 border border-green-200">
+      {/* Apply Licence */}
+      <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
         <button
           onClick={toggleApplySection}
-          className="text-lg font-semibold text-green-700 hover:text-green-800"
+          className="text-lg font-semibold text-green-700 hover:text-green-800 flex items-center gap-2"
         >
           {showApplySection ? '▼' : '▶'} Apply Licence
         </button>
-
         {showApplySection && (
           <div className="mt-4 space-y-4">
             <ul className="list-disc list-inside text-gray-700">
@@ -135,15 +128,14 @@ const MillRegistration = () => {
         )}
       </div>
 
-      {/* Widget 3: Licence History */}
-      <div className="bg-white shadow p-4 rounded mb-6 border border-green-200">
+      {/* Licence History */}
+      <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
         <button
           onClick={toggleHistorySection}
-          className="text-lg font-semibold text-green-700 hover:text-green-800"
+          className="text-lg font-semibold text-green-700 hover:text-green-800 flex items-center gap-2"
         >
           {showHistorySection ? '▼' : '▶'} View Licence History
         </button>
-
         {showHistorySection && (
           <div className="mt-4">
             {/* Filters */}
@@ -182,54 +174,58 @@ const MillRegistration = () => {
             </div>
 
             {/* Table */}
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-green-100 text-green-800 uppercase text-xs tracking-wider">
-                  <th className="border px-4 py-2 text-center">ID</th>
-                  <th className="border px-4 py-2 text-center">Date</th>
-                  <th className="border px-4 py-2 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredHistory.length > 0 ? (
-                  filteredHistory.map((item, index) => (
-                    <tr
-                      key={item.id}
-                      className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-green-50 transition`}
-                    >
-                      <td className="border px-4 py-2 text-center font-medium">{item.id}</td>
-                      <td className="border px-4 py-2 text-center">{item.date}</td>
-                      <td className="border px-4 py-2 text-center">
-                        <span
-                          className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
-                            item.status === 'Approved'
-                              ? 'bg-green-100 text-green-700'
-                              : item.status === 'Pending'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
+            <div className="overflow-x-auto rounded-lg border border-green-200">
+              <table className="w-full table-auto">
+                <thead className="bg-green-200 text-green-900">
+                  <tr>
+                    <th className="border px-4 py-2">ID</th>
+                    <th className="border px-4 py-2">Date</th>
+                    <th className="border px-4 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredHistory.length > 0 ? (
+                    filteredHistory.map((item, index) => (
+                      <tr
+                        key={item.id}
+                        className={`text-center ${
+                          index % 2 === 0 ? 'bg-white' : 'bg-green-50'
+                        } hover:bg-green-100 transition`}
+                      >
+                        <td className="border px-4 py-2 font-medium">{item.id}</td>
+                        <td className="border px-4 py-2">{item.date}</td>
+                        <td className="border px-4 py-2">
+                          <span
+                            className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${
+                              item.status === 'Approved'
+                                ? 'bg-green-100 text-green-700'
+                                : item.status === 'Pending'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-red-100 text-red-700'
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3" className="text-center py-4 text-gray-500">
+                        No records found
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="3" className="text-center py-4 text-gray-500">
-                      No records found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
 
       {/* Apply / Renew Licence Form */}
       {showForm && (
-        <div className="bg-gray-100 p-6 rounded shadow max-w-xl border border-green-200">
+        <div className="bg-white rounded-lg shadow-md border border-green-200 p-6 max-w-xl">
           <h2 className="text-xl font-semibold mb-4 text-green-700">
             {formType} Licence Form
           </h2>
@@ -259,4 +255,3 @@ const MillRegistration = () => {
 };
 
 export default MillRegistration;
-
