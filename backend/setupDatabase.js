@@ -10,8 +10,40 @@ const setupDatabase = async () => {
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME
     });
-
     console.log('✅ Connected to database');
+
+    // Admin table - THIS WAS MISSING!
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS admin (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(100) NOT NULL UNIQUE,
+        email VARCHAR(100) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Insert default admin user
+    await connection.execute(`
+      INSERT IGNORE INTO admin (username, email, password, status) VALUES
+      ('admin01', 'admin@paddy.lk', 'admin123', 'active')
+    `);
+
+    console.log('✅ Admin table created successfully');
+
+    // Admin login log table - FIXED the db.execute to connection.execute
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS admin_login_log (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(100) NOT NULL,
+        success TINYINT(1) NOT NULL,
+        ip VARCHAR(50),
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    console.log('✅ Admin login log table created successfully');
 
     // Mill registration table
     await connection.execute(`
@@ -53,20 +85,8 @@ const setupDatabase = async () => {
       )
     `);
 
-    // Admin table
+    // Users table for registration/login
     await connection.execute(`
-      CREATE TABLE IF NOT EXISTS admin (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(50) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-
-     // Users table for registration/login
-        await connection.execute(`
       CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
         first_name VARCHAR(100) NOT NULL,
@@ -80,10 +100,10 @@ const setupDatabase = async () => {
       )
     `);
 
-
     console.log('🎉 All tables created successfully');
-  } catch (error) {
-    console.error('❌ Error:', error.message);
+    
+  } catch (err) {
+    console.error('❌ Database setup error:', err.message);
   } finally {
     if (connection) await connection.end();
     process.exit(0);
