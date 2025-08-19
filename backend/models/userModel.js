@@ -12,10 +12,9 @@ const createUser = async (user) => {
     passwordHash,
   } = user;
 
-  await db.execute(
-    `INSERT INTO users
-      (first_name, last_name, business_name, business_type, phone, email, password)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  console.log('createUser called with:', user);
+  const result = await db.execute(
+    "INSERT INTO users (first_name, last_name, business_name, business_type, phone, email, password) VALUES (?, ?, ?, ?, ?, ?, ?)",
     [
       first_name,
       last_name,
@@ -26,6 +25,7 @@ const createUser = async (user) => {
       passwordHash,
     ]
   );
+  console.log('createUser db.execute result:', result);
 };
 
 const findByEmail = async (email) => {
