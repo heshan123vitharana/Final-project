@@ -23,7 +23,6 @@ const MillRegistration = () => {
 
   // Licence history and filter state
   const [history] = useState(dummyHistory);
-  const [filteredHistory, setFilteredHistory] = useState(dummyHistory);
   const [statusFilter, setStatusFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -43,22 +42,6 @@ const MillRegistration = () => {
     setShowForm(false);
   };
 
-  // Filter licence history by status and date
-  const handleFilter = () => {
-    let filtered = [...history];
-
-    if (statusFilter) {
-      filtered = filtered.filter((item) => item.status === statusFilter);
-    }
-    if (fromDate) {
-      filtered = filtered.filter((item) => new Date(item.date) >= new Date(fromDate));
-    }
-    if (toDate) {
-      filtered = filtered.filter((item) => new Date(item.date) <= new Date(toDate));
-    }
-    setFilteredHistory(filtered);
-  };
-
   // Certificate actions
   const handleViewCertificate = () => {
     window.open('/certificates/sample-certificate.pdf', '_blank');
@@ -71,6 +54,14 @@ const MillRegistration = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  // Auto-filtered history
+  const filteredHistory = history.filter((item) => {
+    const matchStatus = statusFilter ? item.status === statusFilter : true;
+    const matchFromDate = fromDate ? new Date(item.date) >= new Date(fromDate) : true;
+    const matchToDate = toDate ? new Date(item.date) <= new Date(toDate) : true;
+    return matchStatus && matchFromDate && matchToDate;
+  });
 
   return (
     <div>
@@ -86,7 +77,6 @@ const MillRegistration = () => {
           {showApplySection ? '▼' : '▶'} Apply Licence
         </button>
 
-        {/* Licence application requirements and actions */}
         {showApplySection && (
           <div className="mt-4 space-y-4">
             <ul className="list-disc list-inside text-gray-700">
@@ -122,7 +112,6 @@ const MillRegistration = () => {
           {showStatusSection ? '▼' : '▶'} Status of Licence
         </button>
 
-        {/* Licence status details and certificate actions */}
         {showStatusSection && (
           <div className="mt-4 text-gray-700">
             <p><strong>Apply Date:</strong> 2025-08-01</p>
@@ -155,11 +144,10 @@ const MillRegistration = () => {
           {showHistorySection ? '▼' : '▶'} View Licence History
         </button>
 
-        {/* Licence history filter and table */}
         {showHistorySection && (
           <div className="mt-4">
-            {/* Filters for history table */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            {/* Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">From Date</label>
                 <input
@@ -191,17 +179,9 @@ const MillRegistration = () => {
                   <option value="Rejected">Rejected</option>
                 </select>
               </div>
-              <div className="flex items-end">
-                <button
-                  onClick={handleFilter}
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full"
-                >
-                  Filter
-                </button>
-              </div>
             </div>
 
-            {/* Licence history table */}
+            {/* Table */}
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="bg-green-100 text-green-800 uppercase text-xs tracking-wider">
@@ -254,13 +234,11 @@ const MillRegistration = () => {
             {formType} Licence Form
           </h2>
           <form className="space-y-4">
-            {/* Form fields for mill registration */}
             <input type="text" placeholder="Mill Name" className="w-full p-2 border rounded" required />
             <input type="text" placeholder="Owner Name" className="w-full p-2 border rounded" required />
             <input type="text" placeholder="Licence Number (if renewing)" className="w-full p-2 border rounded" />
             <textarea placeholder="Reason / Comments" className="w-full p-2 border rounded" rows="4" />
 
-            {/* Form action buttons */}
             <div className="flex space-x-4">
               <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                 Submit
@@ -281,3 +259,4 @@ const MillRegistration = () => {
 };
 
 export default MillRegistration;
+
