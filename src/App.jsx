@@ -324,8 +324,8 @@ function App() {
           </SectionTransition>
         </section>
         
-  {/* About Section with slide-in effect (id is inside component to avoid duplicate IDs) */}
-  <section className="relative overflow-hidden">
+  {/* About Section with slide-in effect (id matches navigation bar) */}
+  <section id="platform-features-section" className="relative overflow-hidden">
           <SectionTransition trigger={true} direction="left" delay={200}>
             <div className="relative z-10">
               <About />
