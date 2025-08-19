@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+// ...existing code...
 import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import HeroSection from './components/HeroSection'
@@ -52,9 +52,10 @@ function App() {
       const response = await fetch('http://localhost:5000/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           email: adminFormData.email,
           password: adminFormData.password
-        }),
+        })
       });
       const result = await response.json();
       if (response.ok && result.message === 'Login successful') {
@@ -112,7 +113,11 @@ function App() {
   }
 
   // Handle user logout
-        export default App
+  const handleLogout = () => {
+    sessionStorage.removeItem('millOwnerData');
+    setUserData(null);
+    setUserFlowState('home');
+  }
   const handleAdminLogout = () => {
     sessionStorage.removeItem('adminData')
     setAdminData(null)
@@ -426,9 +431,9 @@ function App() {
 }
 
 export default App
-=======
+// ...existing code...
 
-export default null;
+// ...removed duplicate export...
 
 
->>>>>>> 11172fac6621c27fbbff6f642c33a7a2ab704aeb
+// ...existing code...
