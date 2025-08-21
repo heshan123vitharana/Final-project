@@ -11,7 +11,7 @@ import Footer from './components/Footer'
 import AdminLogin from './components/AdminLogin'
 import MillOwnerRegistration from './components/MillOwnerRegistration'
 import AuthPage from './components/AuthPage'
-import MillDashboard from './components/MillDashboard'
+import AdminDashboard from './components/admin/AdminDashboard'
 import { SectionTransition } from './components/PageTransition'
 import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from './utils/scroll'
 
@@ -20,6 +20,7 @@ function App() {
   const [isNavigating, setIsNavigating] = useState(false)
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false)
   const [adminData, setAdminData] = useState(null)
+  // Admin section navigation state
 
   // Admin login form state
   const [adminFormData, setAdminFormData] = useState({ email: '', password: '' });
@@ -62,12 +63,12 @@ function App() {
         setAdminData(result.admin);
         setUserFlowState('adminDashboard');
         setIsAdminLoginOpen(false);
-  setAdminFormData({ email: '', password: '' });
+        setAdminFormData({ email: '', password: '' });
       } else {
-    setAdminLoginErrors({ general: result.message || 'Login failed' });
+        setAdminLoginErrors({ general: result.message || 'Login failed' });
       }
     } catch {
-  setAdminLoginErrors({ general: 'Server error. Please try again.' });
+      setAdminLoginErrors({ general: 'Server error. Please try again.' });
     }
     setAdminLoginLoading(false);
   };
@@ -284,10 +285,7 @@ function App() {
         />
       )}
       {userFlowState === 'adminDashboard' && adminData && (
-        <MillDashboard 
-          userData={adminData}
-          onLogout={handleAdminLogout}
-        />
+        <AdminDashboard adminData={adminData} onLogout={handleAdminLogout} />
       )}
       
       {userFlowState === 'pmb_registration' && userData && (
