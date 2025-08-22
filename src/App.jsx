@@ -1,3 +1,9 @@
+  // Handle admin logout
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem('adminData');
+    setAdminData(null);
+    setUserFlowState('home');
+  }
 // ...existing code...
 import { useState, useEffect } from 'react'
 import Header from './components/Header'
@@ -14,9 +20,16 @@ import AuthPage from './components/AuthPage'
 import AdminDashboard from './components/admin/AdminDashboard'
 import { SectionTransition } from './components/PageTransition'
 import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from './utils/scroll'
-import MillDashboard from './components/MillDashboard'
+import Dashboard from './components/dashboard/Dashboard'
 
 function App() {
+  // ...existing code...
+  // Handle admin logout
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem('adminData');
+    setAdminData(null);
+    setUserFlowState('home');
+  }
   const [currentPage, setCurrentPage] = useState('home')
   const [isNavigating, setIsNavigating] = useState(false)
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false)
@@ -114,22 +127,6 @@ function App() {
     setUserFlowState('adminDashboard')
   }
 
-  // Handle user logout
-  const handleLogout = () => {
-    sessionStorage.removeItem('millOwnerData');
-    setUserData(null);
-    setUserFlowState('home');
-  }
-  const handleAdminLogout = () => {
-    sessionStorage.removeItem('adminData')
-    setAdminData(null)
-    setUserFlowState('home')
-  }
-
-  // Handle start PMB registration
-  const handleStartPMBRegistration = () => {
-    setUserFlowState('pmb_registration')
-  }
 
   // Handle PMB registration completion
   const handlePMBRegistrationComplete = (registrationData) => {
@@ -279,11 +276,7 @@ function App() {
       )}
       
       {userFlowState === 'dashboard' && userData && (
-        <MillDashboard 
-          userData={userData}
-          onStartPMBRegistration={handleStartPMBRegistration}
-          onLogout={handleLogout}
-        />
+        <Dashboard userData={userData} onBackToHome={() => setUserFlowState('home')} />
       )}
       {userFlowState === 'adminDashboard' && adminData && (
         <AdminDashboard adminData={adminData} onLogout={handleAdminLogout} />
