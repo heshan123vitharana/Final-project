@@ -84,7 +84,20 @@ const register = async (req, res) => {
       passwordHash,
     });
 
-    return res.status(201).json({ message: 'User registered successfully' });
+    // Fetch the newly created user
+    const newUser = await userModel.findByEmail(String(email).toLowerCase().trim());
+    return res.status(201).json({
+      message: 'User registered successfully',
+      user: {
+        id: newUser.id,
+        first_name: newUser.first_name,
+        last_name: newUser.last_name,
+        business_name: newUser.business_name,
+        business_type: newUser.business_type,
+        phone: newUser.phone,
+        email: newUser.email,
+      }
+    });
   } catch (e) {
     console.error('register error:', e);
     return res.status(500).json({ message: 'Server error' });
