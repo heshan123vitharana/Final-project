@@ -14,6 +14,7 @@ import AuthPage from './components/AuthPage'
 import AdminDashboard from './components/admin/AdminDashboard'
 import { SectionTransition } from './components/PageTransition'
 import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from './utils/scroll'
+import MillDashboard from './components/MillDashboard'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home')
