@@ -8,17 +8,18 @@ const MillViewStock = () => {
     { farmerId: "F003", farmerName: "Sunil Fernando", paddyType: "Samba", condition: "Wet", quantity: 1200, date: "2025-08-04" },
   ];
 
-  // Filters state
+  // Filters state for search and dropdowns
   const [filters, setFilters] = useState({ farmerId: "", paddyType: "", condition: "", date: "" });
 
+  // Set page title on mount
   useEffect(() => {
     document.title = "Dashboard | View Stock";
   }, []);
 
-  // Handle filter changes
+  // Handle filter changes for all filter inputs
   const handleChange = (e) => setFilters({ ...filters, [e.target.name]: e.target.value });
 
-  // Filtered data
+  // Filtered data based on all filter criteria
   const filteredData = stockData.filter(
     (stock) =>
       stock.farmerId.toLowerCase().includes(filters.farmerId.toLowerCase()) &&
@@ -29,12 +30,14 @@ const MillViewStock = () => {
 
   return (
     <div className="p-6 bg-green-50 min-h-screen">
+      {/* Page heading */}
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
         📦 View Stock Records
       </h1>
 
-      {/* Filters */}
+      {/* Filters section */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-white p-4 rounded-lg shadow-md border border-green-200">
+        {/* Farmer ID filter */}
         <input
           type="text"
           name="farmerId"
@@ -44,6 +47,7 @@ const MillViewStock = () => {
           className="border border-green-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400"
         />
 
+        {/* Paddy Type filter */}
         <select
           name="paddyType"
           value={filters.paddyType}
@@ -57,6 +61,7 @@ const MillViewStock = () => {
           <option value="Kiri Samba">Kiri Samba</option>
         </select>
 
+        {/* Condition filter */}
         <select
           name="condition"
           value={filters.condition}
@@ -68,6 +73,7 @@ const MillViewStock = () => {
           <option value="Wet">Wet</option>
         </select>
 
+        {/* Date filter */}
         <input
           type="date"
           name="date"
@@ -91,6 +97,7 @@ const MillViewStock = () => {
             </tr>
           </thead>
           <tbody>
+            {/* Render filtered stock records or show no records message */}
             {filteredData.length > 0 ? (
               filteredData.map((stock) => (
                 <tr key={stock.farmerId} className="odd:bg-white even:bg-green-50 hover:bg-green-100 text-center transition-colors">
@@ -98,6 +105,7 @@ const MillViewStock = () => {
                   <td className="border px-4 py-2">{stock.farmerName}</td>
                   <td className="border px-4 py-2">{stock.paddyType}</td>
                   <td className="border px-4 py-2">{stock.condition}</td>
+                  {/* Convert quantity from kg to MT */}
                   <td className="border px-4 py-2">{(stock.quantity / 1000).toFixed(2)}</td>
                   <td className="border px-4 py-2">{stock.date}</td>
                 </tr>
