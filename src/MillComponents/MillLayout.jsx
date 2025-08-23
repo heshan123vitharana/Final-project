@@ -10,6 +10,7 @@ import MillPaddyPrice from '../MillPages/MillPaddyPrice.jsx';
 import MillPayment from '../MillPages/MillPayment.jsx';
 import MillProfile from '../MillPages/MillProfile.jsx';
 import MillNotifications from '../MillPages/MillNotifications.jsx';
+import MillLogout from '../MillPages/MillLogout.jsx';
 
 const MillLayout = () => {
   return (
