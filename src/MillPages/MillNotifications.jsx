@@ -8,14 +8,15 @@ const initialNotifications = [
 ];
 
 const MillNotifications = () => {
+  // State to hold notifications
   const [notifications, setNotifications] = useState(initialNotifications);
 
-  // Update page title with count
+  // Update page title with notification count
   useEffect(() => {
     document.title = `Dashboard | Notifications (${notifications.length})`;
   }, [notifications]);
 
-  // Remove one notification
+  // Remove a single notification by id
   const dismissNotification = (id) => {
     setNotifications((prev) => prev.filter((note) => note.id !== id));
   };
@@ -25,7 +26,7 @@ const MillNotifications = () => {
 
   return (
     <div className="p-6 bg-green-50 min-h-screen">
-      {/* Header */}
+      {/* Header with notification count */}
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2 flex items-center gap-3">
         🔔 Notifications
         {notifications.length > 0 && (
@@ -35,7 +36,7 @@ const MillNotifications = () => {
         )}
       </h1>
 
-      {/* Clear All button */}
+      {/* Clear All button, shown only if notifications exist */}
       {notifications.length > 0 && (
         <div className="flex justify-end mb-4">
           <button onClick={clearAll} className="text-sm text-red-600 hover:text-red-800 transition">
@@ -46,16 +47,18 @@ const MillNotifications = () => {
 
       {/* Notification List */}
       <div className="rounded-lg shadow-md border border-green-200 bg-white p-4">
+        {/* Show message if no notifications */}
         {notifications.length === 0 ? (
           <p className="text-gray-500 italic text-center py-6">🎉 No new notifications!</p>
         ) : (
           <div className="space-y-4">
+            {/* Render each notification */}
             {notifications.map((note) => (
               <div
                 key={note.id}
                 className="border border-green-200 rounded-lg p-5 bg-green-50 hover:bg-green-100 transition relative"
               >
-                {/* Dismiss button */}
+                {/* Dismiss button for individual notification */}
                 <button
                   className="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition duration-200"
                   onClick={() => dismissNotification(note.id)}
