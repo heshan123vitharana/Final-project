@@ -10,3 +10,4 @@
 /* Utility class for fade-in animation */
 .animate-fade-in {
   animation: fade-in 0.4s ease-out;
+}
