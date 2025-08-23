@@ -55,6 +55,7 @@ const MillSidebar = () => {
         aria-label="Toggle Sidebar"
         className="absolute top-4 right-4 text-white focus:outline-none transition-transform duration-300"
       >
+        {/* Show hamburger icon when collapsed, close icon when expanded */}
         {isCollapsed ? (
           <Bars3Icon className="h-6 w-6 transform hover:rotate-90 transition-transform duration-300" />
         ) : (
@@ -68,8 +69,10 @@ const MillSidebar = () => {
           {/* Show logo and title only when sidebar is expanded */}
           {!isCollapsed && (
             <>
+              {/* Logo image */}
               <img src="/logo.svg" alt="Logo" className="h-10 w-10" />
               <div className="leading-tight">
+                {/* Dashboard title */}
                 <h1 className="text-xl font-bold">Wee Saviya</h1>
                 <p className="text-sm text-white/80">Mill Dashboard</p>
               </div>
@@ -91,6 +94,7 @@ const MillSidebar = () => {
                   } ${isActive ? 'bg-green-900 text-yellow-300 font-semibold' : 'hover:bg-green-800 hover:text-yellow-300'}`
                 }
               >
+                {/* Navigation icon */}
                 {icon}
                 {/* Show label only when expanded */}
                 {!isCollapsed && <span>{label}</span>}
@@ -114,6 +118,7 @@ const MillSidebar = () => {
                 } ${isActive ? 'bg-green-900 text-yellow-300 font-semibold' : 'hover:bg-green-800 hover:text-yellow-300'}`
               }
             >
+              {/* Logout icon */}
               {navItems[navItems.length - 1].icon}
               {/* Show label only when expanded */}
               {!isCollapsed && <span>{navItems[navItems.length - 1].label}</span>}
