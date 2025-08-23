@@ -25,6 +25,7 @@ const MillLayout = () => {
           <Route path="/payment" element={<MillPayment />} />
           <Route path="/profile" element={<MillProfile />} />
           <Route path="/notifications" element={<MillNotifications />} />
+          <Route path="/logout" element={<MillLogout />} />
         </Routes>
       </main>
     </div>
