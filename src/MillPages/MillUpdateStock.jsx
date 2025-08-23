@@ -22,11 +22,13 @@ const paddyPrices = {
   },
 };
 
+// Dropdown options for regions, paddy types, and states
 const regions = ["North", "South", "Central"];
 const paddyTypes = ["Nadu - White", "Nadu - Red", "Samba", "Kiri Samba"];
 const paddyStates = ["Wet", "Dry"];
 
 const MillUpdateStock = () => {
+  // State for form fields
   const [formData, setFormData] = useState({
     farmerId: "",
     farmerName: "",
@@ -38,10 +40,14 @@ const MillUpdateStock = () => {
     date: new Date().toISOString().split("T")[0],
   });
 
+  // State for calculated unit price
   const [unitPrice, setUnitPrice] = useState(0);
+  // State for showing confirmation popup
   const [showPopup, setShowPopup] = useState(false);
+  // State for notification message
   const [notification, setNotification] = useState("");
 
+  // Set page title on mount
   useEffect(() => {
     document.title = "Dashboard | Update Stock";
   }, []);
@@ -62,18 +68,22 @@ const MillUpdateStock = () => {
     }
   }, [formData.region, formData.paddyType, formData.paddyState]);
 
+  // Calculate total amount
   const totalAmount =
     formData.quantity && unitPrice ? parseFloat(formData.quantity) * unitPrice : 0;
 
+  // Handle form submit (show confirmation popup)
   const handleSubmit = (e) => {
     e.preventDefault();
     setShowPopup(true);
   };
 
+  // Handle confirmation of stock entry
   const handleConfirm = () => {
     setShowPopup(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
 
+    // Simulate success/failure
     const success = Math.random() > 0.3;
 
     if (success) {
@@ -96,14 +106,16 @@ const MillUpdateStock = () => {
       setNotification("❌ Stock data update unsuccessful!");
     }
 
+    // Hide notification after 4 seconds
     setTimeout(() => setNotification(""), 4000);
   };
 
+  // Handle cancel in popup
   const handleCancel = () => setShowPopup(false);
 
   return (
     <div className="p-6 bg-green-50 min-h-screen">
-      {/* Notification */}
+      {/* Notification message */}
       {notification && (
         <div
           className={`fixed top-2 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded shadow-md z-50 ${
@@ -114,15 +126,17 @@ const MillUpdateStock = () => {
         </div>
       )}
 
+      {/* Page heading */}
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
         🌾 Update Paddy Stock
       </h1>
 
+      {/* Stock update form */}
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-6 rounded-lg shadow-md border border-green-200 max-w-3xl mx-auto"
       >
-        {/* Farmer ID */}
+        {/* Farmer ID input */}
         <div>
           <label className="block text-sm font-semibold mb-1 text-green-800">Farmer ID</label>
           <input
@@ -136,7 +150,7 @@ const MillUpdateStock = () => {
           />
         </div>
 
-        {/* Farmer Name */}
+        {/* Farmer Name input */}
         <div>
           <label className="block text-sm font-semibold mb-1 text-green-800">Farmer Name</label>
           <input
@@ -150,7 +164,7 @@ const MillUpdateStock = () => {
           />
         </div>
 
-        {/* Account Number */}
+        {/* Account Number input (numbers only) */}
         <div>
           <label className="block text-sm font-semibold mb-1 text-green-800">Account Number</label>
           <input
@@ -167,7 +181,7 @@ const MillUpdateStock = () => {
           />
         </div>
 
-        {/* Quantity */}
+        {/* Quantity input (numbers and decimal only) */}
         <div>
           <label className="block text-sm font-semibold mb-1 text-green-800">Quantity (MT)</label>
           <input
@@ -184,7 +198,7 @@ const MillUpdateStock = () => {
           />
         </div>
 
-        {/* Region */}
+        {/* Region dropdown */}
         <div>
           <label className="block text-sm font-semibold mb-1 text-green-800">Region</label>
           <select
@@ -201,7 +215,7 @@ const MillUpdateStock = () => {
           </select>
         </div>
 
-        {/* Paddy Type */}
+        {/* Paddy Type dropdown */}
         <div>
           <label className="block text-sm font-semibold mb-1 text-green-800">Paddy Type</label>
           <select
@@ -218,7 +232,7 @@ const MillUpdateStock = () => {
           </select>
         </div>
 
-        {/* Condition */}
+        {/* Condition dropdown */}
         <div>
           <label className="block text-sm font-semibold mb-1 text-green-800">Condition</label>
           <select
@@ -235,7 +249,7 @@ const MillUpdateStock = () => {
           </select>
         </div>
 
-        {/* Date */}
+        {/* Date input */}
         <div>
           <label className="block text-sm font-semibold mb-1 text-green-800">Date</label>
           <input
@@ -248,7 +262,7 @@ const MillUpdateStock = () => {
           />
         </div>
 
-        {/* Unit Price */}
+        {/* Unit Price (read-only) */}
         <div>
           <label className="block text-sm font-semibold mb-1 text-green-800">Unit Price (Rs./MT)</label>
           <input
@@ -259,7 +273,7 @@ const MillUpdateStock = () => {
           />
         </div>
 
-        {/* Total Amount */}
+        {/* Total Amount (read-only) */}
         <div>
           <label className="block text-sm font-semibold mb-1 text-green-800">Total Amount (Rs.)</label>
           <input
@@ -270,7 +284,7 @@ const MillUpdateStock = () => {
           />
         </div>
 
-        {/* Submit */}
+        {/* Submit button */}
         <div className="md:col-span-2">
           <button
             type="submit"
@@ -281,12 +295,13 @@ const MillUpdateStock = () => {
         </div>
       </form>
 
-      {/* Popup */}
+      {/* Confirmation Popup */}
       {showPopup && (
         <div className="fixed inset-0 bg-green-200 bg-opacity-90 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md border border-green-300">
             <h2 className="text-xl font-bold text-green-800 mb-4">Confirm Stock Entry</h2>
             <ul className="space-y-2 text-sm text-green-900 mb-4">
+              {/* Show all form data for confirmation */}
               {Object.entries(formData).map(([key, value]) => (
                 <li key={key}>
                   <strong>{key.replace(/([A-Z])/g, " $1")}:</strong> {value}
@@ -296,6 +311,7 @@ const MillUpdateStock = () => {
               <li><strong>Total Amount:</strong> Rs.{totalAmount.toFixed(2)}</li>
             </ul>
             <div className="flex justify-end space-x-3">
+              {/* Cancel and Confirm buttons */}
               <button
                 onClick={handleCancel}
                 className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg"
