@@ -3,27 +3,31 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, ResponsiveContainer
 } from 'recharts';
 
+// Home page component for the Mill Dashboard
 const MillHome = () => {
   // Set page title on mount
   useEffect(() => {
     document.title = "Dashboard | Home";
   }, []);
 
+  // State to track selected paddy type (dry/wet)
   const [selectedType, setSelectedType] = useState('dry');
 
-  // Sample data
+  // Sample data for dry paddy stock
   const dryPaddyData = [
     { variety: 'Nadu', stock: 1200 },
     { variety: 'Samba', stock: 800 },
     { variety: 'Red Rice', stock: 450 },
   ];
 
+  // Sample data for wet paddy stock
   const wetPaddyData = [
     { variety: 'Nadu', stock: 600 },
     { variety: 'Samba', stock: 950 },
     { variety: 'Red Rice', stock: 300 },
   ];
 
+  // Select chart data based on selected paddy type
   const chartData = selectedType === 'dry' ? dryPaddyData : wetPaddyData;
 
   return (
@@ -69,13 +73,19 @@ const MillHome = () => {
         </h2>
         <ResponsiveContainer width="100%" height={350}>
           <BarChart data={chartData}>
+            {/* Grid lines */}
             <CartesianGrid strokeDasharray="3 3" />
+            {/* X-axis for paddy variety */}
             <XAxis dataKey="variety" />
+            {/* Y-axis for stock levels */}
             <YAxis 
               label={{ value: 'Stock (MT)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
             />
+            {/* Tooltip on hover */}
             <Tooltip formatter={(value) => [`${value} MT`, 'Stock']} />
+            {/* Chart legend */}
             <Legend />
+            {/* Bar for stock data */}
             <Bar dataKey="stock" fill="#38a169" name="Stock (MT)" />
           </BarChart>
         </ResponsiveContainer>
