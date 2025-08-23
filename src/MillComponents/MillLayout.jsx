@@ -1,4 +1,3 @@
-// src/MillComponents/MillLayout.jsx
 import { Routes, Route } from 'react-router-dom';
 import MillSidebar from './MillSidebar.jsx';  // <- corrected import with .jsx
 

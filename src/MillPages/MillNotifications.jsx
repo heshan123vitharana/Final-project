@@ -1,5 +1,3 @@
-// src/MillPages/MillNotifications.jsx
-
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
 

@@ -1,4 +1,3 @@
-// src/MillPages/MillHome.jsx
 import { useEffect, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, ResponsiveContainer
