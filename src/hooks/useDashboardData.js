@@ -37,7 +37,26 @@ const useDashboardData = () => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       setError(null);
-      // Optionally update data here
+      // Example: update totalRevenue and add a new order
+      setData(prev => ({
+        ...prev,
+        metrics: {
+          ...prev.metrics,
+          totalRevenue: prev.metrics.totalRevenue + 100000
+        },
+        recentOrders: [
+          {
+            id: 'ORD-2024-004',
+            customer: 'New Customer',
+            variety: 'nadu',
+            quantity: '200 kg',
+            status: 'processing',
+            date: '2024-08-24',
+            value: 16400
+          },
+          ...prev.recentOrders
+        ]
+      }));
     } catch {
       setError('Failed to fetch dashboard data');
     } finally {

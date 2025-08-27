@@ -12,7 +12,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
     lastName: '',
     phoneNumber: '',
     businessName: '',
-    businessType: '',
+    businessType: 'private',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState({})
@@ -68,6 +68,10 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
 
       if (!formData.businessName) {
         newErrors.businessName = t('auth.required_field')
+      }
+
+      if (!formData.businessType) {
+        newErrors.businessType = t('auth.required_field')
       }
     }
 
@@ -249,18 +253,21 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
 
               <div>
                 <label htmlFor="businessType" className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t('auth.business_type')}
+                  {t('auth.business_type')} *
                 </label>
                 <select
                   id="businessType"
                   name="businessType"
                   value={formData.businessType}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 ${
+                    errors.businessType ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 >
                   <option value="private">Private</option>
                   <option value="government">Government</option>
                 </select>
+                {errors.businessType && <p className="mt-1 text-sm text-red-600">{errors.businessType}</p>}
               </div>
 
               <div>

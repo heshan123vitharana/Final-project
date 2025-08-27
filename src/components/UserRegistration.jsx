@@ -6,7 +6,10 @@ const UserRegistration = ({ onAuthSuccess, onExit }) => {
 		lastName: '',
 		email: '',
 		password: '',
-		businessName: ''
+		confirmPassword: '',
+		businessName: '',
+		businessType: '',
+		phone: ''
 	});
 	const [errors, setErrors] = useState({});
 	const [loading, setLoading] = useState(false);
@@ -24,7 +27,12 @@ const UserRegistration = ({ onAuthSuccess, onExit }) => {
 		if (!form.lastName) newErrors.lastName = 'Last name required';
 		if (!form.email) newErrors.email = 'Email required';
 		if (!form.password) newErrors.password = 'Password required';
+		if (form.password && form.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+		if (!form.confirmPassword) newErrors.confirmPassword = 'Confirm password required';
+		if (form.password !== form.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
 		if (!form.businessName) newErrors.businessName = 'Business name required';
+		if (!form.businessType) newErrors.businessType = 'Business type required';
+		if (!form.phone) newErrors.phone = 'Phone number required';
 		return newErrors;
 	};
 
@@ -38,11 +46,22 @@ const UserRegistration = ({ onAuthSuccess, onExit }) => {
 			return;
 		}
 		try {
-			// Replace with your backend registration API
+			// Map frontend field names to backend expected names
+			const registrationData = {
+				first_name: form.firstName,
+				last_name: form.lastName,
+				business_name: form.businessName,
+				business_type: form.businessType,
+				phone: form.phone,
+				email: form.email,
+				password: form.password,
+				confirm_password: form.confirmPassword
+			};
+
 			const response = await fetch('http://localhost:5000/api/auth/register', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(form)
+				body: JSON.stringify(registrationData)
 			});
 			const result = await response.json();
 			if (response.ok && result.user) {
@@ -88,9 +107,28 @@ const UserRegistration = ({ onAuthSuccess, onExit }) => {
 							{errors.password && <span className="text-xs text-red-600">{errors.password}</span>}
 						</div>
 						<div>
+							<label className="block text-sm font-medium text-gray-700">Confirm Password</label>
+							<input type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 ${errors.confirmPassword ? 'border-red-500' : ''}`} />
+							{errors.confirmPassword && <span className="text-xs text-red-600">{errors.confirmPassword}</span>}
+						</div>
+						<div>
 							<label className="block text-sm font-medium text-gray-700">Business Name</label>
 							<input type="text" name="businessName" value={form.businessName} onChange={handleChange} className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 ${errors.businessName ? 'border-red-500' : ''}`} />
 							{errors.businessName && <span className="text-xs text-red-600">{errors.businessName}</span>}
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-gray-700">Business Type</label>
+							<select name="businessType" value={form.businessType} onChange={handleChange} className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 ${errors.businessType ? 'border-red-500' : ''}`}>
+								<option value="">Select Business Type</option>
+								<option value="private">Private</option>
+								<option value="government">Government</option>
+							</select>
+							{errors.businessType && <span className="text-xs text-red-600">{errors.businessType}</span>}
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-gray-700">Phone Number</label>
+							<input type="tel" name="phone" value={form.phone} onChange={handleChange} className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-emerald-500 focus:border-emerald-500 ${errors.phone ? 'border-red-500' : ''}`} />
+							{errors.phone && <span className="text-xs text-red-600">{errors.phone}</span>}
 						</div>
 						<button type="submit" disabled={loading} className="w-full py-2 px-4 bg-emerald-600 text-white font-semibold rounded-md shadow hover:bg-emerald-700 transition duration-200">
 							{loading ? 'Registering...' : 'Register'}

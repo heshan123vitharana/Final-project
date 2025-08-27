@@ -146,4 +146,33 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+const getProfile = async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const user = await userModel.findByEmail(req.user.email);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      user: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        business_name: user.business_name,
+        business_type: user.business_type,
+        phone: user.phone,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({
+      message: 'Failed to get profile',
+      error: error.message
+    });
+  }
+};
+
+module.exports = { register, login, getProfile };
