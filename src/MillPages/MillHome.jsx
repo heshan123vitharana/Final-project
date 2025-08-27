@@ -4,7 +4,7 @@ import {
 } from 'recharts';
 
 // Home page component for the Mill Dashboard
-const MillHome = () => {
+const MillHome = ({ userData }) => {
   // Set page title on mount
   useEffect(() => {
     document.title = "Dashboard | Home";
@@ -34,11 +34,16 @@ const MillHome = () => {
     <div className="p-6">
       {/* Dashboard heading */}
       <h1 className="text-5xl font-bold mb-4 text-green-700">
-        Welcome to the Paddy Mill Dashboard
+        Welcome back, {userData?.first_name || 'Mill Owner'}!
       </h1>
 
       {/* Dashboard description */}
       <p className="text-xl text-gray-700 mb-6">
+        {userData?.business_name && (
+          <span className="block font-medium text-green-800 mb-2">
+            {userData.business_name} Dashboard
+          </span>
+        )}
         Use the sidebar to navigate through the system and manage mill operations effectively.
       </p>
 

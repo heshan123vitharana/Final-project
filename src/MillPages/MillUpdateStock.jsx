@@ -27,7 +27,7 @@ const regions = ["North", "South", "Central"];
 const paddyTypes = ["Nadu - White", "Nadu - Red", "Samba", "Kiri Samba"];
 const paddyStates = ["Wet", "Dry"];
 
-const MillUpdateStock = () => {
+const MillUpdateStock = ({ userData }) => {
   // State for form fields
   const [formData, setFormData] = useState({
     farmerId: "",

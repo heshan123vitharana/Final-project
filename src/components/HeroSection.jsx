@@ -1,24 +1,22 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from '../utils/scroll';
 
 /**
  * HeroSection Component
  * 
  * A dynamic hero section with rotating background images, animated content,
- * and decorative elements for the Paddy Marketing Board website.
+ * and call-to-action buttons for the Paddy Marketing Board website.
  * 
  * Features:
  * - Auto-rotating background images with smooth transitions
- * - Dynamic content based on current slide
- * - Floating rice grain animations
- * - Navigation dots for manual slide control
- * - Responsive design with mobile-first approach
+ * - Sri Lankan rice and farming focused content
+ * - Interactive navigation buttons
+ * - Manual slide control with dots
+ * - Responsive design optimized for all devices
  */
 const HeroSection = () => {
   // State to track the currently active background image
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const { t } = useTranslation();
   
   /**
    * Configuration for background images and their associated content
@@ -28,51 +26,51 @@ const HeroSection = () => {
     {
       image: "bg-1.jpg",
       gradient: "from-purple-600/60 to-pink-600/60",
-      title: t('hero.slides.premium.title'),
-      mainTitle: t('hero.slides.premium.main_title'),
-      mainSubtitle: t('hero.slides.premium.main_subtitle'),
-      subtitle: t('hero.slides.premium.subtitle'),
-      description: t('hero.slides.premium.description'),
+      title: "Premium Sri Lankan Rice",
+      mainTitle: "PREMIUM",
+      mainSubtitle: "QUALITY RICE",
+      subtitle: "From our fertile fields to your table",
+      description: "Experience the finest quality rice, carefully selected and processed by the Paddy Marketing Board of Sri Lanka for over 50 years.",
       accent: "text-pink-200"
     },
     {
       image: "bg-2.jpg",
       gradient: "from-amber-600/60 to-orange-600/60",
-      title: t('hero.slides.quality.title'),
-      mainTitle: t('hero.slides.quality.main_title'),
-      mainSubtitle: t('hero.slides.quality.main_subtitle'),
-      subtitle: t('hero.slides.quality.subtitle'),
-      description: t('hero.slides.quality.description'),
+      title: "Quality Assurance",
+      mainTitle: "TRUSTED",
+      mainSubtitle: "EXCELLENCE",
+      subtitle: "Certified quality, batch by batch",
+      description: "Every grain meets our strict quality standards. Government-tested and certified rice varieties for your family's nutrition and health.",
       accent: "text-amber-200"
     },
     {
       image: "bg-3.jpg",
       gradient: "from-emerald-600/60 to-green-600/60",
-      title: t('hero.slides.sustainable.title'),
-      mainTitle: t('hero.slides.sustainable.main_title'),
-      mainSubtitle: t('hero.slides.sustainable.main_subtitle'),
-      subtitle: t('hero.slides.sustainable.subtitle'),
-      description: t('hero.slides.sustainable.description'),
+      title: "Sustainable Farming",
+      mainTitle: "ECO-FRIENDLY",
+      mainSubtitle: "CULTIVATION",
+      subtitle: "Protecting Sri Lanka's agricultural heritage",
+      description: "Supporting sustainable farming practices across the island, ensuring environmental protection while maintaining high productivity for future generations.",
       accent: "text-emerald-200"
     },
     {
       image: "bg-4.jpg",
       gradient: "from-blue-600/60 to-indigo-600/60",
-      title: t('hero.slides.farm_to_table.title'),
-      mainTitle: t('hero.slides.farm_to_table.main_title'),
-      mainSubtitle: t('hero.slides.farm_to_table.main_subtitle'),
-      subtitle: t('hero.slides.farm_to_table.subtitle'),
-      description: t('hero.slides.farm_to_table.description'),
+      title: "Supporting Farmers",
+      mainTitle: "FARMER",
+      mainSubtitle: "EMPOWERMENT",
+      subtitle: "Fair prices, guaranteed procurement",
+      description: "Directly supporting over 1.8 million farming families across Sri Lanka with guaranteed minimum prices and reliable procurement services.",
       accent: "text-blue-200"
     },
     {
       image: "bg-5.jpg",
       gradient: "from-yellow-600/60 to-red-600/60",
-      title: t('hero.slides.distribution.title'),
-      mainTitle: t('hero.slides.distribution.main_title'),
-      mainSubtitle: t('hero.slides.distribution.main_subtitle'),
-      subtitle: t('hero.slides.distribution.subtitle'),
-      description: t('hero.slides.distribution.description'),
+      title: "Island-wide Network",
+      mainTitle: "NATIONWIDE",
+      mainSubtitle: "DISTRIBUTION",
+      subtitle: "Serving all 25 districts of Sri Lanka",
+      description: "Comprehensive distribution network ensuring fresh, quality rice reaches every corner of the island through our extensive collection centers and retail outlets.",
       accent: "text-yellow-200"
     }
   ];
@@ -106,7 +104,7 @@ const HeroSection = () => {
 
     // Cleanup interval on component unmount
     return () => clearInterval(interval);
-  }, [backgroundImages.length, t]);
+  }, [backgroundImages.length]);
 
   /**
    * Handles manual navigation to specific slide
@@ -222,30 +220,23 @@ const HeroSection = () => {
                   // Add click feedback
                   console.log('Explore Services button clicked');
                   
-                  // Navigate to "Our Key Services" section in About component
-                   const aboutSection = document.getElementById('about');
+                  // Navigate to platform features section (About page)
+                  const aboutSection = document.getElementById('platform-features-section');
                   if (aboutSection) {
-                    // Find the "Our Key Services" section within About
-                    const servicesHeading = Array.from(aboutSection.querySelectorAll('h3')).find(
-                      h3 => h3.textContent.includes('Our Key Services')
-                    );
-                    
-                    if (servicesHeading) {
-                      console.log('Our Key Services section found, scrolling...');
-                       const headerHeight = getHeaderHeight(80);
-                       const elementPosition = servicesHeading.offsetTop - headerHeight - 50; // Extra offset for better view
-                       smoothScrollTo(elementPosition);
-                    } else {
-                      // Fallback: scroll to about section
-                      console.log('Scrolling to About section as fallback');
-                       const headerHeight = getHeaderHeight(80);
-                       const elementPosition = aboutSection.offsetTop - headerHeight;
-                       smoothScrollTo(elementPosition);
-                    }
+                    console.log('About section found, scrolling...');
+                    const headerHeight = getHeaderHeight(80);
+                    scrollIntoViewWithOffset(aboutSection, headerHeight);
                   } else {
-                    console.log('About section not found, scrolling to approximate position');
-                    // Fallback: scroll to approximate position
-                     smoothScrollTo(window.innerHeight);
+                    console.log('About section not found, trying alternative...');
+                    // Try alternative section ID
+                    const altSection = document.getElementById('about');
+                    if (altSection) {
+                      const headerHeight = getHeaderHeight(80);
+                      scrollIntoViewWithOffset(altSection, headerHeight);
+                    } else {
+                      // Scroll to approximate position
+                      smoothScrollTo(window.innerHeight * 1.2);
+                    }
                   }
                 }}
                   className="group relative overflow-hidden text-white px-6 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 w-full sm:w-auto flex items-center justify-center gap-2.5 min-w-[180px] bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 shadow-md">
@@ -254,28 +245,34 @@ const HeroSection = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <span className="relative z-10">{t('hero.explore_services')}</span>
+                <span className="relative z-10">Explore Services</span>
                 <svg className="w-4 h-4 relative z-10 opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
-              {/* Secondary CTA - Live Prices scroll */}
+              {/* Secondary CTA - Collection Centers scroll */}
               <button
                 onClick={() => {
-                  const el = document.getElementById('live-paddy-prices');
+                  console.log('Collection Centers button clicked');
+                  const el = document.getElementById('collection-centers');
                   if (el) {
-                    const headerHeight = getHeaderHeight(60);
+                    console.log('Collection Centers section found, scrolling...');
+                    const headerHeight = getHeaderHeight(80);
                     scrollIntoViewWithOffset(el, headerHeight);
+                  } else {
+                    console.log('Collection Centers section not found');
+                    // Scroll to approximate position if section not found
+                    smoothScrollTo(window.innerHeight * 2);
                   }
                 }}
                   className="group relative overflow-hidden px-6 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 w-full sm:w-auto flex items-center justify-center gap-2.5 min-w-[180px] border border-white/30 text-white bg-white/10 hover:bg-white/15"
               >
                 <div className="relative z-10 p-2 bg-white/20 rounded-full group-hover:bg-white/30 transition-all duration-300">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3v18h18M7 15l3-3 4 4 2-2 3 3" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
-                <span className="relative z-10">{t('header.live_prices')}</span>
+                <span className="relative z-10">Collection Centers</span>
                 <svg className="w-4 h-4 relative z-10 opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                 </svg>

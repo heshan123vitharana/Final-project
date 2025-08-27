@@ -1,8 +1,6 @@
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 const AuthPage = ({ onAuthSuccess, onExit }) => {
-  const { t } = useTranslation()
   const [isLogin, setIsLogin] = useState(true)
   const [formData, setFormData] = useState({
     email: '',
@@ -36,42 +34,42 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
     const newErrors = {}
 
     if (!formData.email) {
-      newErrors.email = t('auth.required_field')
+      newErrors.email = 'This field is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = t('auth.email_invalid')
+      newErrors.email = 'Please enter a valid email address'
     }
 
     if (!formData.password) {
-      newErrors.password = t('auth.required_field')
+      newErrors.password = 'This field is required'
     } else if (formData.password.length < 6) {
-      newErrors.password = t('auth.password_min_length')
+      newErrors.password = 'Password must be at least 6 characters'
     }
 
     if (!isLogin) {
       if (!formData.confirmPassword) {
-        newErrors.confirmPassword = t('auth.required_field')
+        newErrors.confirmPassword = 'This field is required'
       } else if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = t('auth.passwords_not_match')
+        newErrors.confirmPassword = 'Passwords do not match'
       }
 
       if (!formData.firstName) {
-        newErrors.firstName = t('auth.required_field')
+        newErrors.firstName = 'This field is required'
       }
 
       if (!formData.lastName) {
-        newErrors.lastName = t('auth.required_field')
+        newErrors.lastName = 'This field is required'
       }
 
       if (!formData.phoneNumber) {
-        newErrors.phoneNumber = t('auth.required_field')
+        newErrors.phoneNumber = 'This field is required'
       }
 
       if (!formData.businessName) {
-        newErrors.businessName = t('auth.required_field')
+        newErrors.businessName = 'This field is required'
       }
 
       if (!formData.businessType) {
-        newErrors.businessType = t('auth.required_field')
+        newErrors.businessType = 'This field is required'
       }
     }
 
@@ -116,7 +114,11 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
       const result = await response.json();
       setIsSubmitting(false);
       if (response.ok) {
-        onAuthSuccess(result);
+        // For login, pass user data with token; for registration, pass user data
+        const userData = isLogin 
+          ? { ...result.user, token: result.token }
+          : result.user;
+        onAuthSuccess(userData);
       } else {
         setErrors({ api: result.errors ? result.errors.join(', ') : result.message || (isLogin ? 'Sign in failed' : 'Registration failed') });
       }
@@ -138,7 +140,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
         <button
           onClick={onExit}
           className="absolute top-6 right-6 z-50 p-3 rounded-full bg-white/80 hover:bg-white transition-all duration-300 group shadow-lg"
-          aria-label={t('auth.exit_tooltip')}
+          aria-label="Exit to home page"
         >
           <svg className="w-6 h-6 text-gray-600 group-hover:text-gray-800 transform group-hover:rotate-90 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -154,12 +156,12 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
               </svg>
             </div>
             <h2 className="text-4xl font-bold text-gray-900 mb-2">
-              {isLogin ? t('auth.welcome_back') : t('auth.create_account')}
+              {isLogin ? 'Welcome Back' : 'Create Account'}
             </h2>
             <p className="text-lg text-gray-600">
               {isLogin 
-                ? t('auth.sign_in_subtitle')
-                : t('auth.join_pmb_subtitle')
+                ? 'Sign in to access your mill dashboard'
+                : 'Join PMB Sri Lanka as a mill owner'
               }
             </p>
           </div>
@@ -198,7 +200,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-2">
-                    {t('auth.first_name')} *
+                    First Name *
                   </label>
                   <input
                     id="firstName"
@@ -209,13 +211,13 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
                     className={`w-full px-4 py-3 border rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 ${
                       errors.firstName ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder={t('auth.first_name_placeholder')}
+                    placeholder="Enter your first name"
                   />
                   {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
                 </div>
                 <div>
                   <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-2">
-                    {t('auth.last_name')} *
+                    Last Name *
                   </label>
                   <input
                     id="lastName"
@@ -226,7 +228,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
                     className={`w-full px-4 py-3 border rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 ${
                       errors.lastName ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder={t('auth.last_name_placeholder')}
+                    placeholder="Enter your last name"
                   />
                   {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
                 </div>
@@ -235,7 +237,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
               {/* Business Information */}
               <div>
                 <label htmlFor="businessName" className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t('auth.business_name')} *
+                  Business Name *
                 </label>
                 <input
                   id="businessName"
@@ -246,14 +248,14 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
                   className={`w-full px-4 py-3 border rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 ${
                     errors.businessName ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder={t('auth.business_name_placeholder')}
+                  placeholder="Enter your business name"
                 />
                 {errors.businessName && <p className="mt-1 text-sm text-red-600">{errors.businessName}</p>}
               </div>
 
               <div>
                 <label htmlFor="businessType" className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t('auth.business_type')} *
+                  Business Type *
                 </label>
                 <select
                   id="businessType"
@@ -272,7 +274,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
 
               <div>
                 <label htmlFor="phoneNumber" className="block text-sm font-semibold text-gray-700 mb-2">
-                  {t('auth.phone_number')} *
+                  Phone Number *
                 </label>
                 <input
                   id="phoneNumber"
@@ -283,7 +285,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
                   className={`w-full px-4 py-3 border rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 ${
                     errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder={t('auth.phone_number_placeholder')}
+                  placeholder="Enter your phone number"
                 />
                 {errors.phoneNumber && <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>}
               </div>
@@ -293,7 +295,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
           {/* Email */}
           <div>
             <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('auth.email')} *
+              Email Address *
             </label>
             <input
               id="email"
@@ -304,7 +306,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
               className={`w-full px-4 py-3 border rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 ${
                 errors.email ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder={t('auth.email_placeholder')}
+              placeholder="Enter your email address"
             />
             {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
           </div>
@@ -312,7 +314,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
           {/* Password */}
           <div>
             <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-              {t('auth.password')} *
+              Password *
             </label>
             <input
               id="password"
@@ -323,7 +325,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
               className={`w-full px-4 py-3 border rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 ${
                 errors.password ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder={t('auth.password_placeholder')}
+              placeholder="Enter your password"
             />
             {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
           </div>
@@ -332,7 +334,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
           {!isLogin && (
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('auth.confirm_password')} *
+                Confirm Password *
               </label>
               <input
                 id="confirmPassword"
@@ -343,7 +345,7 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
                 className={`w-full px-4 py-3 border rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200 ${
                   errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder={t('auth.confirm_password_placeholder')}
+                placeholder="Confirm your password"
               />
               {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
             </div>
@@ -361,10 +363,10 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span>{isLogin ? t('auth.signing_in') : t('auth.creating_account')}</span>
+                <span>{isLogin ? 'Signing In...' : 'Creating Account...'}</span>
               </div>
             ) : (
-              isLogin ? t('auth.sign_in') : t('auth.sign_up')
+              isLogin ? 'Sign In' : 'Sign Up'
             )}
           </button>
         </form>
@@ -372,13 +374,13 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
         {/* Additional Links */}
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            {isLogin ? t('auth.switch_to_signup') + " " : t('auth.switch_to_signin') + " "}
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
               className="font-semibold text-emerald-600 hover:text-emerald-500 transition-colors duration-200"
             >
-              {isLogin ? t('auth.create_your_account') : t('auth.sign_in_here')}
+              {isLogin ? 'Create your account' : 'Sign in here'}
             </button>
           </p>
         </div>

@@ -1,5 +1,5 @@
 // Import necessary components from React Router
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Import the sidebar component for navigation
 import MillSidebar from './MillSidebar.jsx';
@@ -16,26 +16,29 @@ import MillNotifications from '../MillPages/MillNotifications.jsx';
 import MillLogout from '../MillPages/MillLogout.jsx';
 
 // Main layout component for Mill section
-const MillLayout = () => {
+const MillLayout = ({ userData, onBackToHome }) => {
   return (
     // Flex container for sidebar and main content
     <div className="flex">
       {/* Sidebar navigation */}
-      <MillSidebar />
+      <MillSidebar userData={userData} onBackToHome={onBackToHome} />
 
       {/* Main content area */}
       <main className="flex-grow bg-gray-50 p-6 md:p-8 lg:p-10 overflow-y-auto">
         {/* Define all routes for Mill pages */}
         <Routes>
-          <Route path="/" element={<MillHome />} /> {/* Home page */}
-          <Route path="/register" element={<MillRegistration />} /> {/* Registration page */}
-          <Route path="/update-stock" element={<MillUpdateStock />} /> {/* Update stock page */}
-          <Route path="/view-stock" element={<MillViewStock />} /> {/* View stock page */}
-          <Route path="/paddy-price" element={<MillPaddyPrice />} /> {/* Paddy price page */}
-          <Route path="/payment" element={<MillPayment />} /> {/* Payment page */}
-          <Route path="/profile" element={<MillProfile />} /> {/* Profile page */}
-          <Route path="/notifications" element={<MillNotifications />} /> {/* Notifications page */}
-          <Route path="/logout" element={<MillLogout />} /> {/* Logout page */}
+          <Route index element={<MillHome userData={userData} />} /> {/* Default home page */}
+          <Route path="home" element={<MillHome userData={userData} />} /> {/* Home page */}
+          <Route path="register" element={<MillRegistration userData={userData} />} /> {/* Registration page */}
+          <Route path="update-stock" element={<MillUpdateStock userData={userData} />} /> {/* Update stock page */}
+          <Route path="view-stock" element={<MillViewStock userData={userData} />} /> {/* View stock page */}
+          <Route path="paddy-price" element={<MillPaddyPrice userData={userData} />} /> {/* Paddy price page */}
+          <Route path="payment" element={<MillPayment userData={userData} />} /> {/* Payment page */}
+          <Route path="notifications" element={<MillNotifications userData={userData} />} /> {/* Notifications page */}
+          <Route path="profile" element={<MillProfile userData={userData} />} /> {/* Profile page */}
+          <Route path="logout" element={<MillLogout onBackToHome={onBackToHome} />} /> {/* Logout page */}
+          {/* Redirect any unknown routes to home */}
+          <Route path="*" element={<Navigate to="home" replace />} />
         </Routes>
       </main>
     </div>

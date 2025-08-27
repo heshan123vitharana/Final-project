@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
 import logoP from '../assets/logo-p.png';
 
 const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistrationClick = () => {}, onAdminClick = () => {} }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { t } = useTranslation();
 
   const navigationItems = [
-    { name: t('header.home'), id: 'home', icon: '🏠' },
-    { name: t('header.about'), id: 'platform-features-section', icon: 'ℹ️' },
-  { name: t('header.collection_centers'), id: 'collection-centers', icon: '🏢' },
-  { name: t('header.live_prices'), id: 'live-paddy-prices', icon: '💰' },
-    { name: t('header.contact'), id: 'contact', icon: '📞' }
+    { name: 'HOME', id: 'home', icon: '🏠' },
+    { name: 'ABOUT', id: 'platform-features-section', icon: 'ℹ️' },
+    { name: 'COLLECTION CENTERS', id: 'collection-centers', icon: '🏢' },
+    { name: 'LIVE PRICES', id: 'live-paddy-prices', icon: '💰' },
+    { name: 'CONTACT', id: 'contact', icon: '📞' }
   ];
 
   // Handle scroll effect
@@ -26,36 +24,70 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
   }, []);
 
   const handleNavClick = (sectionId) => {
+    console.log('Navigation clicked:', sectionId);
+    
+    // Close mobile menu immediately
+    setIsMenuOpen(false);
+    
     // Add smooth transition effect
     document.body.style.pointerEvents = 'none';
     
-    // Create ripple effect
+    // Create subtle ripple effect
     const ripple = document.createElement('div');
-    ripple.className = 'fixed inset-0 bg-green-500/5 z-40 pointer-events-none';
-    ripple.style.animation = 'pulse 0.6s ease-out';
+    ripple.className = 'fixed inset-0 bg-emerald-500/3 z-40 pointer-events-none transition-opacity duration-300';
     document.body.appendChild(ripple);
     
-    // Navigate after short delay for smooth effect
+    // Navigate with proper offset calculation
     setTimeout(() => {
-        if (sectionId === 'platform-features-section') {
-          const section = document.getElementById('platform-features-section');
-          if (section) {
-            section.scrollIntoView({ behavior: 'smooth' });
-            return;
+      const headerHeight = isScrolled ? 120 : 140; // Account for banner + header
+      
+      if (sectionId === 'home') {
+        // Scroll to top for home
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        console.log('Scrolled to top');
+      } else {
+        // Try to find the target section
+        let targetElement = document.getElementById(sectionId);
+        
+        // Fallback mappings for different section IDs
+        const sectionMappings = {
+          'platform-features-section': ['platform-features-section', 'about'],
+          'collection-centers': ['collection-centers'],
+          'live-paddy-prices': ['live-paddy-prices'],
+          'contact': ['contact']
+        };
+        
+        // Try alternative IDs if primary not found
+        if (!targetElement && sectionMappings[sectionId]) {
+          for (const altId of sectionMappings[sectionId]) {
+            targetElement = document.getElementById(altId);
+            if (targetElement) {
+              console.log(`Found section with alternative ID: ${altId}`);
+              break;
+            }
           }
         }
-        // ...existing code...
-        onNavigate(sectionId);
-      setIsMenuOpen(false);
+        
+        if (targetElement) {
+          const elementTop = targetElement.offsetTop - headerHeight;
+          window.scrollTo({ top: Math.max(0, elementTop), behavior: 'smooth' });
+          console.log(`Successfully scrolled to: ${sectionId}`);
+        } else {
+          console.error(`Section not found: ${sectionId}`);
+          console.log('Available sections:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
+          // Use the original navigation function as fallback
+          onNavigate(sectionId);
+        }
+      }
       
-      // Clean up
+      // Clean up ripple effect
       setTimeout(() => {
         document.body.style.pointerEvents = 'auto';
         if (document.body.contains(ripple)) {
           document.body.removeChild(ripple);
         }
       }, 300);
-    }, 150);
+    }, 100);
   };
 
   // Removed handleAdminClick and onAdminClick as Admin button is no longer used
@@ -69,11 +101,11 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
         <div className="absolute inset-0 bg-black/10"></div>
         <p className="text-[11px] font-medium relative z-10">
           <span className="inline-block text-sm">🌾</span> 
-          <span className="mx-2">{t('header.serving_farmers')}</span>
+          <span className="mx-2">Serving Farmers Island-wide with Fair Paddy Procurement</span>
           <span className="mx-4">|</span>
           <span className="font-semibold">
             <span className="inline-block text-sm">📞</span> 
-            <span className="ml-2">{t('header.hotline')}</span>
+            <span className="ml-2">Hotline: +94 11 234 5678</span>
           </span>
           {/* Smallest lock icon for admin login */}
           <button

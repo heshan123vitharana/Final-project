@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 // Paddy Price page component for Mill Dashboard
-const MillPaddyPrice = () => {
+const MillPaddyPrice = ({ userData }) => {
   // State for selected paddy type filter
   const [selectedType, setSelectedType] = useState("");
   // State for selected condition filter (Dry/Wet)

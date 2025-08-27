@@ -1,31 +1,6 @@
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import MillLayout from './MillComponents/MillLayout.jsx';
-
-function App() {
-  return (
-    // Wrap the app in Router to enable routing
-    <Router>
-      {/* Define application routes */}
-      <Routes>
-        {/* All Mill routes handled inside MillLayout */}
-        <Route path="/*" element={<MillLayout />} />
-      </Routes>
-    </Router>
-  );
-}
-
-export default App;
-
-  // Handle admin logout
-  const handleAdminLogout = () => {
-    sessionStorage.removeItem('adminData');
-    setAdminData(null);
-    setUserFlowState('home');
-  }
-// ...existing code...
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Header from './components/Header'
 import HeroSection from './components/HeroSection'
 import About from './components/About-New'
@@ -40,20 +15,14 @@ import AuthPage from './components/AuthPage'
 import AdminDashboard from './components/admin/AdminDashboard'
 import { SectionTransition } from './components/PageTransition'
 import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from './utils/scroll'
-import Dashboard from './components/dashboard/Dashboard'
+import MillLayout from './MillComponents/MillLayout'
 
 function App() {
-  // ...existing code...
-  // Handle admin logout
-  const handleAdminLogout = () => {
-    sessionStorage.removeItem('adminData');
-    setAdminData(null);
-    setUserFlowState('home');
-  }
   const [currentPage, setCurrentPage] = useState('home')
   const [isNavigating, setIsNavigating] = useState(false)
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false)
   const [adminData, setAdminData] = useState(null)
+  
   // Admin section navigation state
 
   // Admin login form state
@@ -111,6 +80,18 @@ function App() {
   const [userFlowState, setUserFlowState] = useState('home') // 'home', 'auth', 'dashboard', 'pmb_registration'
   const [userData, setUserData] = useState(null)
   
+  // Set page title based on user flow state
+  useEffect(() => {
+    if (userFlowState === 'home') {
+      document.title = 'Paddy Marketing Board In Sri Lanka';
+    } else if (userFlowState === 'auth') {
+      document.title = 'Sign In | Paddy Marketing Board Sri Lanka';
+    } else if (userFlowState === 'adminDashboard') {
+      document.title = 'Admin Dashboard | PMB Sri Lanka';
+    }
+    // Mill dashboard pages handle their own titles via individual components
+  }, [userFlowState]);
+  
   const [sectionsVisible, setSectionsVisible] = useState({
     home: true,
     about: false,
@@ -138,7 +119,16 @@ function App() {
   // Handle successful authentication
   const handleAuthSuccess = (user) => {
     setUserData(user)
+    // Store user data in sessionStorage for session persistence
+    sessionStorage.setItem('millOwnerData', JSON.stringify(user))
     setUserFlowState('dashboard')
+  }
+
+  // Handle admin logout
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem('adminData');
+    setAdminData(null);
+    setUserFlowState('home');
   }
 
   // Handle successful admin login
@@ -146,7 +136,6 @@ function App() {
     setAdminData(data)
     setUserFlowState('adminDashboard')
   }
-
 
   // Handle PMB registration completion
   const handlePMBRegistrationComplete = (registrationData) => {
@@ -285,9 +274,9 @@ function App() {
   // (removed) scroll speed preference control
 
   return (
-    <div className="min-h-screen bg-white relative">
-  
-      {/* Render different flows based on user state */}
+    <Router>
+      <div className="min-h-screen bg-white relative">
+        {/* Render different flows based on user state */}
       {userFlowState === 'auth' && (
         <AuthPage 
           onAuthSuccess={handleAuthSuccess}
@@ -296,7 +285,7 @@ function App() {
       )}
       
       {userFlowState === 'dashboard' && userData && (
-        <Dashboard userData={userData} onBackToHome={() => setUserFlowState('home')} />
+        <MillLayout userData={userData} onBackToHome={() => setUserFlowState('home')} />
       )}
       {userFlowState === 'adminDashboard' && adminData && (
         <AdminDashboard adminData={adminData} onLogout={handleAdminLogout} />
@@ -436,17 +425,11 @@ function App() {
           }}
         />
       )}
-      </>
-      )}
-    </div>
+        </>
+        )}
+      </div>
+    </Router>
   )
 }
 
 export default App
-// ...existing code...
-
-// ...removed duplicate export...
-
-
-// ...existing code...
-

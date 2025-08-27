@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const MillViewStock = () => {
+const MillViewStock = ({ userData }) => {
   // Dummy stock data (quantity in kg)
   const stockData = [
     { farmerId: "F001", farmerName: "Kamal Perera", paddyType: "Samba", condition: "Dry", quantity: 1500, date: "2025-08-06" },

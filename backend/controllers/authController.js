@@ -175,4 +175,23 @@ const getProfile = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getProfile };
+const logout = async (req, res) => {
+  try {
+    // For JWT-based auth, we don't need to do anything server-side
+    // since JWTs are stateless. The client will remove the token.
+    // This endpoint mainly serves to validate the user is authenticated
+    // and provide a proper logout response.
+    
+    res.json({
+      message: 'Logout successful'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      message: 'Server error during logout',
+      error: error.message
+    });
+  }
+};
+
+module.exports = { register, login, getProfile, logout };

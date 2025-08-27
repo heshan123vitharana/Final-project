@@ -3,7 +3,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
 // Payment History page component for Mill Dashboard
-const MillPayment = () => {
+const MillPayment = ({ userData }) => {
   // State for date filter input
   const [dateFilter, setDateFilter] = useState("");
 

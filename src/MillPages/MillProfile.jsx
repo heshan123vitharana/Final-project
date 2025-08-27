@@ -9,7 +9,7 @@ import {
 } from "react-icons/ai";
 
 // Mill Profile page component for Mill Dashboard
-const MillProfile = () => {
+const MillProfile = ({ userData }) => {
   // Initial empty profile structure
   const emptyProfile = {
     firstName: "",
@@ -47,8 +47,26 @@ const MillProfile = () => {
       const parsed = JSON.parse(savedProfile);
       setFormData(parsed);
       setOriginalData(parsed);
+    } else if (userData) {
+      // Initialize with userData if no saved profile exists
+      const initialData = {
+        firstName: userData.first_name || "",
+        lastName: userData.last_name || "",
+        email: userData.email || "",
+        contactNumber: userData.phone || "",
+        address: "",
+        city: "",
+        state: "",
+        millName: userData.business_name || "",
+        millCapacity: "",
+        millLocation: "",
+        profilePhoto: "",
+        password: "",
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
     }
-  }, []);
+  }, [userData]);
 
   // Handle changes in profile form fields
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });

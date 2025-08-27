@@ -1,6 +1,5 @@
 
 /* Import Tailwind CSS base styles */
-@import "tailwindcss";
 
 /* Fade-in animation keyframes */
 @keyframes fade-in {

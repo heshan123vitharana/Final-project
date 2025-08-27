@@ -8,7 +8,7 @@ const dummyHistory = [
   { id: 4, date: '2025-08-01', status: 'Approved' },
 ];
 
-const MillRegistration = () => {
+const MillRegistration = ({ userData }) => {
   // Set page title on mount
   useEffect(() => { document.title = "Dashboard | Mill Registration"; }, []);
 

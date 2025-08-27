@@ -33,7 +33,11 @@ const LanguageSelector = () => {
 
   // Handle language change
   const handleLanguageChange = async (languageCode) => {
+    console.log('Attempting to change language to:', languageCode);
     try {
+      console.log('Current i18n language:', i18n.language);
+      console.log('Available languages:', Object.keys(i18n.store.data));
+      
       await i18n.changeLanguage(languageCode);
       
       // Update document direction if needed
@@ -41,6 +45,7 @@ const LanguageSelector = () => {
       if (selectedLang) {
         document.documentElement.dir = selectedLang.direction;
         document.documentElement.lang = languageCode;
+        console.log('Updated document language to:', languageCode);
       }
       
       setIsOpen(false);
@@ -48,9 +53,11 @@ const LanguageSelector = () => {
       // Store preference in localStorage
       localStorage.setItem('i18nextLng', languageCode);
       
-      console.log(`Language changed to: ${languageCode}`);
+      console.log(`✅ Language successfully changed to: ${languageCode}`);
+      console.log('New current language:', i18n.language);
     } catch (error) {
-      console.error('Error changing language:', error);
+      console.error('❌ Error changing language:', error);
+      console.error('i18n instance:', i18n);
     }
   };
 
