@@ -1,150 +1,77 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PageTitle from './PageTitle';
 import Card from './ui/Card';
 
 const Features = () => {
   const [activeFeature, setActiveFeature] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const [hoveredFeature, setHoveredFeature] = useState(null);
 
-  // (Animations handled globally by SectionTransition)
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
 
-  const features = [
+  // Modern Gallery Content Data
+  const galleryItems = [
     {
-      icon: (
-        <svg
-   className="w-8 h-8"
-   fill="none"
-   stroke="currentColor"
-   viewBox="0 0 24 24"
-   xmlns="http://www.w3.org/2000/svg"
-   >
-   <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-   ></path>
-   </svg>
-      ),
-      title: "Quality Assurance", 
-      description: "Premium quality rice varieties meeting international standards with rigorous testing and certification processes",
-      stats: "99.9% Quality Rate",
-      color: "emerald"
+      type: "leadership",
+      title: "Visionary Leadership",
+      subtitle: "Guiding Sri Lanka's Rice Revolution",
+      description: "Our experienced leadership team combines decades of agricultural expertise with modern innovation to drive sustainable growth in Sri Lanka's rice industry.",
+      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&h=600&fit=crop&crop=faces",
+      stats: "50+ Years Combined Experience",
+      color: "emerald",
+      category: "Leadership"
     },
     {
-      icon: (
-        <svg
-   className="w-8 h-8"
-   fill="none"
-   stroke="currentColor"
-   viewBox="0 0 24 24"
-   xmlns="http://www.w3.org/2000/svg"
-   >
-   <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.124-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.124-1.283.356-1.857m0 0a3.001 3.001 0 015.288 0M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-   ></path>
-   </svg>
-      ),
-      title: "Direct from Farmers",
-      description: "Supporting local farmers through fair trade practices and sustainable agricultural development programs",
-      stats: "1M+ Farmers",
-      color: "green"
+      type: "art",
+      title: "Heritage & Culture",
+      subtitle: "Celebrating Rice Farming Traditions",
+      description: "Honoring the rich cultural heritage of Sri Lankan rice farming through traditional practices merged with contemporary agricultural science.",
+      image: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&h=600&fit=crop",
+      stats: "2000+ Years of Tradition",
+      color: "amber",
+      category: "Heritage"
     },
     {
-      icon: (
-        <svg
-   className="w-8 h-8"
-   fill="none"
-   stroke="currentColor"
-   viewBox="0 0 24 24"
-   xmlns="http://www.w3.org/2000/svg"
-   >
-   <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-   ></path>
-   <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-   ></path>
-   </svg>
-      ),
-      title: "Island-wide Network",
-      description: "Efficient delivery network covering all 25 districts with advanced logistics and tracking systems",
-      stats: "25 Districts",
-      color: "teal"
+      type: "innovation",
+      title: "Digital Transformation",
+      subtitle: "Technology Meets Agriculture",
+      description: "Revolutionary digital solutions transforming how we manage, process, and distribute rice across the island nation.",
+      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=600&fit=crop",
+      stats: "100% Digital Platform",
+      color: "blue",
+      category: "Innovation"
     },
     {
-      icon: (
-        <svg
-   className="w-8 h-8"
-   fill="none"
-   stroke="currentColor"
-   viewBox="0 0 24 24"
-   xmlns="http://www.w3.org/2000/svg"
-   >
-   <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-   ></path>
-   </svg>
-      ),
-      title: "Competitive Pricing",
-      description: "Fair and transparent pricing model ensuring value for money while supporting farmer livelihoods",
-      stats: "Best Value",
-      color: "blue"
+      type: "community",
+      title: "Farmer Community",
+      subtitle: "Empowering Agricultural Excellence",
+      description: "Building strong relationships with farming communities to ensure sustainable livelihoods and premium quality rice production.",
+      image: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&h=600&fit=crop",
+      stats: "10,000+ Active Farmers",
+      color: "green",
+      category: "Community"
     },
     {
-      icon: (
-        <svg
-   className="w-8 h-8"
-   fill="none"
-   stroke="currentColor"
-   viewBox="0 0 24 24"
-   xmlns="http://www.w3.org/2000/svg"
-   >
-   <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-   ></path>
-   </svg>
-      ),
-      title: "Modern Facilities",
-      description: "State-of-the-art collection centers and processing facilities equipped with latest technology",
-      stats: "200+ Centers",
-      color: "purple"
+      type: "sustainability",
+      title: "Sustainable Practices",
+      subtitle: "Environmental Stewardship",
+      description: "Implementing eco-friendly farming methods and sustainable practices to protect our environment for future generations.",
+      image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&h=600&fit=crop",
+      stats: "Carbon Neutral by 2030",
+      color: "teal",
+      category: "Sustainability"
     },
     {
-      icon: (
-        <svg
-   className="w-8 h-8"
-   fill="none"
-   stroke="currentColor"
-   viewBox="0 0 24 24"
-   xmlns="http://www.w3.org/2000/svg"
-   >
-   <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="2"
-    d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
-   ></path>
-   </svg>
-      ),
-      title: "Digital Innovation",
-      description: "Cutting-edge technology solutions including mobile apps, IoT sensors, and blockchain traceability",
-      stats: "100% Digital",
-      color: "indigo"
+      type: "quality",
+      title: "Premium Quality",
+      subtitle: "Excellence in Every Grain",
+      description: "Rigorous quality control processes ensuring every grain meets international standards for nutrition and taste.",
+      image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&h=600&fit=crop",
+      stats: "99.9% Quality Assurance",
+      color: "purple",
+      category: "Quality"
     }
   ];
 
@@ -152,231 +79,175 @@ const Features = () => {
     const colorMap = {
       emerald: {
         bg: 'from-emerald-500 to-emerald-600',
-        border: 'border-emerald-200',
+        bgLight: 'from-emerald-50 to-emerald-100',
         text: 'text-emerald-600',
-        hover: 'hover:border-emerald-300'
+        textLight: 'text-emerald-50',
+        border: 'border-emerald-200',
+        accent: 'bg-emerald-500'
       },
       green: {
         bg: 'from-green-500 to-green-600',
-        border: 'border-green-200',
+        bgLight: 'from-green-50 to-green-100',
         text: 'text-green-600',
-        hover: 'hover:border-green-300'
+        textLight: 'text-green-50',
+        border: 'border-green-200',
+        accent: 'bg-green-500'
       },
       teal: {
         bg: 'from-teal-500 to-teal-600',
-        border: 'border-teal-200',
+        bgLight: 'from-teal-50 to-teal-100',
         text: 'text-teal-600',
-        hover: 'hover:border-teal-300'
+        textLight: 'text-teal-50',
+        border: 'border-teal-200',
+        accent: 'bg-teal-500'
       },
       blue: {
         bg: 'from-blue-500 to-blue-600',
-        border: 'border-blue-200',
+        bgLight: 'from-blue-50 to-blue-100',
         text: 'text-blue-600',
-        hover: 'hover:border-blue-300'
+        textLight: 'text-blue-50',
+        border: 'border-blue-200',
+        accent: 'bg-blue-500'
       },
       purple: {
         bg: 'from-purple-500 to-purple-600',
-        border: 'border-purple-200',
+        bgLight: 'from-purple-50 to-purple-100',
         text: 'text-purple-600',
-        hover: 'hover:border-purple-300'
+        textLight: 'text-purple-50',
+        border: 'border-purple-200',
+        accent: 'bg-purple-500'
       },
-      indigo: {
-        bg: 'from-indigo-500 to-indigo-600',
-        border: 'border-indigo-200',
-        text: 'text-indigo-600',
-        hover: 'hover:border-indigo-300'
+      amber: {
+        bg: 'from-amber-500 to-amber-600',
+        bgLight: 'from-amber-50 to-amber-100',
+        text: 'text-amber-600',
+        textLight: 'text-amber-50',
+        border: 'border-amber-200',
+        accent: 'bg-amber-500'
       }
     };
     return colorMap[color] || colorMap.emerald;
   };
 
   return (
-    <section id="features" className="relative min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 overflow-hidden py-24">
-      {/* Professional Background Elements */}
+    <section id="features" className="relative min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50/30 overflow-hidden py-24">
+      {/* Very Light Background Elements */}
       <div className="absolute inset-0">
-        {/* Clean gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-50/50 to-emerald-50/30"></div>
+        {/* Ultra light gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/20 via-white/80 to-emerald-50/15"></div>
         
-        {/* Subtle geometric shapes */}
-        <div className="absolute top-20 right-20 w-96 h-96 bg-gradient-to-br from-emerald-100/20 to-green-100/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-green-100/15 to-teal-100/10 rounded-full blur-3xl"></div>
+        {/* Very subtle floating elements */}
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-100/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-emerald-100/8 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gray-100/5 rounded-full blur-3xl animate-pulse delay-2000" style={{ animationDuration: '8s' }}></div>
         
-        {/* Professional grid lines */}
-        <div className="absolute inset-0 opacity-[0.01]">
+        {/* Almost invisible grid pattern */}
+        <div className="absolute inset-0 opacity-[0.008]">
           <div className="w-full h-full" style={{
-            backgroundImage: `linear-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(6, 182, 212, 0.1) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(rgba(16, 185, 129, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 185, 129, 0.05) 1px, transparent 1px)`,
             backgroundSize: '100px 100px'
           }}></div>
         </div>
       </div>
 
-  <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-        {/* Page Title Component */}
-        <PageTitle 
-          subtitle="Our Core Services"
-          title="Excellence in Every Service We Provide"
-          description="Discover our comprehensive ecosystem of services designed to transform Sri Lanka's rice industry through innovation, quality, and sustainable practices."
-          className="bg-gradient-to-br from-emerald-500/5 via-green-500/3 to-teal-500/5 mb-8"
-          titleClassName="professional-title enhanced-text-display responsive-title-text"
-          subtitleClassName="professional-subtitle responsive-subtitle-text"
-          descriptionClassName="professional-description enhanced-text-display responsive-description-text"
-        />
+      <div className="relative z-10 max-w-7xl mx-auto px-6">
+        {/* Platform Excellence Header */}
+        <div className={`text-center mb-20 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+          <div className="inline-flex items-center bg-gradient-to-r from-emerald-600/10 to-blue-600/10 backdrop-blur-sm rounded-full px-8 py-4 mb-8 border border-emerald-200/30">
+            <span className="text-emerald-700 font-semibold text-sm tracking-wide">🌾 PADDY EXCELLENCE</span>
+          </div>
+          <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
+            Heritage, Leadership & 
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600">Agricultural Excellence</span>
+          </h1>
+          <p className="text-gray-600 text-xl max-w-3xl mx-auto leading-relaxed">
+            Discover our commitment to preserving Sri Lankan rice farming traditions while embracing 
+            modern leadership and innovative agricultural practices that define our excellence.
+          </p>
+        </div>
 
-        {/* Interactive Features Showcase */}
-        <div className="grid lg:grid-cols-3 gap-12 items-start mb-20">
-          {/* Features List */}
-          <div className="lg:col-span-1 space-y-4">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Service Categories</h3>
-            {features.map((feature, index) => {
-              const colors = getColorClasses(feature.color);
-              return (
-                <div
-                  key={index}
-                  onClick={() => setActiveFeature(index)}
-                  className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
-                    activeFeature === index
-                      ? `${colors.border} bg-gradient-to-r ${colors.bg} bg-opacity-5 shadow-lg`
-                      : `border-gray-200 hover:border-gray-300 bg-white`
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      activeFeature === index 
-                        ? `bg-gradient-to-r ${colors.bg} text-white` 
-                        : `bg-gray-100 text-gray-600`
-                    } transition-all duration-300`}>
-                      {feature.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className={`font-semibold ${
-                        activeFeature === index ? colors.text : 'text-gray-900'
-                      } transition-colors duration-300`}>
-                        {feature.title}
-                      </h4>
-                      <div className="text-sm text-gray-500 mt-1">{feature.stats}</div>
+        {/* Modern Masonry Gallery Layout */}
+        <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
+          {galleryItems.map((item, index) => {
+            const colors = getColorClasses(item.color);
+            const isLarge = index % 4 === 0; // Make every 4th item larger
+            
+            return (
+              <div
+                key={index}
+                className={`group relative break-inside-avoid mb-8 overflow-hidden rounded-2xl bg-white shadow-xl hover:shadow-2xl transition-all duration-700 hover:-translate-y-3 cursor-pointer ${
+                  isLarge ? 'lg:col-span-2' : ''
+                }`}
+                style={{ 
+                  animationDelay: `${index * 150}ms`,
+                }}
+              >
+                {/* Image Container with Overlay */}
+                <div className="relative overflow-hidden">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-64 md:h-80 object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  
+                  {/* Gradient Overlay */}
+                  <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent group-hover:from-black/70 transition-all duration-500`}></div>
+                  
+                  {/* Category Badge */}
+                  <div className="absolute top-4 left-4">
+                    <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wide rounded-full ${colors.accent} ${colors.textLight} shadow-lg`}>
+                      {item.category}
+                    </span>
+                  </div>
+                  
+                  {/* Stats Badge */}
+                  <div className="absolute top-4 right-4">
+                    <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
+                      <span className={`text-xs font-semibold ${colors.text}`}>
+                        {item.stats}
+                      </span>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Active Feature Display */}
-          <div className="lg:col-span-2">
-            <Card className="bg-white rounded-3xl p-8 shadow-xl border-gray-100">
-              <div className="flex items-start gap-6 mb-8">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-r ${getColorClasses(features[activeFeature].color).bg} text-white shadow-lg`}>
-                  {features[activeFeature].icon}
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                    {features[activeFeature].title}
+                
+                {/* Content Section */}
+                <div className="p-6 md:p-8">
+                  {/* Subtitle */}
+                  <p className={`text-sm font-medium ${colors.text} mb-2 tracking-wide uppercase`}>
+                    {item.subtitle}
+                  </p>
+                  
+                  {/* Title */}
+                  <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 group-hover:text-gray-800 transition-colors leading-tight">
+                    {item.title}
                   </h3>
-                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${getColorClasses(features[activeFeature].color).text} bg-gradient-to-r ${getColorClasses(features[activeFeature].color).bg} bg-opacity-10`}>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                    {features[activeFeature].stats}
+                  
+                  {/* Description */}
+                  <p className="text-gray-600 leading-relaxed mb-6 text-sm md:text-base">
+                    {item.description}
+                  </p>
+                  
+                  {/* Action Area */}
+                  <div className="flex items-center justify-between">
+                    <button className={`flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${colors.bg} text-white rounded-xl font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg`}>
+                      <span>Explore</span>
+                      <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </button>
+                    
+                    {/* Type Indicator */}
+                    <div className={`w-3 h-3 rounded-full ${colors.accent} animate-pulse`}></div>
                   </div>
                 </div>
+                
+                {/* Hover Effect Overlay */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${colors.bg} opacity-0 group-hover:opacity-5 transition-all duration-500 pointer-events-none`}></div>
               </div>
-              
-              <p className="text-lg text-gray-600 leading-relaxed mb-8">
-                {features[activeFeature].description}
-              </p>
-
-              {/* Feature Benefits */}
-              <div className="grid grid-cols-2 gap-4">
-                <Card className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border-gray-100">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span className="font-semibold text-gray-900">Reliability</span>
-                  </div>
-                  <p className="text-sm text-gray-600">Consistent service delivery</p>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border-gray-100">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7" />
-                      </svg>
-                    </div>
-                    <span className="font-semibold text-gray-900">Innovation</span>
-                  </div>
-                  <p className="text-sm text-gray-600">Latest technology integration</p>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border-gray-100">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <span className="font-semibold text-gray-900">24/7 Support</span>
-                  </div>
-                  <p className="text-sm text-gray-600">Round-the-clock assistance</p>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-gray-50 to-white p-4 rounded-xl border-gray-100">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <span className="font-semibold text-gray-900">Quality</span>
-                  </div>
-                  <p className="text-sm text-gray-600">Premium standards guaranteed</p>
-                </Card>
-              </div>
-            </Card>
-          </div>
+            );
+          })}
         </div>
 
-        {/* Bottom CTA Section */}
-        <div className="relative bg-gradient-to-r from-emerald-600 to-green-600 rounded-3xl overflow-hidden">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="w-full h-full" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10zm10 0c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10 10-4.5 10-10z'/%3E%3C/g%3E%3C/svg%3E")`,
-              backgroundSize: '40px 40px'
-            }}></div>
-          </div>
-
-          <div className="relative px-12 py-16 text-center">
-            <h3 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Experience World-Class Rice Services
-            </h3>
-            <p className="text-xl text-emerald-100 mb-8 max-w-2xl mx-auto">
-              Join our platform and discover why we're Sri Lanka's most trusted rice marketing board. 
-              Quality, innovation, and service excellence in every interaction.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="group bg-white text-emerald-600 font-semibold px-8 py-4 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                  Get Started Today
-                </span>
-              </button>
-              <button className="border-2 border-white text-white font-semibold px-8 py-4 rounded-2xl hover:bg-white hover:text-emerald-600 transition-all duration-300">
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Learn More
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );

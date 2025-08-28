@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Header from './components/Header'
 import HeroSection from './components/HeroSection'
 import About from './components/About-New'
-import Features from './components/Features-Enhanced'
+import Features from './components/Features'
 import CollectionCenters from './components/CollectionCenters'
 import LivePaddyPrices from './components/LivePaddyPrices'
 import Contact from './components/Contact'
@@ -94,11 +94,11 @@ function App() {
   
   const [sectionsVisible, setSectionsVisible] = useState({
     home: true,
-    about: false,
-  features: true,
-  'collection-centers': false,
-  'live-paddy-prices': false,
-  contact: false
+    about: true,
+    features: true,
+    'collection-centers': true,
+    'live-paddy-prices': true,
+    contact: true
   })
 
   // Check for existing user session on app load
