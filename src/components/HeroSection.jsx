@@ -14,7 +14,7 @@ import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from '../ut
  * - Manual slide control with dots
  * - Responsive design optimized for all devices
  */
-const HeroSection = () => {
+const HeroSection = ({ onNavigate }) => {
   // State to track the currently active background image
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
@@ -221,70 +221,6 @@ const HeroSection = () => {
           <p className="text-base md:text-xl text-white/85 mt-3 leading-relaxed animate-fade-in">
             {currentSlide.description}
           </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center md:items-start">
-              <button 
-                onClick={() => {
-                  // Add click feedback
-                  console.log('Explore Services button clicked');
-                  
-                  // Navigate to platform features section (About page)
-                  const aboutSection = document.getElementById('platform-features-section');
-                  if (aboutSection) {
-                    console.log('About section found, scrolling...');
-                    const headerHeight = getHeaderHeight(80);
-                    scrollIntoViewWithOffset(aboutSection, headerHeight);
-                  } else {
-                    console.log('About section not found, trying alternative...');
-                    // Try alternative section ID
-                    const altSection = document.getElementById('about');
-                    if (altSection) {
-                      const headerHeight = getHeaderHeight(80);
-                      scrollIntoViewWithOffset(altSection, headerHeight);
-                    } else {
-                      // Scroll to approximate position
-                      smoothScrollTo(window.innerHeight * 1.2);
-                    }
-                  }
-                }}
-                  className="group relative overflow-hidden text-white px-6 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 w-full sm:w-auto flex items-center justify-center gap-2.5 min-w-[180px] bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 shadow-md">
-                <div className="relative z-10 p-2 bg-white/10 rounded-full group-hover:bg-white/20 transition-all duration-300">
-                  <svg className="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <span className="relative z-10">Explore Services</span>
-                <svg className="w-4 h-4 relative z-10 opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-              {/* Secondary CTA - Collection Centers scroll */}
-              <button
-                onClick={() => {
-                  console.log('Collection Centers button clicked');
-                  const el = document.getElementById('collection-centers');
-                  if (el) {
-                    console.log('Collection Centers section found, scrolling...');
-                    const headerHeight = getHeaderHeight(80);
-                    scrollIntoViewWithOffset(el, headerHeight);
-                  } else {
-                    console.log('Collection Centers section not found');
-                    // Scroll to approximate position if section not found
-                    smoothScrollTo(window.innerHeight * 2);
-                  }
-                }}
-                  className="group relative overflow-hidden px-6 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 w-full sm:w-auto flex items-center justify-center gap-2.5 min-w-[180px] border border-white/30 text-white bg-white/10 hover:bg-white/15"
-              >
-                <div className="relative z-10 p-2 bg-white/20 rounded-full group-hover:bg-white/30 transition-all duration-300">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
-                <span className="relative z-10">Collection Centers</span>
-                <svg className="w-4 h-4 relative z-10 opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
         </div>
       </div>
     );

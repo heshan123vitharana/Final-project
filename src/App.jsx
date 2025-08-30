@@ -321,7 +321,7 @@ function App() {
         {/* Hero Section with enhanced animations */}
         <section id="home" className="relative">
           <SectionTransition trigger={sectionsVisible.home} direction="up">
-            <HeroSection />
+            <HeroSection onNavigate={handleNavigation} />
           </SectionTransition>
         </section>
         
