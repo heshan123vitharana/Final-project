@@ -236,8 +236,13 @@ export default function AboutNew() {
                     {/* Action Button */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500">
                       <button 
-                        onClick={() => openImageModal(img, idx)}
-                        className="bg-white/95 backdrop-blur-sm text-gray-900 px-6 py-3 rounded-xl font-semibold shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-2"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('View button clicked for image:', idx);
+                          openImageModal(img, idx);
+                        }}
+                        className="bg-white/95 backdrop-blur-sm text-gray-900 px-6 py-3 rounded-xl font-semibold shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-2 z-20"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -305,7 +310,7 @@ export default function AboutNew() {
       {/* Simple Image Modal for Testing */}
       {selectedImage && (
         <div 
-          className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 z-50 flex items-center justify-center"
+          className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-90 z-[9999] flex items-center justify-center"
           onClick={closeImageModal}
         >
           {/* Close Button */}
