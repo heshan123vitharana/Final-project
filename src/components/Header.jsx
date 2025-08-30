@@ -140,7 +140,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
       isScrolled ? 'bg-white shadow-lg border-b border-gray-200' : 'bg-white/95 backdrop-blur-md border-b border-gray-100'
     }`}>
       {/* AWS-style Top Info Bar */}
-      <div className={`bg-slate-900 text-white text-center relative overflow-hidden ${isScrolled ? 'py-1' : 'py-2'}`}>
+      <div className={`bg-slate-900 text-white text-center relative overflow-hidden ${isScrolled ? 'py-0.5' : 'py-1'}`}>
         <div className="container mx-auto px-4 flex items-center justify-between text-sm">
           <div className="flex items-center space-x-6">
             <span className="flex items-center">
@@ -168,15 +168,15 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
       </div>
 
       {/* AWS-style Main Header */}
-      <div className={`container mx-auto px-4 ${isScrolled ? 'py-3' : 'py-4'}`}>
+      <div className={`container mx-auto px-4 ${isScrolled ? 'py-2' : 'py-3'}`}>
         <div className="flex items-center justify-between">
           {/* AWS-style Logo Section */}
           <div className="flex items-center space-x-3">
-            <div className={`flex items-center justify-center ${isScrolled ? 'w-10 h-10' : 'w-12 h-12'}`}>
+            <div className={`flex items-center justify-center ${isScrolled ? 'w-14 h-14' : 'w-16 h-16'}`}>
               <img 
                 src={logoP} 
                 alt="PMB Logo" 
-                className={`object-contain ${isScrolled ? 'w-8 h-8' : 'w-10 h-10'}`}
+                className={`object-contain ${isScrolled ? 'w-12 h-12' : 'w-14 h-14'}`}
               />
             </div>
             <div className="leading-tight">
@@ -261,22 +261,6 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
             <div className="flex items-center space-x-4 ml-8">
               <LanguageSelector />
               
-              {/* Search Icon */}
-              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200" title="Search">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-              
-              {/* Notifications Icon */}
-              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 relative" title="Notifications">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM11 3.055A9.001 9.001 0 0020.945 13H11V3.055z" />
-                </svg>
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
-                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                </span>
-              </button>
               
               {/* Enhanced Mill Owner Portal Button */}
               <button

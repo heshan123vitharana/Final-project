@@ -1,6 +1,6 @@
 const Footer = () => {
   return (
-    <footer className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-emerald-900 text-white overflow-hidden">
+    <footer className="relative gov-footer text-white overflow-hidden">
       {/* Professional Background Elements */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-emerald-600/5 via-transparent to-green-600/10"></div>

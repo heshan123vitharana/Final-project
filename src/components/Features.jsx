@@ -130,7 +130,7 @@ const Features = () => {
   };
 
   return (
-    <section id="features" className="relative min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50/30 overflow-hidden py-24">
+    <section id="features" className="relative min-h-screen gov-section-bg overflow-hidden py-24">
       {/* Very Light Background Elements */}
       <div className="absolute inset-0">
         {/* Ultra light gradient overlay */}
@@ -151,18 +151,18 @@ const Features = () => {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6">
-        {/* Platform Excellence Header */}
+        {/* Government Excellence Header */}
         <div className={`text-center mb-20 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <div className="inline-flex items-center bg-gradient-to-r from-emerald-600/10 to-blue-600/10 backdrop-blur-sm rounded-full px-8 py-4 mb-8 border border-emerald-200/30">
-            <span className="text-emerald-700 font-semibold text-sm tracking-wide">🌾 PADDY EXCELLENCE</span>
+          <div className="gov-badge mb-8">
+            <span className="text-gov-primary font-semibold text-sm tracking-wide">🏛️ GOVERNMENT EXCELLENCE</span>
           </div>
-          <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-            Heritage, Leadership & 
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600">Agricultural Excellence</span>
+          <h1 className="gov-heading-xl mb-8">
+            Paddy Marketing Board
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-gov-primary via-gov-secondary to-gov-accent">Services & Excellence</span>
           </h1>
-          <p className="text-gray-600 text-xl max-w-3xl mx-auto leading-relaxed">
-            Discover our commitment to preserving Sri Lankan rice farming traditions while embracing 
-            modern leadership and innovative agricultural practices that define our excellence.
+          <p className="gov-text-secondary text-xl max-w-3xl mx-auto leading-relaxed">
+            Discover our commitment to serving Sri Lankan farmers and citizens through professional government 
+            services, quality assurance, and agricultural excellence backed by decades of expertise.
           </p>
         </div>
 
@@ -175,7 +175,7 @@ const Features = () => {
             return (
               <div
                 key={index}
-                className={`group relative break-inside-avoid mb-8 overflow-hidden rounded-2xl bg-white shadow-xl hover:shadow-2xl transition-all duration-700 hover:-translate-y-3 cursor-pointer ${
+                className={`gov-card group relative break-inside-avoid mb-8 overflow-hidden cursor-pointer hover:-translate-y-3 ${
                   isLarge ? 'lg:col-span-2' : ''
                 }`}
                 style={{ 

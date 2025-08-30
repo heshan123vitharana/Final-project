@@ -121,24 +121,25 @@ const HeroSection = () => {
   const currentSlide = backgroundImages[currentImageIndex];
 
   return (
-    <section className="relative h-[100svh] flex items-center overflow-hidden overscroll-none">
+    <section className="relative h-[100svh] flex items-center overflow-hidden overscroll-none bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Background Image Carousel */}
       {renderBackgroundImages()}
       
-      {/* Overlay for better text readability */}
-      {renderOverlay()}
+      {/* Professional Overlay for better text readability */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 via-transparent to-blue-900/10 z-20" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent z-20" />
       
-      {/* Decorative floating elements */}
-      {renderFloatingDecorations()}
+      {/* Modern Decorative Elements */}
+      {renderModernDecorations()}
       
-      {/* Main content area */}
-      {renderMainContent()}
+      {/* Enhanced Main Content */}
+      {renderEnhancedMainContent()}
       
-      {/* Navigation dots */}
-      {renderNavigationDots()}
+      {/* Professional Navigation Dots */}
+      {renderProfessionalNavigationDots()}
       
-      {/* Scroll indicator */}
-      {renderScrollIndicator()}
+      {/* Modern Scroll Indicator */}
+      {renderModernScrollIndicator()}
     </section>
   );
 
@@ -193,10 +194,23 @@ const HeroSection = () => {
   }
 
   /**
-   * Renders the main content area with dynamic text
-   * @returns {JSX.Element} Main content section
+   * Renders modern decorative elements
    */
-  function renderMainContent() {
+  function renderModernDecorations() {
+    return (
+      <div className="absolute inset-0 z-10 pointer-events-none">
+        {/* Modern geometric shapes */}
+        <div className="absolute top-20 right-10 w-20 h-20 bg-blue-400/10 rounded-full animate-float" />
+        <div className="absolute bottom-32 left-8 w-16 h-16 bg-emerald-400/10 rounded-lg rotate-45 animate-float" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 right-20 w-12 h-12 bg-amber-400/10 rounded-full animate-float" style={{ animationDelay: '2s' }} />
+      </div>
+    );
+  }
+
+  /**
+   * Renders enhanced main content with modern design
+   */
+  function renderEnhancedMainContent() {
     return (
   <div className="container mx-auto px-6 relative z-10 h-full flex items-center md:items-start justify-center md:justify-start pt-6 sm:pt-8 md:pt-24 lg:pt-32 xl:pt-36">
         <div className="max-w-4xl w-full text-center md:text-left mx-auto md:mx-0">
@@ -307,15 +321,49 @@ const HeroSection = () => {
   }
 
   /**
-   * Renders the scroll indicator
-   * @returns {JSX.Element} Scroll indicator
+   * Renders professional navigation dots for manual slide control
    */
-  function renderScrollIndicator() {
+  function renderProfessionalNavigationDots() {
     return (
-      <div className="absolute bottom-8 right-8 text-white animate-bounce z-20 scroll-indicator">
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-        </svg>
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 z-30">
+        {backgroundImages.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => handleSlideNavigation(index)}
+            className={`group relative w-3 h-3 transition-all duration-300 ${
+              index === currentImageIndex 
+                ? 'scale-110' 
+                : 'hover:scale-105'
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+          >
+            <div className={`w-full h-full rounded-full transition-all duration-300 ${
+              index === currentImageIndex
+                ? 'bg-white shadow-lg ring-2 ring-white/50'
+                : 'bg-white/40 hover:bg-white/60'
+            }`} />
+            {index === currentImageIndex && (
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 to-emerald-400 opacity-80 animate-pulse" />
+            )}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  /**
+   * Renders modern scroll indicator
+   */
+  function renderModernScrollIndicator() {
+    return (
+      <div className="absolute bottom-8 right-8 z-30">
+        <div className="group cursor-pointer animate-bounce">
+          <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center group-hover:bg-white/20 transition-all duration-300">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          </div>
+        </div>
       </div>
     );
   }
