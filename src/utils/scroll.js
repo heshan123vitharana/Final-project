@@ -1,6 +1,6 @@
 // Smooth scrolling utilities with easing and header offset support
 
-export function getHeaderHeight(defaultHeight = 80) {
+export function getHeaderHeight(defaultHeight = 100) {
   const headerEl = typeof document !== 'undefined' ? document.querySelector('header') : null;
   return headerEl ? headerEl.offsetHeight : defaultHeight;
 }

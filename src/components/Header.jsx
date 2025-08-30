@@ -5,13 +5,44 @@ import logoP from '../assets/logo-p.png';
 const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistrationClick = () => {}, onAdminClick = () => {} }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
   const navigationItems = [
-    { name: 'HOME', id: 'home', icon: '🏠' },
-    { name: 'ABOUT', id: 'platform-features-section', icon: 'ℹ️' },
-    { name: 'COLLECTION CENTERS', id: 'collection-centers', icon: '🏢' },
-    { name: 'LIVE PRICES', id: 'live-paddy-prices', icon: '💰' },
-    { name: 'CONTACT', id: 'contact', icon: '📞' }
+    { 
+      name: 'Products', 
+      id: 'products',
+      hasDropdown: true,
+      items: [
+        { name: 'Paddy Purchase', description: 'Direct paddy procurement services', icon: '🌾' },
+        { name: 'Storage Solutions', description: 'Modern storage facilities', icon: '🏪' },
+        { name: 'Distribution', description: 'Island-wide distribution network', icon: '🚛' },
+        { name: 'Quality Control', description: 'Advanced quality assurance', icon: '✅' }
+      ]
+    },
+    { 
+      name: 'Services', 
+      id: 'services',
+      hasDropdown: true,
+      items: [
+        { name: 'Mill Registration', description: 'Register your mill with PMB', icon: '🏭' },
+        { name: 'Price Information', description: 'Live paddy price updates', icon: '💰' },
+        { name: 'Collection Centers', description: 'Find nearest collection points', icon: '📍' },
+        { name: 'Support', description: '24/7 farmer support services', icon: '🤝' }
+      ]
+    },
+    { 
+      name: 'Resources', 
+      id: 'resources',
+      hasDropdown: true,
+      items: [
+        { name: 'Documentation', description: 'Guides and procedures', icon: '📚' },
+        { name: 'Training', description: 'Educational programs', icon: '🎓' },
+        { name: 'News & Updates', description: 'Latest announcements', icon: '📰' },
+        { name: 'Contact Support', description: 'Get help when you need it', icon: '📞' }
+      ]
+    },
+    { name: 'About', id: 'platform-features-section' },
+    { name: 'Contact', id: 'contact' }
   ];
 
   // Handle scroll effect
@@ -20,7 +51,19 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
       setIsScrolled(window.scrollY > 50);
     };
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    // Close dropdowns when clicking outside
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.dropdown-container')) {
+        setActiveDropdown(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('click', handleClickOutside);
+    };
   }, []);
 
   const handleNavClick = (sectionId) => {
@@ -93,98 +136,207 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
   // Removed handleAdminClick and onAdminClick as Admin button is no longer used
 
   return (
-    <header className={`fixed w-full z-40 top-0 transition-all duration-300 border-b ${
-      isScrolled ? 'bg-white/85 backdrop-blur-xl border-emerald-100 shadow-[0_10px_30px_-12px_rgba(16,185,129,0.15)]' : 'bg-white/95 backdrop-blur-md border-transparent'
+    <header className={`fixed w-full z-50 top-0 transition-all duration-300 ${
+      isScrolled ? 'bg-white shadow-lg border-b border-gray-200' : 'bg-white/95 backdrop-blur-md border-b border-gray-100'
     }`}>
-      {/* Enhanced Colorful Top Banner - Reduced Height */}
-  <div className={`bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 text-white text-center relative overflow-hidden ${isScrolled ? 'py-1' : 'py-1.5'}`}>
-        <div className="absolute inset-0 bg-black/10"></div>
-        <p className="text-[11px] font-medium relative z-10">
-          <span className="inline-block text-sm">🌾</span> 
-          <span className="mx-2">Serving Farmers Island-wide with Fair Paddy Procurement</span>
-          <span className="mx-4">|</span>
-          <span className="font-semibold">
-            <span className="inline-block text-sm">📞</span> 
-            <span className="ml-2">Hotline: +94 11 234 5678</span>
-          </span>
-          {/* Smallest lock icon for admin login */}
-          <button
-            title="Admin Login"
-            onClick={onAdminClick}
-            style={{ background: 'transparent', border: 'none', padding: 0, marginLeft: 8, cursor: 'pointer', verticalAlign: 'middle' }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" viewBox="0 0 24 24"><path d="M17 8V7a5 5 0 0 0-10 0v1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2zm-8-1a3 3 0 0 1 6 0v1h-6zm9 12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zm-6-3a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1z"/></svg>
-          </button>
-        </p>
+      {/* Enhanced Professional Top Info Bar */}
+      <div className={`bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden ${isScrolled ? 'py-1' : 'py-2'}`}>
+        {/* Animated background pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)',
+            backgroundSize: '20px 20px'
+          }}></div>
+        </div>
+        
+        <div className="container mx-auto px-4 flex items-center justify-between text-sm relative z-10">
+          <div className="flex items-center space-x-8">
+            <span className="flex items-center">
+              <span className="hidden sm:inline">Serving Farmers Island-wide with Fair Paddy Procurement</span>
+              <span className="sm:hidden">Serving Farmers Nationwide</span>
+            </span>
+            
+            {/* Live Status Indicator */}
+            <div className="hidden md:flex items-center space-x-2">
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+                <span className="text-xs text-green-400">Live Trading Active</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-6">
+            {/* Time Display */}
+            <div className="hidden lg:flex items-center text-xs text-gray-300">
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {new Date().toLocaleTimeString('en-US', { 
+                hour12: true, 
+                hour: 'numeric', 
+                minute: '2-digit' 
+              })} LKT
+            </div>
+            
+            <span className="flex items-center group cursor-pointer hover:text-yellow-300 transition-colors">
+              <span className="mr-2 group-hover:animate-bounce">📞</span>
+              <span className="hidden sm:inline">Hotline: +94 11 234 5678</span>
+              <span className="sm:hidden">Hotline</span>
+            </span>
+            
+            <button
+              title="Admin Login"
+              onClick={onAdminClick}
+              className="flex items-center px-3 py-1 rounded-md text-xs hover:bg-slate-700 transition-all duration-200 border border-slate-700 hover:border-slate-600 group"
+            >
+              <svg className="w-4 h-4 mr-1 group-hover:rotate-12 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17 8V7a5 5 0 0 0-10 0v1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2zm-8-1a3 3 0 0 1 6 0v1h-6zm9 12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zm-6-3a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1z"/>
+              </svg>
+              <span className="hidden sm:inline">Admin</span>
+              <span className="sm:hidden">🔐</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-    {/* Enhanced Main Header - dynamic padding for shrink */}
-  <div className={`container mx-auto px-4 ${isScrolled ? 'py-1.5' : 'py-2.5'}`}>
+      {/* AWS-style Main Header */}
+      <div className={`container mx-auto px-4 ${isScrolled ? 'py-3' : 'py-4'}`}>
         <div className="flex items-center justify-between">
-          {/* Logo Section - larger PNG with glow highlight; brand on two lines */}
-          <div className="flex items-center space-x-2">
-      <div className={`relative rounded-lg bg-gradient-to-br from-emerald-600 to-green-600 ring-1 ring-emerald-300/40 shadow-md flex items-center justify-center overflow-hidden ${isScrolled ? 'w-10 h-10 md:w-11 md:h-11' : 'w-11 h-11 md:w-12 md:h-12'}`}>
+          {/* AWS-style Logo Section */}
+          <div className="flex items-center space-x-3">
+            <div className={`flex items-center justify-center ${isScrolled ? 'w-10 h-10' : 'w-12 h-12'}`}>
               <img 
                 src={logoP} 
                 alt="PMB Logo" 
-                className="w-9 h-9 md:w-10 md:h-10 object-contain"
+                className={`object-contain ${isScrolled ? 'w-8 h-8' : 'w-10 h-10'}`}
               />
             </div>
             <div className="leading-tight">
-              <h1 className="text-sm md:text-base font-bold text-gradient-primary leading-[1.05]">
-                <span className="block">Paddy Marketing</span>
-                <span className="block">Board</span>
+              <h1 className={`font-bold text-gray-900 leading-none ${isScrolled ? 'text-lg' : 'text-xl'}`}>
+                Paddy Marketing Board
               </h1>
-              <p className="text-[10px] md:text-[11px] text-gray-600 leading-none mt-0.5">Ministry of Agriculture - Sri Lanka</p>
+              <p className="text-xs text-gray-600 mt-0.5">Ministry of Agriculture - Sri Lanka</p>
             </div>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-4">
-            <nav className="flex space-x-1">
+          {/* AWS-style Desktop Navigation */}
+          <div className="hidden lg:flex items-center space-x-1">
+            <nav className="flex items-center space-x-1">
               {navigationItems.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => handleNavClick(item.id)}
-                  className={`relative px-2.5 py-2 rounded-md font-medium text-sm transition-all duration-200 flex items-center gap-1.5 nav-btn-${item.id} ${
-                    currentPage === item.id ? 'text-emerald-700 bg-emerald-50' : 'text-gray-700 hover:text-emerald-700 hover:bg-emerald-50'
-                  }`}
-                >
-                  <span className="text-base">{item.icon}</span>
-                  {item.name}
-                  <span
-                    className={`absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full origin-left transition-transform duration-300 ease-out ${
-                      currentPage === item.id ? 'bg-emerald-600 scale-x-100' : 'bg-transparent scale-x-0'
-                    }`}
-                  />
-                </button>
+                <div key={item.name} className="relative dropdown-container">
+                  {item.hasDropdown ? (
+                    <>
+                      <button
+                        onClick={() => setActiveDropdown(activeDropdown === item.id ? null : item.id)}
+                        className={`px-4 py-3 text-sm font-medium transition-colors duration-200 flex items-center space-x-1 hover:bg-gray-50 ${
+                          activeDropdown === item.id ? 'bg-gray-50 text-orange-600' : 'text-gray-700 hover:text-gray-900'
+                        }`}
+                      >
+                        <span>{item.name}</span>
+                        <svg className={`w-4 h-4 transition-transform ${activeDropdown === item.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      
+                      {/* Enhanced AWS-style Dropdown Menu */}
+                      {activeDropdown === item.id && (
+                        <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 animate-in slide-in-from-top-5 duration-200">
+                          <div className="p-5 space-y-1">
+                            {item.items.map((subItem, index) => (
+                              <button
+                                key={index}
+                                onClick={() => {
+                                  if (subItem.name === 'Mill Registration') {
+                                    onMillRegistrationClick();
+                                  } else if (subItem.name === 'Collection Centers') {
+                                    handleNavClick('collection-centers');
+                                  } else if (subItem.name === 'Price Information') {
+                                    handleNavClick('live-paddy-prices');
+                                  } else if (subItem.name === 'Contact Support') {
+                                    handleNavClick('contact');
+                                  }
+                                  setActiveDropdown(null);
+                                }}
+                                className="w-full text-left p-4 rounded-lg hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50 transition-all duration-200 group border border-transparent hover:border-emerald-100"
+                              >
+                                <div className="flex items-start space-x-4">
+                                  <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg group-hover:bg-emerald-100 transition-colors">
+                                    <span className="text-lg group-hover:scale-110 transition-transform">{subItem.icon}</span>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors mb-1">
+                                      {subItem.name}
+                                    </div>
+                                    <div className="text-sm text-gray-600 leading-relaxed">
+                                      {subItem.description}
+                                    </div>
+                                  </div>
+                                  <svg className="w-4 h-4 text-gray-400 group-hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => handleNavClick(item.id)}
+                      className={`px-4 py-3 text-sm font-medium transition-colors duration-200 hover:bg-gray-50 ${
+                        currentPage === item.id ? 'text-orange-600 bg-gray-50' : 'text-gray-700 hover:text-gray-900'
+                      }`}
+                    >
+                      {item.name}
+                    </button>
+                  )}
+                </div>
               ))}
             </nav>
-            
-            {/* Language Selector */}
-            <LanguageSelector />
-
-            {/* Sign In Button - previously Register */}
-            <button
-              onClick={() => {
-                console.log('Header Sign In button clicked - using prop function');
-                onMillRegistrationClick();
-              }}
-              className="px-3 py-2 rounded-md font-medium text-sm transition-all duration-200 flex items-center gap-2 text-gray-700 hover:text-emerald-700 border border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50"
-            >
-              <span className="text-base">🏭</span>
-              <span className="text-[11px]">Sign In</span>
-            </button>
-            
-            {/* Admin Login Button removed as requested */}
+            {/* Enhanced Action Section */}
+            <div className="flex items-center space-x-4 ml-8">
+              <LanguageSelector />
+              
+              {/* Search Icon */}
+              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200" title="Search">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+              
+              {/* Notifications Icon */}
+              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 relative" title="Notifications">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                </svg>
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                </span>
+              </button>
+              
+              {/* AWS-style Mill Portal Button */}
+              <button
+                onClick={() => {
+                  console.log('Mill Owner Portal button clicked');
+                  onMillRegistrationClick();
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 border border-orange-500 rounded-md hover:bg-orange-600 hover:border-orange-600 transition-colors duration-200 flex items-center space-x-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m0 0h4M9 7h6m-6 4h6m-3 4h3" />
+                </svg>
+                <span>Mill Portal</span>
+              </button>
+            </div>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* AWS-style Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 mobile-menu-icon"
+            className="lg:hidden p-2 rounded-md hover:bg-gray-50 transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isMenuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
@@ -194,30 +346,114 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
           </button>
         </div>
 
-        {/* Mobile Menu */}
+        {/* AWS-style Mobile Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden mt-4 py-4 border-t border-emerald-100 space-y-4">
-            <nav className="space-y-2">
-              {navigationItems.map((item) => (
+          <div className="lg:hidden border-t border-gray-200 bg-white">
+            <div className="container mx-auto px-4 py-4">
+              <nav className="space-y-2">
+                {navigationItems.map((item) => (
+                  <div key={item.name} className="space-y-2">
+                    {item.hasDropdown ? (
+                      <>
+                        <div className="font-medium text-gray-900 px-3 py-2 border-b border-gray-100">
+                          {item.name}
+                        </div>
+                        <div className="pl-4 space-y-1">
+                          {item.items.map((subItem, index) => (
+                            <button
+                              key={index}
+                              onClick={() => {
+                                if (subItem.name === 'Mill Registration') {
+                                  onMillRegistrationClick();
+                                } else if (subItem.name === 'Collection Centers') {
+                                  handleNavClick('collection-centers');
+                                } else if (subItem.name === 'Price Information') {
+                                  handleNavClick('live-paddy-prices');
+                                } else if (subItem.name === 'Contact Support') {
+                                  handleNavClick('contact');
+                                }
+                                setIsMenuOpen(false);
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-orange-600 hover:bg-gray-50 rounded-md transition-colors flex items-center space-x-2"
+                            >
+                              <span>{subItem.icon}</span>
+                              <span>{subItem.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          handleNavClick(item.id);
+                          setIsMenuOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-md font-medium transition-colors ${
+                          currentPage === item.id ? 'text-orange-600 bg-orange-50' : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {item.name}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </nav>
+              
+              {/* Mobile Action Section */}
+              <div className="mt-6 pt-4 border-t border-gray-200 space-y-4">
+                <LanguageSelector />
+                
+                {/* Mobile Search Bar */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search services..."
+                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  />
+                  <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                
+                {/* Enhanced Mobile Mill Portal Button */}
                 <button
-                  key={item.name}
-                  onClick={() => handleNavClick(item.id)}
-                  className={`w-full text-left px-4 py-3 rounded-md font-medium transition-colors flex items-center gap-3 nav-btn-${item.id} ${
-                    currentPage === item.id ? 'bg-emerald-600 text-white' : 'text-gray-700 hover:bg-emerald-50'
-                  }`}
+                  onClick={() => {
+                    onMillRegistrationClick();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 flex items-center justify-center space-x-2 shadow-md"
                 >
-                  <span className="text-lg">{item.icon}</span>
-                  {item.name}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m0 0h4M9 7h6m-6 4h6m-3 4h3" />
+                  </svg>
+                  <span>Access Mill Portal</span>
                 </button>
-              ))}
-            </nav>
-            
-            {/* Mobile Language Selector */}
-            <div className="px-4">
-              <LanguageSelector />
+                
+                {/* Quick Access Links */}
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    onClick={() => {
+                      handleNavClick('live-paddy-prices');
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex flex-col items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-center"
+                  >
+                    <span className="text-lg mb-1">💰</span>
+                    <span className="text-xs text-gray-600">Live Prices</span>
+                  </button>
+                  <button 
+                    onClick={() => {
+                      handleNavClick('contact');
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex flex-col items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-center"
+                  >
+                    <span className="text-lg mb-1">📞</span>
+                    <span className="text-xs text-gray-600">Contact</span>
+                  </button>
+                </div>
+              </div>
             </div>
-            
-            {/* Mobile Admin Button removed as requested */}
           </div>
         )}
       </div>
