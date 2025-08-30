@@ -139,61 +139,29 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
     <header className={`fixed w-full z-50 top-0 transition-all duration-300 ${
       isScrolled ? 'bg-white shadow-lg border-b border-gray-200' : 'bg-white/95 backdrop-blur-md border-b border-gray-100'
     }`}>
-      {/* Enhanced Professional Top Info Bar */}
-      <div className={`bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden ${isScrolled ? 'py-1' : 'py-2'}`}>
-        {/* Animated background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)',
-            backgroundSize: '20px 20px'
-          }}></div>
-        </div>
-        
-        <div className="container mx-auto px-4 flex items-center justify-between text-sm relative z-10">
-          <div className="flex items-center space-x-8">
-            <span className="flex items-center">
-              <span className="hidden sm:inline">Serving Farmers Island-wide with Fair Paddy Procurement</span>
-              <span className="sm:hidden">Serving Farmers Nationwide</span>
-            </span>
-            
-            {/* Live Status Indicator */}
-            <div className="hidden md:flex items-center space-x-2">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
-                <span className="text-xs text-green-400">Live Trading Active</span>
-              </div>
-            </div>
-          </div>
-          
+      {/* AWS-style Top Info Bar */}
+      <div className={`bg-slate-900 text-white text-center relative overflow-hidden ${isScrolled ? 'py-1' : 'py-2'}`}>
+        <div className="container mx-auto px-4 flex items-center justify-between text-sm">
           <div className="flex items-center space-x-6">
-            {/* Time Display */}
-            <div className="hidden lg:flex items-center text-xs text-gray-300">
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {new Date().toLocaleTimeString('en-US', { 
-                hour12: true, 
-                hour: 'numeric', 
-                minute: '2-digit' 
-              })} LKT
-            </div>
-            
-            <span className="flex items-center group cursor-pointer hover:text-yellow-300 transition-colors">
-              <span className="mr-2 group-hover:animate-bounce">📞</span>
-              <span className="hidden sm:inline">Hotline: +94 11 234 5678</span>
-              <span className="sm:hidden">Hotline</span>
+            <span className="flex items-center">
+              <span className="mr-2"></span>
+              Serving Farmers Island-wide with Fair Paddy Procurement
             </span>
-            
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="flex items-center">
+              <span className="mr-2">📞</span>
+              Hotline: +94 11 234 5678
+            </span>
             <button
               title="Admin Login"
               onClick={onAdminClick}
-              className="flex items-center px-3 py-1 rounded-md text-xs hover:bg-slate-700 transition-all duration-200 border border-slate-700 hover:border-slate-600 group"
+              className="flex items-center px-2 py-1 rounded text-xs hover:bg-slate-800 transition-colors"
             >
-              <svg className="w-4 h-4 mr-1 group-hover:rotate-12 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M17 8V7a5 5 0 0 0-10 0v1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2zm-8-1a3 3 0 0 1 6 0v1h-6zm9 12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zm-6-3a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1z"/>
               </svg>
-              <span className="hidden sm:inline">Admin</span>
-              <span className="sm:hidden">🔐</span>
+              Admin
             </button>
           </div>
         </div>
@@ -212,7 +180,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
               />
             </div>
             <div className="leading-tight">
-              <h1 className={`font-bold text-gray-900 leading-none ${isScrolled ? 'text-lg' : 'text-xl'}`}>
+              <h1 className="text-lg font-bold text-gray-900 leading-none">
                 Paddy Marketing Board
               </h1>
               <p className="text-xs text-gray-600 mt-0.5">Ministry of Agriculture - Sri Lanka</p>
@@ -238,10 +206,10 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
                         </svg>
                       </button>
                       
-                      {/* Enhanced AWS-style Dropdown Menu */}
+                      {/* AWS-style Dropdown Menu */}
                       {activeDropdown === item.id && (
-                        <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 animate-in slide-in-from-top-5 duration-200">
-                          <div className="p-5 space-y-1">
+                        <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                          <div className="p-4 space-y-2">
                             {item.items.map((subItem, index) => (
                               <button
                                 key={index}
@@ -257,23 +225,18 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
                                   }
                                   setActiveDropdown(null);
                                 }}
-                                className="w-full text-left p-4 rounded-lg hover:bg-gradient-to-r hover:from-emerald-50 hover:to-green-50 transition-all duration-200 group border border-transparent hover:border-emerald-100"
+                                className="w-full text-left p-3 rounded-md hover:bg-gray-50 transition-colors group"
                               >
-                                <div className="flex items-start space-x-4">
-                                  <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg group-hover:bg-emerald-100 transition-colors">
-                                    <span className="text-lg group-hover:scale-110 transition-transform">{subItem.icon}</span>
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="font-semibold text-gray-900 group-hover:text-emerald-700 transition-colors mb-1">
+                                <div className="flex items-start space-x-3">
+                                  <span className="text-lg mt-0.5">{subItem.icon}</span>
+                                  <div>
+                                    <div className="font-medium text-gray-900 group-hover:text-orange-600 transition-colors">
                                       {subItem.name}
                                     </div>
-                                    <div className="text-sm text-gray-600 leading-relaxed">
+                                    <div className="text-sm text-gray-600 mt-0.5">
                                       {subItem.description}
                                     </div>
                                   </div>
-                                  <svg className="w-4 h-4 text-gray-400 group-hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
                                 </div>
                               </button>
                             ))}
@@ -308,25 +271,26 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
               {/* Notifications Icon */}
               <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors duration-200 relative" title="Notifications">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM11 3.055A9.001 9.001 0 0020.945 13H11V3.055z" />
                 </svg>
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
                   <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
                 </span>
               </button>
               
-              {/* AWS-style Mill Portal Button */}
+              {/* Enhanced Mill Owner Portal Button */}
               <button
                 onClick={() => {
                   console.log('Mill Owner Portal button clicked');
                   onMillRegistrationClick();
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 border border-orange-500 rounded-md hover:bg-orange-600 hover:border-orange-600 transition-colors duration-200 flex items-center space-x-2"
+                className="relative px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 group"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m0 0h4M9 7h6m-6 4h6m-3 4h3" />
                 </svg>
                 <span>Mill Portal</span>
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 rounded-lg transition-opacity duration-300"></div>
               </button>
             </div>
           </div>
