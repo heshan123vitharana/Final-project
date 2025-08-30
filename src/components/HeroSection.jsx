@@ -197,14 +197,7 @@ const HeroSection = () => {
    * Renders modern decorative elements
    */
   function renderModernDecorations() {
-    return (
-      <div className="absolute inset-0 z-10 pointer-events-none">
-        {/* Modern geometric shapes */}
-        <div className="absolute top-20 right-10 w-20 h-20 bg-blue-400/10 rounded-full animate-float" />
-        <div className="absolute bottom-32 left-8 w-16 h-16 bg-emerald-400/10 rounded-lg rotate-45 animate-float" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 right-20 w-12 h-12 bg-amber-400/10 rounded-full animate-float" style={{ animationDelay: '2s' }} />
-      </div>
-    );
+    return null;
   }
 
   /**

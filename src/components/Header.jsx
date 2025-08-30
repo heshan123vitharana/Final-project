@@ -290,13 +290,11 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
                   console.log('Mill Owner Portal button clicked');
                   onMillRegistrationClick();
                 }}
-                className="relative px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 group"
+                className="relative px-5 py-2 text-sm font-light text-white bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-full hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 shadow-md hover:shadow-emerald-500/50 hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105 group"
               >
-                <svg className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m0 0h4M9 7h6m-6 4h6m-3 4h3" />
-                </svg>
-                <span>Mill Portal</span>
-                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 rounded-lg transition-opacity duration-300"></div>
+                <span className="relative z-10">Mill Portal</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-white/10 opacity-0 group-hover:opacity-100 rounded-full transition-all duration-300"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-emerald-500 opacity-0 group-hover:opacity-30 rounded-full blur-md transition-all duration-300"></div>
               </button>
             </div>
           </div>
@@ -391,12 +389,11 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
                     onMillRegistrationClick();
                     setIsMenuOpen(false);
                   }}
-                  className="w-full px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 flex items-center justify-center space-x-2 shadow-md"
+                  className="relative w-full px-5 py-3 text-sm font-light text-white bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-full hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-emerald-500/50 hover:shadow-2xl transform hover:scale-105 group"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m0 0h4M9 7h6m-6 4h6m-3 4h3" />
-                  </svg>
-                  <span>Access Mill Portal</span>
+                  <span className="relative z-10">Mill Portal</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-white/10 opacity-0 group-hover:opacity-100 rounded-full transition-all duration-300"></div>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-emerald-500 opacity-0 group-hover:opacity-30 rounded-full blur-md transition-all duration-300"></div>
                 </button>
                 
                 {/* Quick Access Links */}
