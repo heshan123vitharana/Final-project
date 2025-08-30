@@ -6,6 +6,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [currentTime, setCurrentTime] = useState('');
 
   const navigationItems = [
     { 
@@ -64,6 +65,25 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
       window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('click', handleClickOutside);
     };
+  }, []);
+
+  // Update Sri Lankan time
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const sriLankanTime = now.toLocaleString('en-US', {
+        timeZone: 'Asia/Colombo',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+      setCurrentTime(sriLankanTime);
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleNavClick = (sectionId) => {
@@ -144,8 +164,10 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
         <div className="container mx-auto px-4 flex items-center justify-between text-sm">
           <div className="flex items-center space-x-6">
             <span className="flex items-center">
-              <span className="mr-2"></span>
-              Serving Farmers Island-wide with Fair Paddy Procurement
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {currentTime}
             </span>
           </div>
           <div className="flex items-center space-x-4">

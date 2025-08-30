@@ -54,8 +54,8 @@ const Contact = () => {
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-glow animate-pulse-glow">
             <span>We’re here to help</span>
           </div>
-          <h2 className="mt-6 text-4xl md:text-5xl font-bold text-gray-900 professional-title enhanced-text-display">
-            Contact Our Expert Team
+          <h2 className="mt-6 text-4xl md:text-5xl font-light text-gray-900 leading-tight tracking-tight">
+            Contact Us
           </h2>
           <p className="mt-4 text-lg md:text-xl text-gray-600 max-w-3xl mx-auto professional-description">
             Support for farmers, mill owners, and customers across Sri Lanka. Reach out for product info, collection centers, pricing, or registration help.

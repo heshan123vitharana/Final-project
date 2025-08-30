@@ -171,10 +171,7 @@ const CollectionCenters = () => {
   <div className="relative z-10 max-w-7xl mx-auto px-6">
         {/* Header Section */}
         <div className={`text-center mb-16 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <div className="inline-flex items-center bg-emerald-500/20 backdrop-blur-sm rounded-full px-6 py-3 mb-6">
-            <span className="text-emerald-200 font-semibold">🏢 Find Collection Centers</span>
-          </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl font-light text-white mb-6 leading-tight tracking-tight">
             Collection <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-400">Centers</span>
           </h1>
           <p className="text-emerald-100 text-lg max-w-2xl mx-auto">

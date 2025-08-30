@@ -152,15 +152,11 @@ const Features = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto px-6">
         {/* Government Excellence Header */}
-        <div className={`text-center mb-20 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <div className="gov-badge mb-8">
-            <span className="text-gov-primary font-semibold text-sm tracking-wide">🏛️ GOVERNMENT EXCELLENCE</span>
-          </div>
-          <h1 className="gov-heading-xl mb-8">
-            Paddy Marketing Board
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-gov-primary via-gov-secondary to-gov-accent">Services & Excellence</span>
+        <div className={`text-center mb-16 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+          <h1 className="text-4xl md:text-5xl font-light text-gray-900 mb-6 leading-tight tracking-tight">
+            Services & Excellence
           </h1>
-          <p className="gov-text-secondary text-xl max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed font-light">
             Discover our commitment to serving Sri Lankan farmers and citizens through professional government 
             services, quality assurance, and agricultural excellence backed by decades of expertise.
           </p>

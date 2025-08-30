@@ -235,8 +235,8 @@ const LivePaddyPrices = () => {
           <div className="inline-flex items-center bg-emerald-500/20 backdrop-blur-sm rounded-full px-6 py-3 mb-6">
             <span className="text-emerald-200 font-semibold">💰 Live Market Prices</span>
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            Live Paddy <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-400">Prices</span>
+          <h1 className="text-4xl md:text-5xl font-light text-white mb-6 leading-tight tracking-tight">
+            Live Paddy Prices
           </h1>
           <p className="text-emerald-100 text-lg max-w-2xl mx-auto mb-4">
             Real-time paddy collection prices across all districts in Sri Lanka

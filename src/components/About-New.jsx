@@ -147,77 +147,46 @@ export default function AboutNew() {
   }, [selectedImage, currentImageIndex]);
 
   return (
-    <section className="py-24 bg-gradient-to-br from-slate-50 via-white to-gray-50 min-h-screen">
+    <section className="py-20 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto px-6">
-        {/* Modern Leadership Section */}
+        {/* Apple-style Leadership Section */}
         <div className="relative">
-          {/* Header */}
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center bg-emerald-50 border border-emerald-200 rounded-full px-6 py-3 mb-6">
-              <span className="text-emerald-700 font-semibold text-sm tracking-wide">👥 LEADERSHIP TEAM</span>
-            </div>
-            <h2 className="text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
-              Meet Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-green-600">Leadership</span>
+          {/* Clean Header */}
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-light text-gray-900 mb-6 leading-tight tracking-tight">
+              Leadership
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Discover the visionary leaders driving innovation and excellence in Sri Lanka's rice industry through 
-              decades of combined expertise and unwavering commitment.
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed font-light">
+              Meet the people who guide Sri Lanka's agricultural future with vision, expertise, and commitment to excellence.
             </p>
           </div>
 
-          {/* Leadership Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          {/* Apple-style Leadership Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-16">
             {positions.map((pos, idx) => (
-              <div key={idx} className="group relative">
-                {/* Card */}
-                <div className="relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-700 hover:-translate-y-4 border border-gray-100">
-                  {/* Background Pattern */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-white opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                  
-                  {/* Profile Image */}
-                  <div className="relative p-8 pb-6">
-                    <div className="relative mx-auto w-32 h-32 mb-6">
-                      <img 
-                        src={pos.image} 
-                        alt={pos.name} 
-                        className="w-full h-full object-cover rounded-2xl shadow-lg group-hover:scale-105 transition-transform duration-500" 
-                      />
-                      {/* Status Indicator */}
-                      <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full border-4 border-white shadow-lg"></div>
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="text-center">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-emerald-700 transition-colors">
-                        {pos.name}
-                      </h3>
-                      <div className="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold mb-4">
-                        {pos.title}
-                      </div>
-                      <p className="text-gray-600 leading-relaxed text-sm px-2">
-                        {pos.description}
-                      </p>
-                    </div>
+              <div key={idx} className="group text-center">
+                {/* Clean Profile Image */}
+                <div className="mb-8">
+                  <div className="relative mx-auto w-48 h-48 mb-6">
+                    <img 
+                      src={pos.image} 
+                      alt={pos.name} 
+                      className="w-full h-full object-cover rounded-full grayscale hover:grayscale-0 transition-all duration-500" 
+                    />
                   </div>
-                  
-                  {/* Footer */}
-                  <div className="px-8 pb-8">
-                    <div className="flex items-center justify-center space-x-4 pt-6 border-t border-gray-100">
-                      <button className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium text-sm transition-colors">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                        </svg>
-                        Contact
-                      </button>
-                      <div className="w-px h-4 bg-gray-300"></div>
-                      <button className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium text-sm transition-colors">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Profile
-                      </button>
-                    </div>
+                </div>
+                
+                {/* Minimal Content */}
+                <div>
+                  <h3 className="text-2xl font-light text-gray-900 mb-2">
+                    {pos.name}
+                  </h3>
+                  <div className="text-lg text-gray-500 mb-4 font-light">
+                    {pos.title}
                   </div>
+                  <p className="text-gray-600 leading-relaxed text-base font-light max-w-xs mx-auto">
+                    {pos.description}
+                  </p>
                 </div>
               </div>
             ))}
@@ -227,14 +196,10 @@ export default function AboutNew() {
         <div className="relative mt-32">
           {/* Section Header */}
           <div className="text-center mb-16">
-            <div className="inline-flex items-center bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-full px-6 py-3 mb-6">
-              <span className="text-blue-700 font-semibold text-sm tracking-wide">🌟 FEATURED SHOWCASE</span>
-            </div>
-            <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Premium 
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600"> Excellence</span>
+            <h2 className="text-4xl md:text-5xl font-light text-gray-900 mb-6 leading-tight tracking-tight">
+              Featured Showcase
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed font-light">
               Discover our carefully curated collection of premium agricultural resources and innovative solutions
             </p>
           </div>
