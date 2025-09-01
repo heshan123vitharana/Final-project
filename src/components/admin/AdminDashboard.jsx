@@ -57,10 +57,10 @@ const AdminDashboard = ({ onLogout }) => {
   const ActiveComponent = navigationItems.find(item => item.id === activeSection)?.component
 
   return (
-    <div className="min-h-screen bg-gray-100 flex overflow-hidden">
+    <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar - Fixed */}
       <div 
-        className={`text-white transition-all duration-300 flex flex-col relative flex-shrink-0 ${
+        className={`text-white transition-all duration-300 flex flex-col flex-shrink-0 ${
           sidebarOpen ? 'w-64' : 'w-16'
         }`}
         style={{
@@ -69,8 +69,10 @@ const AdminDashboard = ({ onLogout }) => {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
           height: '100vh',
-          position: 'sticky',
-          top: 0
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: 40
         }}
       >
         {/* Overlay for better text readability */}
@@ -137,9 +139,15 @@ const AdminDashboard = ({ onLogout }) => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div 
+        className="flex-1 flex flex-col min-w-0"
+        style={{ 
+          marginLeft: sidebarOpen ? '256px' : '64px',
+          transition: 'margin-left 300ms'
+        }}
+      >
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex-shrink-0">
+        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex-shrink-0 sticky top-0 z-30">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-800">
               {navigationItems.find(item => item.id === activeSection)?.label}
@@ -158,7 +166,7 @@ const AdminDashboard = ({ onLogout }) => {
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-6 overflow-y-auto" style={{ height: 'calc(100vh - 73px)' }}>
           {ActiveComponent && <ActiveComponent />}
         </main>
       </div>
