@@ -6,6 +6,7 @@ import {
   Save,
   DollarSign,
   TrendingUp,
+  TrendingDown,
   History,
   Filter,
   Plus,
