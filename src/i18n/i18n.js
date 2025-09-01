@@ -33,7 +33,7 @@ i18n
     fallbackLng: 'en',
     
     // Debug mode (set to false in production)
-    debug: true,
+    debug: false,
     
     // Language detection options
     detection: {

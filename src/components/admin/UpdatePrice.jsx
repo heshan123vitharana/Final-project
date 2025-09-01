@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Edit3,
   Check,
@@ -133,6 +133,122 @@ const PriceManagement = () => {
     district: '',
     description: ''
   })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  // Fetch prices from backend
+  useEffect(() => {
+    fetchPrices()
+  }, [])
+
+  const fetchPrices = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('http://localhost:5000/api/prices')
+      if (response.ok) {
+        const data = await response.json()
+        console.log('PriceManagement: API response:', data)
+        const pricesData = data.data || data
+        
+        // Transform API data to match component expectations
+        const transformedPrices = (pricesData || []).map(price => {
+          try {
+            const currentPrice = parseFloat(price.pricePerKg || price.currentPrice) || 0;
+            const priceChange = parseFloat(price.priceChange) || 0;
+            const previousPrice = parseFloat(price.previousPrice) || (currentPrice - priceChange);
+            
+            return {
+              ...price,
+              id: price.id || Date.now() + Math.random(), // Ensure ID exists
+              currentPrice: currentPrice,
+              previousPrice: previousPrice > 0 ? previousPrice : currentPrice,
+              pricePerKg: currentPrice, // Ensure backward compatibility
+              unit: price.unit || 'LKR/kg',
+              type: price.type || 'Wet',
+              variety: price.variety || 'Unknown',
+              district: price.district || 'Unknown',
+              lastUpdated: price.lastUpdated || price.updated_at || new Date().toISOString().split('T')[0],
+              status: price.status || 'Active'
+            };
+          } catch (error) {
+            console.error('Error transforming price data:', error, price);
+            // Return a safe fallback object
+            return {
+              id: Date.now() + Math.random(),
+              currentPrice: 0,
+              previousPrice: 0,
+              pricePerKg: 0,
+              unit: 'LKR/kg',
+              type: 'Wet',
+              variety: 'Unknown',
+              district: 'Unknown',
+              lastUpdated: new Date().toISOString().split('T')[0],
+              status: 'Active'
+            };
+          }
+        })
+        
+        setPrices(transformedPrices)
+      } else {
+        // Fallback to initial data
+        setPrices(initialPrices)
+      }
+    } catch (err) {
+      console.error('Failed to fetch prices:', err)
+      setError('Failed to load prices')
+      // Fallback to initial data
+      setPrices(initialPrices)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updatePriceInBackend = async (id, newPrice) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/prices/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ price: newPrice })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update price')
+      }
+      
+      return await response.json()
+    } catch (err) {
+      console.error('Error updating price:', err)
+      throw err
+    }
+  }
+
+  const addPriceToBackend = async (priceData) => {
+    try {
+      console.log('🔧 Sending price data to backend:', priceData);
+      
+      const response = await fetch('http://localhost:5000/api/prices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(priceData)
+      })
+      
+      const responseData = await response.json();
+      console.log('📨 Backend response:', responseData);
+      
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Failed to add price')
+      }
+      
+      return responseData;
+    } catch (err) {
+      console.error('❌ Error adding price:', err)
+      throw err
+    }
+  }
 
   // Comprehensive price history data
   const priceHistory = {
@@ -198,28 +314,39 @@ const PriceManagement = () => {
   const handleEditPrice = (id) => {
     setEditingId(id)
     const price = prices.find(p => p.id === id)
-    setEditingPrice(price.currentPrice.toString())
+    setEditingPrice((parseFloat(price.currentPrice) || 0).toString())
   }
 
-  const handleSavePrice = (id) => {
+  const handleSavePrice = async (id) => {
     const newPriceValue = parseFloat(editingPrice)
     if (isNaN(newPriceValue) || newPriceValue <= 0) {
       alert('Please enter a valid price')
       return
     }
 
-    setPrices(prices.map(price => 
-      price.id === id 
-        ? { 
-            ...price, 
-            previousPrice: price.currentPrice,
-            currentPrice: newPriceValue,
-            lastUpdated: new Date().toISOString().split('T')[0]
-          }
-        : price
-    ))
-    setEditingId(null)
-    setEditingPrice('')
+    try {
+      await updatePriceInBackend(id, newPriceValue)
+      
+      // Update local state
+      setPrices((prices || []).map(price => 
+        price.id === id 
+          ? { 
+              ...price, 
+              previousPrice: price.currentPrice,
+              currentPrice: newPriceValue,
+              lastUpdated: new Date().toISOString().split('T')[0]
+            }
+          : price
+      ))
+      setEditingId(null)
+      setEditingPrice('')
+      
+      // Show success message
+      alert('Price updated successfully!')
+    } catch (err) {
+      console.error('Error updating price:', err)
+      alert('Failed to update price. Please try again.')
+    }
   }
 
   const handleCancelEdit = () => {
@@ -232,43 +359,54 @@ const PriceManagement = () => {
     setShowHistoryModal(true)
   }
 
-  const handleAddNewPrice = () => {
-  if (!newPrice.variety || !newPrice.type || !newPrice.currentPrice || !newPrice.district) {
+  const handleAddNewPrice = async () => {
+    if (!newPrice.variety || !newPrice.type || !newPrice.currentPrice || !newPrice.district) {
       alert('Please fill in all required fields')
       return
     }
 
-    const newId = Math.max(...prices.map(p => p.id)) + 1
-    const priceEntry = {
-      id: newId,
+    const priceData = {
       variety: newPrice.variety,
       type: newPrice.type,
-      currentPrice: parseFloat(newPrice.currentPrice),
-      previousPrice: parseFloat(newPrice.currentPrice) - 1,
-      unit: 'LKR/kg',
-      lastUpdated: new Date().toISOString().split('T')[0],
-      status: 'Active',
-      description: newPrice.description || `${newPrice.variety} - ${newPrice.type}`,
-      district: newPrice.district
+      price: parseFloat(newPrice.currentPrice),
+      district: newPrice.district,
+      description: newPrice.description || `${newPrice.variety} - ${newPrice.type}`
     }
 
-    setPrices([...prices, priceEntry])
-    setNewPrice({
-      variety: '',
-      type: '',
-      currentPrice: '',
-      district: '',
-      description: ''
-    })
-    setShowPriceModal(false)
+    console.log('🔧 Processing new price addition:', priceData);
+
+    try {
+      const response = await addPriceToBackend(priceData)
+      console.log('✅ Successfully added price to backend:', response);
+      
+      // Refresh the prices list from backend to get the latest data including the new entry
+      await fetchPrices();
+      
+      // Reset form and close modal
+      setNewPrice({
+        variety: '',
+        type: '',
+        currentPrice: '',
+        district: '',
+        description: ''
+      })
+      setShowPriceModal(false)
+      
+      alert('Price added successfully to database!')
+    } catch (err) {
+      console.error('❌ Error adding price:', err)
+      alert(`Failed to add price: ${err.message || 'Please try again.'}`)
+    }
   }
 
   const getPriceChange = (current, previous) => {
-    const change = current - previous
+    const currentPrice = parseFloat(current) || 0;
+    const previousPrice = parseFloat(previous) || 0;
+    const change = currentPrice - previousPrice;
     return {
       amount: Math.abs(change).toFixed(2),
       direction: change >= 0 ? 'up' : 'down',
-      percentage: ((change / previous) * 100).toFixed(1)
+      percentage: previousPrice > 0 ? ((change / previousPrice) * 100).toFixed(1) : '0.0'
     }
   }
 
@@ -277,18 +415,44 @@ const PriceManagement = () => {
 
   return (
     <>
-      <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">Price Management</h2>
-        <button
-          onClick={() => setShowPriceModal(true)}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Add New Price</span>
-        </button>
-      </div>
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <span className="ml-4 text-gray-600">Loading prices...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <X className="h-5 w-5 text-red-500 mr-2" />
+            <span className="text-red-700">{error}</span>
+            <button 
+              onClick={fetchPrices}
+              className="ml-auto px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!loading && !error && (
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-800">Price Management</h2>
+            <button
+              onClick={() => setShowPriceModal(true)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add New Price</span>
+            </button>
+          </div>
 
       {/* Quick Price Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -357,7 +521,7 @@ const PriceManagement = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {prices.filter(p =>
+                {(prices || []).filter(p =>
                   p.type === 'Dry' &&
                   (filterVariety === 'all' || p.variety === filterVariety) &&
                   (filterDistrict === 'all' || p.district === filterDistrict)
@@ -380,7 +544,7 @@ const PriceManagement = () => {
                           />
                         ) : (
                           <span className="text-sm font-medium text-gray-900">
-                            {price.currentPrice.toFixed(2)} {price.unit}
+                            {(parseFloat(price.currentPrice) || 0).toFixed(2)} {price.unit}
                           </span>
                         )}
                       </td>
@@ -440,7 +604,7 @@ const PriceManagement = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {prices.filter(p =>
+                {(prices || []).filter(p =>
                   p.type === 'Wet' &&
                   (filterVariety === 'all' || p.variety === filterVariety) &&
                   (filterDistrict === 'all' || p.district === filterDistrict)
@@ -463,7 +627,7 @@ const PriceManagement = () => {
                           />
                         ) : (
                           <span className="text-sm font-medium text-gray-900">
-                            {price.currentPrice.toFixed(2)} {price.unit}
+                            {(parseFloat(price.currentPrice) || 0).toFixed(2)} {price.unit}
                           </span>
                         )}
                       </td>
@@ -650,7 +814,7 @@ const PriceManagement = () => {
                         {entry.date}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        LKR {entry.price.toFixed(2)}
+                        LKR {(parseFloat(entry.price) || 0).toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span className={entry.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}>
@@ -668,7 +832,8 @@ const PriceManagement = () => {
           </div>
         </div>
       )}
-    </div>
+        </div>
+      )}
     </>
   );
 }

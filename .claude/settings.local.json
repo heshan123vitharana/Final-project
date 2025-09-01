@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node server.js)"
+      "Bash(node server.js)",
+      "Bash(curl:*)",
+      "Bash(start http://localhost:3000)",
+      "Bash(ls:*)",
+      "Bash(node:*)",
+      "Bash(dir server.js)",
+      "Bash(npm start)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

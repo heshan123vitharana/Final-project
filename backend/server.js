@@ -3,6 +3,10 @@ const express = require('express');
 const adminRoutes = require('./routes/adminRoutes');
 const authRoutes = require('./routes/authRoutes');
 
+console.log('Loading price routes...');
+const priceRoutes = require('./routes/priceRoutes');
+console.log('Price routes loaded successfully');
+
 console.log('Loading stock routes...');
 const stockRoutes = require('./routes/stockRoutes');
 console.log('Stock routes loaded successfully');
@@ -41,6 +45,9 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
+console.log('Registering price routes at /api/prices');
+app.use('/api/prices', priceRoutes);
+console.log('Price routes registered');
 console.log('Registering stock routes at /api/stock');
 app.use('/api/stock', stockRoutes);
 console.log('Stock routes registered');

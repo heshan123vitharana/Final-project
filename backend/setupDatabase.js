@@ -45,6 +45,49 @@ const setupDatabase = async () => {
 
     console.log('✅ Admin login log table created successfully');
 
+    // Paddy prices table
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS paddy_prices (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        district VARCHAR(100) NOT NULL,
+        province VARCHAR(100) NOT NULL,
+        market VARCHAR(100) NOT NULL,
+        variety VARCHAR(100) NOT NULL,
+        type ENUM('Wet', 'Dry') NOT NULL DEFAULT 'Wet',
+        price_per_kg DECIMAL(10,2) NOT NULL,
+        previous_price DECIMAL(10,2),
+        currency VARCHAR(10) DEFAULT 'LKR',
+        trend ENUM('up', 'down', 'flat') DEFAULT 'flat',
+        price_change DECIMAL(10,2) DEFAULT 0,
+        availability ENUM('High', 'Medium', 'Low') DEFAULT 'Medium',
+        status ENUM('Active', 'Inactive') DEFAULT 'Active',
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_district (district),
+        INDEX idx_variety (variety),
+        INDEX idx_status (status),
+        INDEX idx_updated (updated_at)
+      )
+    `);
+
+    // Insert sample paddy price data
+    await connection.execute(`
+      INSERT IGNORE INTO paddy_prices (id, district, province, market, variety, type, price_per_kg, previous_price, currency, trend, price_change, availability, status, description) VALUES
+      (1, 'Colombo', 'Western', 'Pettah', 'Nadu', 'Wet', 210.00, 205.00, 'LKR', 'up', 5.00, 'High', 'Active', 'Premium white rice, highest quality grade'),
+      (2, 'Kandy', 'Central', 'Good Shed', 'Samba', 'Wet', 245.00, 248.00, 'LKR', 'down', -3.00, 'Medium', 'Active', 'High quality samba rice'),
+      (3, 'Galle', 'Southern', 'Galle Town', 'Nadu', 'Wet', 205.00, 205.00, 'LKR', 'flat', 0.00, 'Medium', 'Active', 'Standard quality nadu rice'),
+      (4, 'Kurunegala', 'North Western', 'Kurunegala City', 'Keeri Samba', 'Wet', 270.00, 262.00, 'LKR', 'up', 8.00, 'High', 'Active', 'Premium keeri samba variety'),
+      (5, 'Anuradhapura', 'North Central', 'Central Market', 'Nadu', 'Wet', 195.00, 192.00, 'LKR', 'up', 3.00, 'High', 'Active', 'Good quality nadu rice'),
+      (6, 'Badulla', 'Uva', 'Badulla Market', 'Red Nadu', 'Wet', 220.00, 225.00, 'LKR', 'down', -5.00, 'Low', 'Active', 'Traditional red rice variety'),
+      (7, 'Colombo', 'Western', 'Manning Market', 'Samba', 'Dry', 280.00, 275.00, 'LKR', 'up', 5.00, 'Medium', 'Active', 'Dry samba rice for storage'),
+      (8, 'Gampaha', 'Western', 'Negombo', 'Nadu', 'Wet', 200.00, 198.00, 'LKR', 'up', 2.00, 'High', 'Active', 'Fresh nadu rice from coastal region'),
+      (9, 'Kalutara', 'Western', 'Kalutara Market', 'Basmati', 'Dry', 350.00, 345.00, 'LKR', 'up', 5.00, 'Low', 'Active', 'Imported basmati quality rice'),
+      (10, 'Ratnapura', 'Sabaragamuwa', 'Gem City Market', 'Samba', 'Wet', 230.00, 235.00, 'LKR', 'down', -5.00, 'Medium', 'Active', 'Local samba variety')
+    `);
+
+    console.log('✅ Paddy prices table created successfully');
+
     // Mill registration table
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS mill_registration (

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import pricesData from '../data/paddyPrices.json';
 
 const LivePaddyPrices = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,6 +12,9 @@ const LivePaddyPrices = () => {
   const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
   const districtRef = useRef(null);
   const [selectedType, setSelectedType] = useState(''); // wet or dry
+  const [pricesData, setPricesData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Intersection observer for animations
   useEffect(() => {
@@ -48,25 +50,108 @@ const LivePaddyPrices = () => {
     };
   }, [showDistrictDropdown]);
 
-  // Sample live paddy prices data for Sri Lankan districts
-  // Load paddy prices from JSON data file
-  const paddyPrices = pricesData.map((p) => ({
-    ...p,
-    // normalize trend naming to expected tokens
-    trend: p.trend === 'flat' ? 'stable' : p.trend,
-    // derive a readable lastUpdated if ISO date provided
-    lastUpdated: p.lastUpdated && /\d{4}-\d{2}-\d{2}T/.test(p.lastUpdated)
-      ? new Date(p.lastUpdated).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
-      : p.lastUpdated || '—',
-    // optional derived quality grade
-    qualityGrade: p.qualityGrade || (p.pricePerKg >= 260 ? 'Premium' : p.pricePerKg >= 240 ? 'Grade A+' : 'Grade A'),
-    collectionCenter: p.collectionCenter || `${p.district} Center`
-  }));
+  // Fetch prices data from backend
+  useEffect(() => {
+    const fetchPricesData = async () => {
+      try {
+        console.log('🔄 LivePaddyPrices: Starting data fetch...');
+        setLoading(true);
+        console.log('📡 LivePaddyPrices: Fetching from http://localhost:5000/api/prices');
+        const response = await fetch('http://localhost:5000/api/prices');
+        console.log('📨 LivePaddyPrices: Response status:', response.status, response.statusText);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ LivePaddyPrices: Backend data received:', data);
+          const processedData = data.data || data;
+          console.log('✅ LivePaddyPrices: Processed data:', processedData);
+          
+          // Ensure processedData is an array
+          if (Array.isArray(processedData)) {
+            setPricesData(processedData);
+          } else {
+            console.warn('⚠️ LivePaddyPrices: Received data is not an array:', processedData);
+            setPricesData([]);
+          }
+        } else {
+          console.warn('⚠️ LivePaddyPrices: Backend responded with error status, using fallback');
+          // Fallback to local data if backend is not available
+          const fallbackData = await import('../data/paddyPrices.json');
+          setPricesData(fallbackData.default);
+        }
+      } catch (err) {
+        console.warn('❌ LivePaddyPrices: Failed to fetch from backend, using local data:', err);
+        // Fallback to local data
+        try {
+          const fallbackData = await import('../data/paddyPrices.json');
+          setPricesData(fallbackData.default);
+          console.log('✅ LivePaddyPrices: Fallback data loaded');
+        } catch (fallbackErr) {
+          console.error('💥 LivePaddyPrices: Failed to load fallback data:', fallbackErr);
+          setError('Failed to load price data');
+          setPricesData([]);
+        }
+      } finally {
+        setLoading(false);
+        console.log('🏁 LivePaddyPrices: Data fetch completed');
+      }
+    };
 
-  // Extract unique values for filters
-  const districts = [...new Set(paddyPrices.map(p => p.district))].sort();
-  const provinces = [...new Set(paddyPrices.map(p => p.province))].sort();
-  const varieties = [...new Set(paddyPrices.map(p => p.variety))].sort();
+    fetchPricesData();
+    
+    // Set up periodic refresh every 30 seconds to sync with database changes
+    const refreshInterval = setInterval(() => {
+      console.log('🔄 LivePaddyPrices: Auto-refreshing data from database');
+      fetchPricesData();
+    }, 30000); // 30 seconds
+    
+    return () => clearInterval(refreshInterval);
+  }, []);
+
+  // Sample live paddy prices data for Sri Lankan districts
+  // Standardized data transformation (matching PriceManagement format)
+  const paddyPrices = (pricesData || []).map((p) => {
+    const currentPrice = parseFloat(p.pricePerKg || p.currentPrice) || 0;
+    const priceChange = parseFloat(p.priceChange || p.change) || 0;
+    const previousPrice = parseFloat(p.previousPrice) || (currentPrice - priceChange);
+    
+    return {
+      ...p,
+      // Standardized price fields
+      currentPrice: currentPrice,
+      pricePerKg: currentPrice,
+      previousPrice: previousPrice > 0 ? previousPrice : currentPrice,
+      priceChange: priceChange,
+      change: priceChange, // For compatibility
+      
+      // Standardized display fields
+      unit: p.unit || 'LKR/kg',
+      type: p.type || 'Wet',
+      variety: p.variety || 'Unknown',
+      district: p.district || 'Unknown',
+      province: p.province || 'Unknown',
+      market: p.market || `${p.district} Center`,
+      
+      // Trend normalization
+      trend: p.trend === 'flat' ? 'stable' : (p.trend === 'rising' ? 'up' : p.trend === 'falling' ? 'down' : p.trend),
+      
+      // Date formatting
+      lastUpdated: p.lastUpdated && /\d{4}-\d{2}-\d{2}T/.test(p.lastUpdated)
+        ? new Date(p.lastUpdated).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+        : p.lastUpdated || p.updated_at || '—',
+      
+      // Calculated fields
+      qualityGrade: p.qualityGrade || (currentPrice >= 260 ? 'Premium' : currentPrice >= 240 ? 'Grade A+' : 'Grade A'),
+      collectionCenter: p.collectionCenter || `${p.district} Center`,
+      availability: p.availability || 'Medium',
+      status: p.status || 'Active'
+    };
+  });
+
+  // Extract unique values for filters with null/undefined safety
+  const districts = [...new Set(paddyPrices.map(p => p.district).filter(Boolean))].sort();
+  const provinces = [...new Set(paddyPrices.map(p => p.province).filter(Boolean))].sort();
+  const varieties = [...new Set(paddyPrices.map(p => p.variety).filter(Boolean))].sort();
 
   // Filter and sort prices
   const getFilteredAndSortedPrices = () => {
@@ -159,7 +244,7 @@ const LivePaddyPrices = () => {
       p.variety,
       p.pricePerKg,
       p.trend,
-      p.change,
+      p.change || 0,
       p.availability,
       p.lastUpdated
     ]);
@@ -180,19 +265,44 @@ const LivePaddyPrices = () => {
     URL.revokeObjectURL(url);
   };
 
+  // Manual refresh function for instant data sync
+  const handleManualRefresh = async () => {
+    console.log('🔄 LivePaddyPrices: Manual refresh triggered');
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:5000/api/prices');
+      if (response.ok) {
+        const data = await response.json();
+        const processedData = data.data || data;
+        if (Array.isArray(processedData)) {
+          setPricesData(processedData);
+          console.log('✅ LivePaddyPrices: Data refreshed successfully');
+        }
+      }
+    } catch (error) {
+      console.error('❌ LivePaddyPrices: Error refreshing data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getTrendIcon = (trend) => {
     switch (trend) {
-      case 'up': return '📈';
-      case 'down': return '📉';
-  case 'stable': return '➡️';
+      case 'up':
+      case 'rising': return '📈';
+      case 'down': 
+      case 'falling': return '📉';
+      case 'stable': return '➡️';
       default: return '➡️';
     }
   };
 
   const getTrendColor = (trend) => {
     switch (trend) {
-      case 'up': return 'text-green-400';
-      case 'down': return 'text-red-400';
+      case 'up':
+      case 'rising': return 'text-green-400';
+      case 'down':
+      case 'falling': return 'text-red-400';
       case 'stable': return 'text-yellow-400';
       default: return 'text-gray-400';
     }
@@ -207,32 +317,87 @@ const LivePaddyPrices = () => {
     }
   };
 
-  const avgPrice = filteredPrices.length > 0 
-    ? (filteredPrices.reduce((sum, p) => sum + p.pricePerKg, 0) / filteredPrices.length).toFixed(2)
-    : 0;
-  
-  const highestPrice = filteredPrices.length > 0 
-    ? Math.max(...filteredPrices.map(p => p.pricePerKg)).toFixed(2)
-    : 0;
-  
-  const lowestPrice = filteredPrices.length > 0 
-    ? Math.min(...filteredPrices.map(p => p.pricePerKg)).toFixed(2)
-    : 0;
+  // Safe calculations with error handling
+  const calculateAvgPrice = () => {
+    try {
+      if (filteredPrices.length === 0) return '0';
+      const validPrices = filteredPrices.filter(p => p.pricePerKg && !isNaN(p.pricePerKg));
+      if (validPrices.length === 0) return '0';
+      return (validPrices.reduce((sum, p) => sum + p.pricePerKg, 0) / validPrices.length).toFixed(2);
+    } catch (error) {
+      console.error('Error calculating average price:', error);
+      return '0';
+    }
+  };
+
+  const calculateHighestPrice = () => {
+    try {
+      if (filteredPrices.length === 0) return '0';
+      const validPrices = filteredPrices.filter(p => p.pricePerKg && !isNaN(p.pricePerKg));
+      if (validPrices.length === 0) return '0';
+      return Math.max(...validPrices.map(p => p.pricePerKg)).toFixed(2);
+    } catch (error) {
+      console.error('Error calculating highest price:', error);
+      return '0';
+    }
+  };
+
+  const calculateLowestPrice = () => {
+    try {
+      if (filteredPrices.length === 0) return '0';
+      const validPrices = filteredPrices.filter(p => p.pricePerKg && !isNaN(p.pricePerKg));
+      if (validPrices.length === 0) return '0';
+      return Math.min(...validPrices.map(p => p.pricePerKg)).toFixed(2);
+    } catch (error) {
+      console.error('Error calculating lowest price:', error);
+      return '0';
+    }
+  };
+
+  const avgPrice = calculateAvgPrice();
+  const highestPrice = calculateHighestPrice();
+  const lowestPrice = calculateLowestPrice();
 
   return (
     <section id="live-paddy-prices" className="relative min-h-screen py-20">
       {/* Background */}
-  <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-emerald-900 to-green-900 overflow-hidden pointer-events-none"></div>
-  <div className="absolute inset-0 bg-gradient-to-tr from-emerald-600/20 via-transparent to-green-500/15 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-emerald-900 to-green-900 overflow-hidden pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-emerald-600/20 via-transparent to-green-500/15 pointer-events-none"></div>
       
       {/* Floating Elements */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-green-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
 
-  <div className="relative z-10 max-w-7xl mx-auto px-6">
-        {/* Header Section */}
-        <div className={`text-center mb-16 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <div className="inline-flex items-center bg-emerald-500/20 backdrop-blur-sm rounded-full px-6 py-3 mb-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-6">
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-20">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
+            <p className="text-white mt-4">Loading live prices...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="text-center py-20">
+            <div className="bg-red-500/20 backdrop-blur-sm rounded-lg p-6 max-w-md mx-auto">
+              <p className="text-red-200">{error}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-4 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content */}
+        {!loading && !error && (
+          <>
+            {/* Header Section */}
+            <div className={`text-center mb-16 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+              <div className="inline-flex items-center bg-emerald-500/20 backdrop-blur-sm rounded-full px-6 py-3 mb-6">
             <span className="text-emerald-200 font-semibold">💰 Live Market Prices</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-light text-white mb-6 leading-tight tracking-tight">
@@ -397,6 +562,13 @@ const LivePaddyPrices = () => {
               🗑️ Clear Filters
             </button>
             <button
+              onClick={handleManualRefresh}
+              disabled={loading}
+              className={`px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-cyan-700 transform hover:scale-105 transition-all duration-300 shadow-lg ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              🔄 {loading ? 'Refreshing...' : 'Refresh Data'}
+            </button>
+            <button
               onClick={exportCSV}
               className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-green-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
             >
@@ -442,12 +614,12 @@ const LivePaddyPrices = () => {
                 <div className="bg-emerald-500/20 rounded-xl p-4 mb-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-2xl font-bold text-white">
-                      Rs. {price.pricePerKg.toFixed(2)}
+                      Rs. {(price.pricePerKg || 0).toFixed(2)}
                     </div>
                     <div className={`flex items-center text-sm ${getTrendColor(price.trend)}`}>
                       <span className="mr-1">{getTrendIcon(price.trend)}</span>
                       {price.change !== 0 && (
-                        <span>{price.change > 0 ? '+' : ''}{price.change.toFixed(2)}</span>
+                        <span>{price.change > 0 ? '+' : ''}{(price.change || 0).toFixed(2)}</span>
                       )}
                     </div>
                   </div>
@@ -490,6 +662,8 @@ const LivePaddyPrices = () => {
             </p>
           </div>
         </div>
+          </>
+        )}
       </div>
     </section>
   );
