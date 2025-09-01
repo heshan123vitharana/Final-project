@@ -110,30 +110,8 @@ const initialPrices = [
     description: 'Basic quality red rice, Grade 3',
     district: 'Matale'
   },
-  {
-    id: 9,
-    variety: 'Mixed Variety',
-    type: 'Standard',
-    currentPrice: 105.00,
-    previousPrice: 102.00,
-    unit: 'LKR/kg',
-    lastUpdated: '2025-02-06',
-    status: 'Active',
-    description: 'Mixed paddy varieties, standard processing',
-    district: 'Batticaloa'
-  },
-  {
-    id: 10,
-    variety: 'Nadu',
-    type: 'Premium',
-    currentPrice: 88.00,
-    previousPrice: 85.00,
-    unit: 'LKR/kg',
-    lastUpdated: '2025-02-05',
-    status: 'Active',
-    description: 'Traditional Nadu variety, premium grade',
-    district: 'Polonnaruwa'
-  }
+  
+  
 ]
 
 const PriceManagement = () => {
