@@ -16,8 +16,8 @@ import {
 const initialPrices = [
   {
     id: 1,
-    variety: 'Thetha Wee (White Rice)',
-    type: 'Super',
+    variety: 'Nadu(Sudu)',
+    type: 'Thetha Wee',
     currentPrice: 150.00,
     previousPrice: 145.00,
     unit: 'LKR/kg',
@@ -28,8 +28,8 @@ const initialPrices = [
   },
   {
     id: 2,
-    variety: 'Thetha Wee (White Rice)',
-    type: 'Grade 1',
+    variety: 'Nadu(Sudu)',
+    type: 'Thetha Wee',
     currentPrice: 138.00,
     previousPrice: 135.00,
     unit: 'LKR/kg',
@@ -40,8 +40,8 @@ const initialPrices = [
   },
   {
     id: 3,
-    variety: 'Thetha Wee (White Rice)',
-    type: 'Grade 2',
+    variety: 'Nadu(Sudu)',
+    type: 'Thetha Wee',
     currentPrice: 125.00,
     previousPrice: 123.00,
     unit: 'LKR/kg',
@@ -52,8 +52,8 @@ const initialPrices = [
   },
   {
     id: 4,
-    variety: 'Thetha Wee (White Rice)',
-    type: 'Grade 3',
+    variety: 'Nadu(Sudu)',
+    type: 'Thetha Wee',
     currentPrice: 115.00,
     previousPrice: 113.00,
     unit: 'LKR/kg',
@@ -64,8 +64,8 @@ const initialPrices = [
   },
   {
     id: 5,
-    variety: 'Wiyali Wee (Red Rice)',
-    type: 'Super',
+    variety: 'Nadu(Sudu)',
+    type: 'Wiyali Wee',
     currentPrice: 165.00,
     previousPrice: 160.00,
     unit: 'LKR/kg',
@@ -76,8 +76,8 @@ const initialPrices = [
   },
   {
     id: 6,
-    variety: 'Wiyali Wee (Red Rice)',
-    type: 'Grade 1',
+    variety: 'Nadu(Sudu)',
+    type: 'Wiyali Wee',
     currentPrice: 152.00,
     previousPrice: 148.00,
     unit: 'LKR/kg',
@@ -88,8 +88,8 @@ const initialPrices = [
   },
   {
     id: 7,
-    variety: 'Wiyali Wee (Red Rice)',
-    type: 'Grade 2',
+    variety: 'Nadu(Sudu)',
+    type: 'Wiyali Wee',
     currentPrice: 138.00,
     previousPrice: 135.00,
     unit: 'LKR/kg',
@@ -100,8 +100,8 @@ const initialPrices = [
   },
   {
     id: 8,
-    variety: 'Wiyali Wee (Red Rice)',
-    type: 'Grade 3',
+    variety: 'Nadu(Sudu)',
+    type: 'Wiyali Wee',
     currentPrice: 128.00,
     previousPrice: 125.00,
     unit: 'LKR/kg',
@@ -140,7 +140,6 @@ const PriceManagement = () => {
   const [showPriceModal, setShowPriceModal] = useState(false)
   const [filterDistrict, setFilterDistrict] = useState('all')
   const [filterVariety, setFilterVariety] = useState('all')
-  const [filterType, setFilterType] = useState('all')
   const [prices, setPrices] = useState(initialPrices)
   const [activeTab, setActiveTab] = useState('wiyali')
   const [editingId, setEditingId] = useState(null)
@@ -211,12 +210,8 @@ const PriceManagement = () => {
     
   ]
   const types = [
-    'Super',
-    'Grade 1',
-    'Grade 2',
-    'Grade 3',
-    'Standard',
-    'Premium'
+    'Wiyali Wee',
+    'Thetha Wee'
   ]
 
   // Removed unused filteredPrices
@@ -348,17 +343,6 @@ const PriceManagement = () => {
               <option key={variety} value={variety}>{variety}</option>
             ))}
           </select>
-          <select
-            value={filterType}
-            onChange={e => setFilterType(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-1 text-sm"
-          >
-            <option value="all">All Types</option>
-            {types.map(type => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
-  const [filterType, setFilterType] = useState('all')
         </div>
       </div>
 
@@ -395,9 +379,8 @@ const PriceManagement = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {prices.filter(p =>
-                  p.variety.includes('Wiyali Wee') &&
+                  p.type === 'Wiyali Wee' &&
                   (filterVariety === 'all' || p.variety === filterVariety) &&
-                  (filterType === 'all' || p.type === filterType) &&
                   (filterDistrict === 'all' || p.district === filterDistrict)
                 ).map((price, idx) => {
                   const change = getPriceChange(price.currentPrice, price.previousPrice)
@@ -479,9 +462,8 @@ const PriceManagement = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {prices.filter(p =>
-                  p.variety.includes('Thetha Wee') &&
+                  p.type === 'Thetha Wee' &&
                   (filterVariety === 'all' || p.variety === filterVariety) &&
-                  (filterType === 'all' || p.type === filterType) &&
                   (filterDistrict === 'all' || p.district === filterDistrict)
                 ).map((price, idx) => {
                   const change = getPriceChange(price.currentPrice, price.previousPrice)
