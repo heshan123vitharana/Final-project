@@ -3,6 +3,7 @@ import {
   Edit3,
   Check,
   X,
+  Save,
   DollarSign,
   TrendingUp,
   History,
@@ -17,7 +18,7 @@ const initialPrices = [
   {
     id: 1,
     variety: 'Nadu(Sudu)',
-    type: 'Thetha Wee',
+    type: 'Wet',
     currentPrice: 150.00,
     previousPrice: 145.00,
     unit: 'LKR/kg',
@@ -29,7 +30,7 @@ const initialPrices = [
   {
     id: 2,
     variety: 'Nadu(Sudu)',
-    type: 'Thetha Wee',
+    type: 'Wet',
     currentPrice: 138.00,
     previousPrice: 135.00,
     unit: 'LKR/kg',
@@ -41,7 +42,7 @@ const initialPrices = [
   {
     id: 3,
     variety: 'Nadu(Sudu)',
-    type: 'Thetha Wee',
+    type: 'Wet',
     currentPrice: 125.00,
     previousPrice: 123.00,
     unit: 'LKR/kg',
@@ -53,7 +54,7 @@ const initialPrices = [
   {
     id: 4,
     variety: 'Nadu(Sudu)',
-    type: 'Thetha Wee',
+    type: 'Wet',
     currentPrice: 115.00,
     previousPrice: 113.00,
     unit: 'LKR/kg',
@@ -65,7 +66,7 @@ const initialPrices = [
   {
     id: 5,
     variety: 'Nadu(Sudu)',
-    type: 'Wiyali Wee',
+    type: 'Dry',
     currentPrice: 165.00,
     previousPrice: 160.00,
     unit: 'LKR/kg',
@@ -77,7 +78,7 @@ const initialPrices = [
   {
     id: 6,
     variety: 'Nadu(Sudu)',
-    type: 'Wiyali Wee',
+    type: 'Dry',
     currentPrice: 152.00,
     previousPrice: 148.00,
     unit: 'LKR/kg',
@@ -89,7 +90,7 @@ const initialPrices = [
   {
     id: 7,
     variety: 'Nadu(Sudu)',
-    type: 'Wiyali Wee',
+    type: 'Dry',
     currentPrice: 138.00,
     previousPrice: 135.00,
     unit: 'LKR/kg',
@@ -101,7 +102,7 @@ const initialPrices = [
   {
     id: 8,
     variety: 'Nadu(Sudu)',
-    type: 'Wiyali Wee',
+    type: 'Dry',
     currentPrice: 128.00,
     previousPrice: 125.00,
     unit: 'LKR/kg',
@@ -188,8 +189,8 @@ const PriceManagement = () => {
     
   ]
   const types = [
-    'Wiyali Wee',
-    'Thetha Wee'
+    'Dry',
+    'Wet'
   ]
 
   // Removed unused filteredPrices
@@ -324,19 +325,19 @@ const PriceManagement = () => {
         </div>
       </div>
 
-      {/* Tab labels for Wiyali Wee and Theth Wee */}
+      {/* Tab labels for Dry and Wet */}
       <div className="flex space-x-2 mb-4">
         <span
           className={`px-6 py-2 rounded-t-lg font-semibold text-sm cursor-pointer transition-colors ${activeTab === 'wiyali' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}
           onClick={() => setActiveTab('wiyali')}
         >
-          Wiyali Wee
+          Dry
         </span>
         <span
           className={`px-6 py-2 rounded-t-lg font-semibold text-sm cursor-pointer transition-colors ${activeTab === 'thetha' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700'}`}
           onClick={() => setActiveTab('thetha')}
         >
-          Theth Wee
+          Wet
         </span>
       </div>
 
@@ -357,7 +358,7 @@ const PriceManagement = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {prices.filter(p =>
-                  p.type === 'Wiyali Wee' &&
+                  p.type === 'Dry' &&
                   (filterVariety === 'all' || p.variety === filterVariety) &&
                   (filterDistrict === 'all' || p.district === filterDistrict)
                 ).map((price, idx) => {
@@ -440,7 +441,7 @@ const PriceManagement = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {prices.filter(p =>
-                  p.type === 'Thetha Wee' &&
+                  p.type === 'Wet' &&
                   (filterVariety === 'all' || p.variety === filterVariety) &&
                   (filterDistrict === 'all' || p.district === filterDistrict)
                 ).map((price, idx) => {
