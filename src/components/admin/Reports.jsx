@@ -9,8 +9,6 @@ import {
   Users,
   Package
 } from 'lucide-react'
-import jsPDF from 'jspdf'
-import 'jspdf-autotable'
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState({
@@ -111,7 +109,11 @@ const Reports = () => {
     }
   }
 
-  const generatePDFReport = () => {
+  const generatePDFReport = async () => {
+    // Dynamic import to ensure autoTable plugin is loaded
+    const { jsPDF } = await import('jspdf')
+    await import('jspdf-autotable')
+    
     const doc = new jsPDF()
     const currentData = reportData[reportType]
     
@@ -180,31 +182,54 @@ const Reports = () => {
         item.percentage ? `${item.percentage}%` : (item.utilization ? `${item.utilization}%` : 'N/A')
       ])
       
-      // Using autoTable method
-      doc.autoTable({
-        startY: yPosition + 5,
-        head: [['Category', 'Value', 'Percentage/Rate']],
-        body: tableData,
-        theme: 'striped',
-        headStyles: { 
-          fillColor: [34, 197, 94],
-          textColor: [255, 255, 255],
-          fontSize: 12,
-          fontStyle: 'bold'
-        },
-        bodyStyles: {
-          fontSize: 10
-        },
-        alternateRowStyles: {
-          fillColor: [248, 250, 252]
-        },
-        margin: { left: 14, right: 14 },
-        columnStyles: {
-          0: { cellWidth: 60 },
-          1: { cellWidth: 60, halign: 'right' },
-          2: { cellWidth: 40, halign: 'center' }
-        }
-      })
+      try {
+        // Using autoTable method
+        doc.autoTable({
+          startY: yPosition + 5,
+          head: [['Category', 'Value', 'Percentage/Rate']],
+          body: tableData,
+          theme: 'striped',
+          headStyles: { 
+            fillColor: [34, 197, 94],
+            textColor: [255, 255, 255],
+            fontSize: 12,
+            fontStyle: 'bold'
+          },
+          bodyStyles: {
+            fontSize: 10
+          },
+          alternateRowStyles: {
+            fillColor: [248, 250, 252]
+          },
+          margin: { left: 14, right: 14 },
+          columnStyles: {
+            0: { cellWidth: 60 },
+            1: { cellWidth: 60, halign: 'right' },
+            2: { cellWidth: 40, halign: 'center' }
+          }
+        })
+      } catch (autoTableError) {
+        console.error('AutoTable error:', autoTableError)
+        // Fallback to basic table if autoTable fails
+        doc.setFontSize(10)
+        let tableY = yPosition + 15
+        
+        // Header
+        doc.setFont(undefined, 'bold')
+        doc.text('Category', 14, tableY)
+        doc.text('Value', 80, tableY)
+        doc.text('Percentage/Rate', 140, tableY)
+        tableY += 10
+        
+        // Data rows
+        doc.setFont(undefined, 'normal')
+        tableData.forEach(row => {
+          doc.text(row[0] || '', 14, tableY)
+          doc.text(row[1] || '', 80, tableY)
+          doc.text(row[2] || '', 140, tableY)
+          tableY += 8
+        })
+      }
     }
     
     // Footer
@@ -233,7 +258,7 @@ const Reports = () => {
       // Add a small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 300))
       
-      const doc = generatePDFReport()
+      const doc = await generatePDFReport()
       
       // Create blob and URL for preview
       const pdfBlob = doc.output('blob')
@@ -275,7 +300,7 @@ const Reports = () => {
         // Add a small delay to show loading state
         await new Promise(resolve => setTimeout(resolve, 500))
         
-        const doc = generatePDFReport()
+        const doc = await generatePDFReport()
         
         // Use the save method to trigger download
         doc.save(filename)
