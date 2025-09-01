@@ -15,6 +15,7 @@ import MillMap from './MillMap'
 import Reports from './Reports'
 import PriceManagement from './UpdatePrice'
 import rainbowNature from '../../assets/beautiful-rainbow-nature.jpg'
+import pmbLogo from '../../assets/logo-p.png'
 
 const AdminDashboard = ({ onLogout }) => {
   const [activeSection, setActiveSection] = useState('license-requests')
@@ -83,15 +84,25 @@ const AdminDashboard = ({ onLogout }) => {
           {/* Header */}
           <div className="p-4 flex-shrink-0">
             <div className="flex items-center justify-between">
-              <h2 className={`font-bold text-xl text-white drop-shadow-lg ${sidebarOpen ? 'block' : 'hidden'}`}>
-                PMB Admin
-              </h2>
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="text-white hover:text-green-200 transition-colors drop-shadow-lg"
-              >
-                {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
+              <div className={`flex items-center ${sidebarOpen ? 'flex' : 'hidden'}`}>
+                <img 
+                  src={pmbLogo} 
+                  alt="PMB Logo" 
+                  className="w-16 h-16 object-contain drop-shadow-lg mr-3"
+                />
+                <div className="font-bold text-sm text-white drop-shadow-lg tracking-wide">
+                  <div>PADDY MARKETING</div>
+                  <div>BOARD</div>
+                </div>
+              </div>
+              <div className={`flex items-center ${!sidebarOpen ? 'justify-center w-full' : ''}`}>
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="text-white hover:text-green-200 transition-colors drop-shadow-lg p-2 rounded-lg hover:bg-white hover:bg-opacity-10"
+                >
+                  {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -125,9 +136,10 @@ const AdminDashboard = ({ onLogout }) => {
                   onLogout();
                 }
               }}
-              className={`w-full flex items-center px-4 py-2 text-left bg-red-600 bg-opacity-70 hover:bg-red-700 hover:bg-opacity-80 transition-colors rounded text-white font-medium backdrop-blur-sm shadow-lg ${
-                sidebarOpen ? '' : 'justify-center'
+              className={`w-full flex items-center text-left bg-red-600 bg-opacity-70 hover:bg-red-700 hover:bg-opacity-80 transition-colors rounded text-white font-medium backdrop-blur-sm shadow-lg ${
+                sidebarOpen ? 'px-4 py-2' : 'px-2 py-3 justify-center'
               }`}
+              title={!sidebarOpen ? 'Logout' : ''}
             >
               <LogOut size={20} className="drop-shadow-lg" />
               <span className={`ml-3 drop-shadow-lg ${sidebarOpen ? 'block' : 'hidden'}`}>
