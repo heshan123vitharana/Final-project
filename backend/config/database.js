@@ -8,8 +8,8 @@ const dbConfig = {
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'paddy_management',
   connectionLimit: 10,
-  acquireTimeout: 60000,
-  timeout: 60000
+  waitForConnections: true,
+  queueLimit: 0
 };
 
 console.log('🔧 Database config loaded:', {
