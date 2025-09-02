@@ -55,6 +55,7 @@ const validateRegistration = (body) => {
 
 const register = async (req, res) => {
   try {
+    console.log('📝 AUTH CONTROLLER: register() called with:', req.body.email);
     const { errors, normalizedBusinessType } = validateRegistration(req.body);
     if (errors.length) return res.status(400).json({ errors });
 
@@ -74,6 +75,7 @@ const register = async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
+    console.log('📝 AUTH CONTROLLER: About to call userModel.createUser()');
     await userModel.createUser({
       first_name: String(first_name).trim(),
       last_name: String(last_name).trim(),

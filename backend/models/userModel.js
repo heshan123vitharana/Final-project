@@ -1,5 +1,6 @@
 // models/userModel.js
-const db = require('../database');
+// FORCE MySQL-only database connection
+const db = require('../database-mysql-only');
 
 const createUser = async (user) => {
   try {
@@ -13,7 +14,9 @@ const createUser = async (user) => {
       passwordHash,
     } = user;
 
-    console.log('🔄 Creating user:', { email, business_name, business_type });
+    console.log('🔄 Creating user in MYSQL:', { email, business_name, business_type });
+    console.log('🔍 Database connection type:', typeof db, db.constructor.name);
+    console.log('🔍 Database module path:', require.resolve('../database-mysql-only'));
     
     const result = await db.execute(
       "INSERT INTO users (first_name, last_name, business_name, business_type, phone, email, password) VALUES (?, ?, ?, ?, ?, ?, ?)",

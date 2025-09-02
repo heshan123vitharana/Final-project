@@ -1,7 +1,7 @@
 require('dotenv').config();
 
-// Use SQLite for easier setup
-const USE_SQLITE = process.env.USE_SQLITE !== 'false';
+// Force MySQL usage - disable SQLite completely
+const USE_SQLITE = false; // FORCE MySQL
 
 if (USE_SQLITE) {
   console.log('🔧 Using SQLite database...');
