@@ -13,7 +13,6 @@ import MillPaddyPrice from '../MillPages/MillPaddyPrice.jsx';
 import MillPayment from '../MillPages/MillPayment.jsx';
 import MillProfile from '../MillPages/MillProfile.jsx';
 import MillNotifications from '../MillPages/MillNotifications.jsx';
-import MillLogout from '../MillPages/MillLogout.jsx';
 
 // Main layout component for Mill section
 const MillLayout = ({ userData, onBackToHome }) => {
@@ -36,7 +35,6 @@ const MillLayout = ({ userData, onBackToHome }) => {
           <Route path="payment" element={<MillPayment userData={userData} />} /> {/* Payment page */}
           <Route path="notifications" element={<MillNotifications userData={userData} />} /> {/* Notifications page */}
           <Route path="profile" element={<MillProfile userData={userData} />} /> {/* Profile page */}
-          <Route path="logout" element={<MillLogout onBackToHome={onBackToHome} />} /> {/* Logout page */}
           {/* Redirect any unknown routes to home */}
           <Route path="*" element={<Navigate to="home" replace />} />
         </Routes>
