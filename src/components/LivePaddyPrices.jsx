@@ -317,13 +317,15 @@ const LivePaddyPrices = () => {
     }
   };
 
-  // Safe calculations with error handling
+  // Safe calculations with error handling - Using ALL database data for statistics
   const calculateAvgPrice = () => {
     try {
-      if (filteredPrices.length === 0) return '0';
-      const validPrices = filteredPrices.filter(p => p.pricePerKg && !isNaN(p.pricePerKg));
+      if (paddyPrices.length === 0) return '0';
+      const validPrices = paddyPrices.filter(p => p.pricePerKg && !isNaN(p.pricePerKg));
       if (validPrices.length === 0) return '0';
-      return (validPrices.reduce((sum, p) => sum + p.pricePerKg, 0) / validPrices.length).toFixed(2);
+      const average = (validPrices.reduce((sum, p) => sum + p.pricePerKg, 0) / validPrices.length);
+      console.log('📊 Website: Calculated average from', validPrices.length, 'database prices:', average.toFixed(2));
+      return average.toFixed(2);
     } catch (error) {
       console.error('Error calculating average price:', error);
       return '0';
@@ -332,10 +334,12 @@ const LivePaddyPrices = () => {
 
   const calculateHighestPrice = () => {
     try {
-      if (filteredPrices.length === 0) return '0';
-      const validPrices = filteredPrices.filter(p => p.pricePerKg && !isNaN(p.pricePerKg));
+      if (paddyPrices.length === 0) return '0';
+      const validPrices = paddyPrices.filter(p => p.pricePerKg && !isNaN(p.pricePerKg));
       if (validPrices.length === 0) return '0';
-      return Math.max(...validPrices.map(p => p.pricePerKg)).toFixed(2);
+      const highest = Math.max(...validPrices.map(p => p.pricePerKg));
+      console.log('📊 Website: Calculated highest from', validPrices.length, 'database prices:', highest.toFixed(2));
+      return highest.toFixed(2);
     } catch (error) {
       console.error('Error calculating highest price:', error);
       return '0';
@@ -344,10 +348,12 @@ const LivePaddyPrices = () => {
 
   const calculateLowestPrice = () => {
     try {
-      if (filteredPrices.length === 0) return '0';
-      const validPrices = filteredPrices.filter(p => p.pricePerKg && !isNaN(p.pricePerKg));
+      if (paddyPrices.length === 0) return '0';
+      const validPrices = paddyPrices.filter(p => p.pricePerKg && !isNaN(p.pricePerKg));
       if (validPrices.length === 0) return '0';
-      return Math.min(...validPrices.map(p => p.pricePerKg)).toFixed(2);
+      const lowest = Math.min(...validPrices.map(p => p.pricePerKg));
+      console.log('📊 Website: Calculated lowest from', validPrices.length, 'database prices:', lowest.toFixed(2));
+      return lowest.toFixed(2);
     } catch (error) {
       console.error('Error calculating lowest price:', error);
       return '0';
@@ -411,22 +417,31 @@ const LivePaddyPrices = () => {
           </div>
         </div>
 
-        {/* Price Statistics Cards */}
-        <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 transform transition-all duration-1000 delay-200 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+        {/* Price Statistics Cards - Database-wide Stats */}
+        <div className={`grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 transform transition-all duration-1000 delay-200 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 text-center">
             <div className="text-3xl mb-2">📊</div>
             <div className="text-2xl font-bold text-white mb-2">Rs. {avgPrice}</div>
-            <div className="text-emerald-200">Average Price/kg</div>
+            <div className="text-emerald-200">Average Price</div>
+            <div className="text-xs text-emerald-300 mt-1">All {paddyPrices.length} entries</div>
           </div>
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 text-center">
             <div className="text-3xl mb-2">📈</div>
             <div className="text-2xl font-bold text-green-400 mb-2">Rs. {highestPrice}</div>
-            <div className="text-emerald-200">Highest Price/kg</div>
+            <div className="text-emerald-200">Highest Price</div>
+            <div className="text-xs text-emerald-300 mt-1">Database maximum</div>
           </div>
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 text-center">
             <div className="text-3xl mb-2">📉</div>
             <div className="text-2xl font-bold text-red-400 mb-2">Rs. {lowestPrice}</div>
-            <div className="text-emerald-200">Lowest Price/kg</div>
+            <div className="text-emerald-200">Lowest Price</div>
+            <div className="text-xs text-emerald-300 mt-1">Database minimum</div>
+          </div>
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-6 text-center">
+            <div className="text-3xl mb-2">🏷️</div>
+            <div className="text-2xl font-bold text-yellow-400 mb-2">{filteredPricesAll.length}</div>
+            <div className="text-emerald-200">Filtered Results</div>
+            <div className="text-xs text-emerald-300 mt-1">of {paddyPrices.length} total</div>
           </div>
         </div>
 
