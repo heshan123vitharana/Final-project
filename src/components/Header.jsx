@@ -6,7 +6,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [currentTime, setCurrentTime] = useState('');
+  const [currentTime, setCurrentTime] = useState(''); // Will hold full formatted date/time string
 
   const navigationItems = [
     { 
@@ -67,23 +67,21 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
     };
   }, []);
 
-  // Update Sri Lankan time
+  // Update Sri Lankan real-time date & time (weekday • Month Day, Year • hh:mm:ss AM)
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      const sriLankanTime = now.toLocaleString('en-US', {
-        timeZone: 'Asia/Colombo',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-      });
-      setCurrentTime(sriLankanTime);
+      const localeOpts = { timeZone: 'Asia/Colombo' };
+      const weekday = now.toLocaleString('en-US', { weekday: 'long', ...localeOpts });
+      const month = now.toLocaleString('en-US', { month: 'long', ...localeOpts });
+      const day = now.toLocaleString('en-US', { day: '2-digit', ...localeOpts });
+      const year = now.toLocaleString('en-US', { year: 'numeric', ...localeOpts });
+      const time = now.toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, ...localeOpts });
+      setCurrentTime(`${weekday} • ${month} ${day}, ${year} • ${time}`);
     };
-
     updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
+    const id = setInterval(updateTime, 1000);
+    return () => clearInterval(id);
   }, []);
 
   const handleNavClick = (sectionId) => {
@@ -160,11 +158,11 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
       isScrolled ? 'bg-white shadow-lg border-b border-gray-200' : 'bg-white/95 backdrop-blur-md border-b border-gray-100'
     }`}>
       {/* AWS-style Top Info Bar */}
-      <div className={`bg-slate-900 text-white text-center relative overflow-hidden ${isScrolled ? 'py-0.5' : 'py-1'}`}>
-        <div className="container mx-auto px-4 flex items-center justify-between text-sm">
-          <div className="flex items-center space-x-6">
-            <span className="flex items-center">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className={`bg-slate-900 text-white text-center relative overflow-hidden ${isScrolled ? 'py-0.5' : 'py-1'}`} role="banner" aria-label="Current Sri Lanka date and time bar">
+        <div className="container mx-auto px-4 flex items-center justify-between text-xs sm:text-sm">
+          <div className="flex items-center space-x-4 sm:space-x-6">
+            <span className="flex items-center font-medium tracking-tight" aria-live="polite">
+              <svg className="w-4 h-4 mr-2 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {currentTime}
