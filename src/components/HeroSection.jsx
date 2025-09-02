@@ -17,6 +17,8 @@ import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from '../ut
 const HeroSection = ({ onNavigate }) => {
   // State to track the currently active background image
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  // State for current date and time
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
   
   /**
    * Configuration for background images and their associated content
@@ -107,6 +109,19 @@ const HeroSection = ({ onNavigate }) => {
   }, [backgroundImages.length]);
 
   /**
+   * Real-time date and time update effect
+   * Updates every second to show current date and time
+   */
+  useEffect(() => {
+    const dateTimeInterval = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(dateTimeInterval);
+  }, []);
+
+  /**
    * Handles manual navigation to specific slide
    * @param {number} index - The index of the slide to navigate to
    */
@@ -120,8 +135,41 @@ const HeroSection = ({ onNavigate }) => {
    */
   const currentSlide = backgroundImages[currentImageIndex];
 
+  /**
+   * Formats the current date and time for display
+   * @returns {Object} Formatted date and time information
+   */
+  const getFormattedDateTime = () => {
+    const options = {
+      timeZone: 'Asia/Colombo',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    };
+
+    const sriLankanTime = currentDateTime.toLocaleString('en-US', options);
+    const parts = sriLankanTime.split(', ');
+    
+    return {
+      weekday: parts[0],
+      date: parts[1],
+      time: parts[2],
+      year: currentDateTime.getFullYear(),
+      month: currentDateTime.toLocaleString('en-US', { month: 'long', timeZone: 'Asia/Colombo' }),
+      day: currentDateTime.getDate()
+    };
+  };
+
   return (
     <section className="relative h-[100svh] flex items-center overflow-hidden overscroll-none bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Date and Time Top Bar */}
+      {renderDateTimeTopBar()}
+      
       {/* Background Image Carousel */}
       {renderBackgroundImages()}
       
@@ -142,6 +190,47 @@ const HeroSection = ({ onNavigate }) => {
       {renderModernScrollIndicator()}
     </section>
   );
+
+  /**
+   * Renders the date and time top bar
+   * @returns {JSX.Element} Date time top bar element
+   */
+  function renderDateTimeTopBar() {
+    const { weekday, date, time, year, month, day } = getFormattedDateTime();
+    
+    return (
+      <div className="absolute top-0 left-0 right-0 z-40 bg-gradient-to-r from-slate-900/80 via-slate-800/70 to-slate-900/80 backdrop-blur-sm border-b border-white/10">
+        <div className="container mx-auto px-6 py-3">
+          <div className="flex items-center justify-between text-white">
+            {/* Left side - Weekday and Date */}
+            <div className="flex items-center space-x-4">
+              <div className="text-sm font-medium">
+                <span className="text-emerald-400">{weekday}</span>
+                <span className="mx-2 text-white/60">•</span>
+                <span className="text-white/90">{month} {day}, {year}</span>
+              </div>
+            </div>
+            
+            {/* Center - Sri Lanka Time */}
+            <div className="hidden md:flex items-center space-x-2">
+              <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12,6 12,12 16,14"></polyline>
+              </svg>
+              <span className="text-sm font-medium text-white/90">Sri Lanka Time</span>
+            </div>
+            
+            {/* Right side - Current Time */}
+            <div className="flex items-center space-x-2">
+              <div className="text-sm font-mono font-medium text-white/90">
+                {time}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   /**
    * Renders the rotating background images with clean, professional transitions
