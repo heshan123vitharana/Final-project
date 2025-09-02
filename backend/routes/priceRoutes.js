@@ -10,7 +10,8 @@ const {
   getPriceById,
   addPrice,
   updatePrice,
-  deletePrice
+  deletePrice,
+  getPriceStatistics
 } = priceController;
 
 console.log('🛣️ PriceRoutes: Functions check:');
@@ -19,11 +20,12 @@ console.log('  getPriceById:', typeof getPriceById);
 console.log('  addPrice:', typeof addPrice);
 console.log('  updatePrice:', typeof updatePrice);
 console.log('  deletePrice:', typeof deletePrice);
+console.log('  getPriceStatistics:', typeof getPriceStatistics);
 
 console.log('🛣️ PriceRoutes: Controller loaded, setting up routes...');
 
 // Public routes (for frontend display)
-router.get('/', getAllPrices);
+router.get('/', getAllPrices); // Now handles statistics via query param ?stats=true
 router.get('/:id', getPriceById);
 
 // Admin routes (protected - you may want to add auth middleware)

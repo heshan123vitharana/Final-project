@@ -63,6 +63,11 @@ const getAllPrices = async (req, res) => {
     console.log('📡 PriceController: getAllPrices called');
     console.log('📄 Query params:', req.query);
     
+    // Special case: if statistics are requested
+    if (req.query.stats === 'true') {
+      return getPriceStatistics(req, res);
+    }
+    
     const {
       district,
       province,
@@ -153,6 +158,9 @@ const getAllPrices = async (req, res) => {
 const getPriceById = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('🔍 getPriceById called with ID:', id);
+    console.log('🔍 Request path:', req.path);
+    console.log('🔍 Request URL:', req.url);
     
     const query = `
       SELECT 
@@ -392,6 +400,52 @@ const deletePrice = async (req, res) => {
   }
 };
 
+// Get database-wide price statistics
+const getPriceStatistics = async (req, res) => {
+  try {
+    console.log('📊 PriceController: getPriceStatistics called - CORRECT ENDPOINT HIT!');
+    console.log('📊 Request path:', req.path);
+    console.log('📊 Request URL:', req.url);
+    
+    const query = `
+      SELECT 
+        COUNT(*) as totalEntries,
+        AVG(price_per_kg) as averagePrice,
+        MAX(price_per_kg) as highestPrice,
+        MIN(price_per_kg) as lowestPrice,
+        COUNT(CASE WHEN type = 'Wet' THEN 1 END) as wetCount,
+        COUNT(CASE WHEN type = 'Dry' THEN 1 END) as dryCount
+      FROM paddy_prices 
+      WHERE status = 'Active'
+    `;
+
+    const [rows] = await db.execute(query);
+    const stats = rows[0];
+    
+    console.log('📊 Database statistics:', stats);
+    
+    res.json({
+      success: true,
+      data: {
+        totalEntries: parseInt(stats.totalEntries) || 0,
+        averagePrice: parseFloat(stats.averagePrice?.toFixed(2)) || 0,
+        highestPrice: parseFloat(stats.highestPrice) || 0,
+        lowestPrice: parseFloat(stats.lowestPrice) || 0,
+        wetCount: parseInt(stats.wetCount) || 0,
+        dryCount: parseInt(stats.dryCount) || 0
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching price statistics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch price statistics',
+      error: error.message
+    });
+  }
+};
+
 console.log('🔧 PriceController: Functions defined, preparing exports');
 
 module.exports = {
@@ -399,7 +453,8 @@ module.exports = {
   getPriceById,
   addPrice,
   updatePrice,
-  deletePrice
+  deletePrice,
+  getPriceStatistics
 };
 
 console.log('🔧 PriceController: Module exports completed');
