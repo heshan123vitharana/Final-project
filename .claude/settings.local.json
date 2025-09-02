@@ -15,7 +15,8 @@
       "Bash(move paddy_management.db paddy_management.db.backup)",
       "Bash(del /F /Q paddy_management.db*)",
       "Bash(taskkill:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:www.treasury.gov.lk)"
     ],
     "deny": [],
     "ask": []
