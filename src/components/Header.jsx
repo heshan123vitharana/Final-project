@@ -158,7 +158,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
       isScrolled ? 'bg-gradient-to-r from-emerald-400 via-green-400 to-teal-400 shadow-lg border-b border-emerald-200' : 'bg-gradient-to-r from-emerald-100/95 via-green-50/95 to-teal-50/95 backdrop-blur-md border-b border-emerald-100'
     }`}>
       {/* AWS-style Top Info Bar */}
-      <div className={`bg-slate-900 text-white ${isScrolled ? 'py-0.5' : 'py-1'} border-b border-slate-800`} role="banner" aria-label="Official Sri Lanka government site bar">
+      <div className={`${isScrolled ? 'bg-gradient-to-r from-slate-800 via-emerald-800 to-teal-800' : 'bg-gradient-to-r from-slate-900 via-emerald-900 to-teal-900'} text-white ${isScrolled ? 'py-0.5' : 'py-1'} border-b ${isScrolled ? 'border-emerald-700' : 'border-slate-800'}`} role="banner" aria-label="Official Sri Lanka government site bar">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4 text-[11px] sm:text-xs md:text-sm text-center">
           <div className="flex items-center gap-2 md:gap-3">
             <img
