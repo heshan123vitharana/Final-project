@@ -155,10 +155,10 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
 
   return (
     <header className={`fixed w-full z-50 top-0 transition-all duration-300 ${
-      isScrolled ? 'bg-white shadow-lg border-b border-gray-200' : 'bg-white/95 backdrop-blur-md border-b border-gray-100'
+      isScrolled ? 'bg-gradient-to-r from-emerald-400 via-green-400 to-teal-400 shadow-lg border-b border-emerald-200' : 'bg-gradient-to-r from-emerald-100/95 via-green-50/95 to-teal-50/95 backdrop-blur-md border-b border-emerald-100'
     }`}>
       {/* AWS-style Top Info Bar */}
-      <div className={`bg-slate-900 text-white ${isScrolled ? 'py-0.5' : 'py-1.5'} border-b border-slate-800`} role="banner" aria-label="Official Sri Lanka government site bar">
+      <div className={`bg-slate-900 text-white ${isScrolled ? 'py-0.5' : 'py-1'} border-b border-slate-800`} role="banner" aria-label="Official Sri Lanka government site bar">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4 text-[11px] sm:text-xs md:text-sm text-center">
           <div className="flex items-center gap-2 md:gap-3">
             <img
@@ -198,7 +198,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
       </div>
 
       {/* AWS-style Main Header */}
-      <div className={`container mx-auto px-4 ${isScrolled ? 'py-2' : 'py-3'}`}>
+      <div className={`container mx-auto px-4 ${isScrolled ? 'py-0' : 'py-0.5'}`}>
         <div className="flex items-center justify-between">
           {/* AWS-style Logo Section */}
           <div className="flex items-center space-x-3">
@@ -226,7 +226,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
                     <>
                       <button
                         onClick={() => setActiveDropdown(activeDropdown === item.id ? null : item.id)}
-                        className={`px-4 py-3 text-sm font-medium transition-colors duration-200 flex items-center space-x-1 hover:bg-gray-50 ${
+                        className={`px-3 py-1 text-sm font-medium transition-colors duration-200 flex items-center space-x-1 hover:bg-gray-50 ${
                           activeDropdown === item.id ? 'bg-gray-50 text-orange-600' : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
@@ -277,7 +277,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
                   ) : (
                     <button
                       onClick={() => handleNavClick(item.id)}
-                      className={`px-4 py-3 text-sm font-medium transition-colors duration-200 hover:bg-gray-50 ${
+                      className={`px-3 py-1 text-sm font-medium transition-colors duration-200 hover:bg-gray-50 ${
                         currentPage === item.id ? 'text-orange-600 bg-gray-50' : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
