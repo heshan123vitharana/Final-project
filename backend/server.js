@@ -32,13 +32,13 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 // Request logging middleware
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
     console.log(`📝 ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
     next();
 });
 
 // Basic route
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
     res.json({ message: 'Paddy Management System API' });
 });
 
@@ -53,7 +53,7 @@ app.use('/api/stock', stockRoutes);
 console.log('Stock routes registered');
 
 // 404 handler for undefined routes (must be after all other routes)
-app.use((req, res, next) => {
+app.use((req, res, _next) => {
     res.status(404).json({ 
         message: 'Route not found', 
         path: req.originalUrl,
@@ -62,7 +62,7 @@ app.use((req, res, next) => {
 });
 
 // Global error handler
-app.use((err, req, res, next) => {
+app.use((err, _req, res, _next) => {
     console.error('Global error handler:', err);
     res.status(500).json({ 
         message: 'Internal server error',

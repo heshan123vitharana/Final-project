@@ -3,8 +3,6 @@ import {
   Edit3,
   Check,
   X,
-  Save,
-  DollarSign,
   TrendingUp,
   TrendingDown,
   History,

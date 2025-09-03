@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from '../utils/scroll';
+// Import removed - unused utilities
 
 /**
  * HeroSection Component
@@ -14,7 +14,7 @@ import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from '../ut
  * - Manual slide control with dots
  * - Responsive design optimized for all devices
  */
-const HeroSection = ({ onNavigate }) => {
+const HeroSection = () => {
   // State to track the currently active background image
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   // State for current date and time
@@ -196,7 +196,7 @@ const HeroSection = ({ onNavigate }) => {
    * @returns {JSX.Element} Date time top bar element
    */
   function renderDateTimeTopBar() {
-    const { weekday, date, time, year, month, day } = getFormattedDateTime();
+    const { weekday, time, year, month, day } = getFormattedDateTime();
     
     console.log('🔧 Rendering DateTime Top Bar:', { weekday, month, day, year, time });
     
@@ -280,21 +280,7 @@ const HeroSection = ({ onNavigate }) => {
     });
   }
 
-  /**
-   * Renders the overlay for improved text contrast
-   * @returns {JSX.Element} Overlay element
-   */
-  function renderOverlay() {
-    return null; // Overlays are now handled in background images for better performance
-  }
 
-  /**
-   * Renders floating rice grain and wheat decorations
-   * @returns {JSX.Element} Decorative elements
-   */
-  function renderFloatingDecorations() {
-    return null; // Remove busy floating decorations for a calm, professional look
-  }
 
   /**
    * Renders modern decorative elements
@@ -333,7 +319,7 @@ const HeroSection = ({ onNavigate }) => {
    * Renders navigation dots for manual slide control
    * @returns {JSX.Element} Navigation dots
    */
-  function renderNavigationDots() {
+  function _UNUSED_renderNavigationDots() {
     return (
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
         {backgroundImages.map((_, index) => (

@@ -27,7 +27,7 @@ const req = http.request(options, (res) => {
     try {
       const jsonData = JSON.parse(data);
       console.log(JSON.stringify(jsonData, null, 2));
-    } catch (e) {
+    } catch {
       console.log('Raw response:', data);
     }
   });
