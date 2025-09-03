@@ -17,7 +17,9 @@
       "Bash(taskkill:*)",
       "mcp__ide__getDiagnostics",
       "WebFetch(domain:www.treasury.gov.lk)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Read(C:\\Users\\HESHAN WITHARANA\\OneDrive\\Desktop\\New folder (6)/**)",
+      "Read(C:\\Users\\HESHAN WITHARANA\\OneDrive\\Desktop\\New folder (6)/**)"
     ],
     "deny": [],
     "ask": []

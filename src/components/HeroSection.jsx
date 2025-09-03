@@ -219,14 +219,20 @@ const HeroSection = () => {
               </div>
             </div>
             
-            {/* Center - Sri Lanka Time Label */}
+            {/* Center - Government Official Text */}
             <div className="hidden md:flex items-center space-x-2">
-              <div className="flex items-center space-x-2 px-4 py-2 rounded-full bg-emerald-500/30 border border-emerald-400/50 shadow-md">
-                <svg className="w-5 h-5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12,6 12,12 16,14"></polyline>
-                </svg>
-                <span className="text-sm font-semibold text-emerald-200">Sri Lanka Time</span>
+              <div className="flex items-center space-x-2 px-4 py-2 rounded-full bg-blue-600/50 border border-blue-400/50 shadow-md">
+                {/* Sri Lankan Flag */}
+                <div className="w-6 h-4 relative rounded-sm overflow-hidden shadow-sm border border-yellow-400/30">
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-600"></div>
+                  <div className="absolute left-0 top-0 w-1.5 h-full bg-gradient-to-b from-green-600 to-green-700"></div>
+                  <div className="absolute left-1.5 top-0.5 w-3 h-2.5 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-sm flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 bg-red-600 rounded-full"></div>
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-white">
+                  An Official Website of the Government of Sri Lanka
+                </span>
               </div>
             </div>
             
