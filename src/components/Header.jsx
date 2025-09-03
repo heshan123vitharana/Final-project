@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import LanguageSelector from './LanguageSelector';
 import logoP from '../assets/logo-p.png';
-import flagSriLanka from '../assets/flag-sri-lanka.svg';
 
 const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistrationClick = () => {}, onAdminClick = () => {} }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -162,15 +161,17 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
       <div className={`bg-slate-900 text-white ${isScrolled ? 'py-0.5' : 'py-1.5'} border-b border-slate-800`} role="banner" aria-label="Official Sri Lanka government site bar">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4 text-[11px] sm:text-xs md:text-sm text-center">
           <div className="flex items-center gap-2 md:gap-3">
-            <img src={flagSriLanka} alt="Sri Lanka Flag" className="h-4 w-auto select-none" draggable="false" />
+            <img
+              src="/flag.png"
+              alt="Sri Lanka Flag"
+              className="h-4 w-auto select-none"
+              draggable="false"
+            />
             <span className="font-semibold tracking-tight whitespace-nowrap hidden md:inline">An Official Website of the Government of Sri Lanka</span>
             <span className="font-semibold tracking-tight md:hidden">Official Sri Lanka Government Website</span>
           </div>
           <span className="hidden md:inline text-slate-600">|</span>
           <span className="flex items-center font-medium tracking-tight" aria-live="polite">
-            <svg className="w-4 h-4 mr-1.5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
             {currentTime}
             <span className="ml-2 flex items-center text-[10px] text-emerald-300">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1" />LIVE

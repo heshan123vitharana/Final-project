@@ -1,21 +1,52 @@
-<!-- Simplified flat Sri Lanka flag (public domain). Proportions approximate 1:2 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-label="Flag of Sri Lanka">
-  <rect width="960" height="480" fill="#FFB700"/>
-  <!-- Green and saffron panels -->
-  <rect x="40" y="40" width="120" height="400" fill="#006A4E"/>
-  <rect x="160" y="40" width="120" height="400" fill="#FF8C00"/>
-  <!-- Crimson panel -->
-  <rect x="300" y="40" width="620" height="400" fill="#8D153A" stroke="#FFB700" stroke-width="8"/>
-  <!-- Four Bo leaves -->
-  <g fill="#FFB700">
-    <path d="M350 90c14 0 32 18 32 32s-12 32-32 32-32-18-32-32 18-32 32-32z"/>
-    <path d="M870 90c14 0 32 18 32 32s-12 32-32 32-32-18-32-32 18-32 32-32z"/>
-    <path d="M350 330c14 0 32 18 32 32s-12 32-32 32-32-18-32-32 18-32 32-32z"/>
-    <path d="M870 330c14 0 32 18 32 32s-12 32-32 32-32-18-32-32 18-32 32-32z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" role="img" aria-label="Flag of Sri Lanka">
+  <!-- Yellow border -->
+  <rect width="1200" height="600" fill="#FFB700"/>
+  
+  <!-- Inner flag area -->
+  <rect x="12" y="12" width="1176" height="576" fill="#FFB700"/>
+  
+  <!-- Green panel (left) -->
+  <rect x="24" y="24" width="180" height="552" fill="#006A4E"/>
+  
+  <!-- Orange/Saffron panel (middle-left) -->  
+  <rect x="204" y="24" width="180" height="552" fill="#FF8C00"/>
+  
+  <!-- Dark red/Maroon panel (right - main area) -->
+  <rect x="384" y="24" width="792" height="552" fill="#8D153A"/>
+  
+  <!-- Four Bo leaves (Pipal leaves) in corners of maroon area -->
+  <g fill="#FFB700" stroke="#FFB700" stroke-width="2">
+    <!-- Top left Bo leaf -->
+    <path d="M420 80 C430 60, 450 50, 470 60 C485 70, 490 90, 480 110 C475 120, 465 125, 450 120 C435 115, 425 95, 420 80 Z"/>
+    <!-- Top right Bo leaf -->
+    <path d="M1120 80 C1130 60, 1150 50, 1170 60 C1185 70, 1190 90, 1180 110 C1175 120, 1165 125, 1150 120 C1135 115, 1125 95, 1120 80 Z"/>
+    <!-- Bottom left Bo leaf -->
+    <path d="M420 520 C430 500, 450 490, 470 500 C485 510, 490 530, 480 550 C475 560, 465 565, 450 560 C435 555, 425 535, 420 520 Z"/>
+    <!-- Bottom right Bo leaf -->
+    <path d="M1120 520 C1130 500, 1150 490, 1170 500 C1185 510, 1190 530, 1180 550 C1175 560, 1165 565, 1150 560 C1135 555, 1125 535, 1120 520 Z"/>
   </g>
-  <!-- Stylized lion (simplified) -->
-  <g transform="translate(430,115) scale(0.8)" fill="#FFB700">
-    <path d="M80 180c-10-30 5-55 25-70l-15-25 30-20 20 25 35-10 10-25 35 5 5 25 30 5 10 25-25 20 15 35-20 25-30-10-15 30-35-5-5-25-30-5-10-25 20-25-25-30-20 30z"/>
-    <path d="M210 60l40-15 10 20-40 15z"/>
+  
+  <!-- Lion holding sword (simplified but recognizable) -->
+  <g transform="translate(580,150) scale(2.5)" fill="#FFB700" stroke="#8D153A" stroke-width="1">
+    <!-- Lion body -->
+    <ellipse cx="50" cy="80" rx="35" ry="45"/>
+    <!-- Lion head -->
+    <circle cx="35" cy="40" r="20"/>
+    <!-- Lion mane -->
+    <path d="M15 30 C10 25, 10 35, 15 40 C20 45, 25 50, 35 45 C45 50, 50 45, 55 40 C60 35, 60 25, 55 30 C50 20, 45 15, 35 20 C25 15, 20 20, 15 30 Z"/>
+    <!-- Front legs -->
+    <rect x="25" y="110" width="8" height="25" rx="4"/>
+    <rect x="38" y="110" width="8" height="25" rx="4"/>
+    <!-- Back legs -->
+    <rect x="55" y="110" width="8" height="25" rx="4"/>
+    <rect x="68" y="110" width="8" height="25" rx="4"/>
+    <!-- Tail (curved upward) -->
+    <path d="M80 70 C90 60, 95 50, 90 40 C85 35, 75 40, 80 50" stroke-width="6" fill="none" stroke="#FFB700"/>
+    <!-- Sword (in front paw) -->
+    <rect x="20" y="65" width="3" height="25" fill="#C0C0C0"/>
+    <rect x="18" y="63" width="7" height="4" fill="#C0C0C0"/>
+    <!-- Eyes -->
+    <circle cx="30" cy="38" r="2" fill="#8D153A"/>
+    <circle cx="40" cy="38" r="2" fill="#8D153A"/>
   </g>
 </svg>
