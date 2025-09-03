@@ -17,8 +17,7 @@ import { useState, useEffect } from 'react';
 const HeroSection = () => {
   // State to track the currently active background image
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  // State for current date and time
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  // (Removed local date/time state – handled by Header)
   
   /**
    * Configuration for background images and their associated content
@@ -108,18 +107,7 @@ const HeroSection = () => {
     return () => clearInterval(interval);
   }, [backgroundImages.length]);
 
-  /**
-   * Real-time date and time update effect
-   * Updates every second to show current date and time
-   */
-  useEffect(() => {
-    const dateTimeInterval = setInterval(() => {
-      setCurrentDateTime(new Date());
-    }, 1000);
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(dateTimeInterval);
-  }, []);
+  // (Removed local date/time updater – global header handles real-time clock)
 
   /**
    * Handles manual navigation to specific slide
@@ -135,40 +123,11 @@ const HeroSection = () => {
    */
   const currentSlide = backgroundImages[currentImageIndex];
 
-  /**
-   * Formats the current date and time for display
-   * @returns {Object} Formatted date and time information
-   */
-  const getFormattedDateTime = () => {
-    const options = {
-      timeZone: 'Asia/Colombo',
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true
-    };
-
-    const sriLankanTime = currentDateTime.toLocaleString('en-US', options);
-    const parts = sriLankanTime.split(', ');
-    
-    return {
-      weekday: parts[0],
-      date: parts[1],
-      time: parts[2],
-      year: currentDateTime.getFullYear(),
-      month: currentDateTime.toLocaleString('en-US', { month: 'long', timeZone: 'Asia/Colombo' }),
-      day: currentDateTime.getDate()
-    };
-  };
+  // (Removed date/time formatting util – not needed locally)
 
   return (
     <section className="relative h-[100svh] flex items-center overflow-hidden overscroll-none bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Date and Time Top Bar */}
-      {renderDateTimeTopBar()}
+  {/* Top bar removed (handled globally in Header) */}
       
       {/* Background Image Carousel */}
       {renderBackgroundImages()}
@@ -191,66 +150,7 @@ const HeroSection = () => {
     </section>
   );
 
-  /**
-   * Renders the date and time top bar
-   * @returns {JSX.Element} Date time top bar element
-   */
-  function renderDateTimeTopBar() {
-    const { weekday, time, year, month, day } = getFormattedDateTime();
-    
-    console.log('🔧 Rendering DateTime Top Bar:', { weekday, month, day, year, time });
-    
-    return (
-      <div className="absolute top-0 left-0 right-0 z-[999] bg-gradient-to-r from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-md border-b-2 border-emerald-400/30 shadow-lg">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between text-white">
-            {/* Left side - Weekday and Date */}
-            <div className="flex items-center space-x-4">
-              <div className="text-sm font-medium">
-                <span className="text-emerald-400 font-bold text-base">{weekday}</span>
-                <span className="mx-2 text-white/60">•</span>
-                <span className="text-white/95 font-medium">{month} {day}, {year}</span>
-              </div>
-              <div className="hidden sm:flex items-center text-xs text-emerald-300 bg-emerald-500/20 px-2 py-1 rounded-full">
-                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                </svg>
-                Today
-              </div>
-            </div>
-            
-            {/* Center - Government Official Text */}
-            <div className="hidden md:flex items-center space-x-2">
-              <div className="flex items-center space-x-2 px-4 py-2 rounded-full bg-blue-600/50 border border-blue-400/50 shadow-md">
-                {/* Sri Lankan Flag */}
-                <div className="w-6 h-4 relative rounded-sm overflow-hidden shadow-sm border border-yellow-400/30">
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-600"></div>
-                  <div className="absolute left-0 top-0 w-1.5 h-full bg-gradient-to-b from-green-600 to-green-700"></div>
-                  <div className="absolute left-1.5 top-0.5 w-3 h-2.5 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-sm flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 bg-red-600 rounded-full"></div>
-                  </div>
-                </div>
-                <span className="text-sm font-semibold text-white">
-                  An Official Website of the Government of Sri Lanka
-                </span>
-              </div>
-            </div>
-            
-            {/* Right side - Current Time */}
-            <div className="flex items-center space-x-3">
-              <div className="text-base font-mono font-bold text-white bg-slate-700/80 px-4 py-2 rounded-lg border-2 border-emerald-400/40 shadow-lg">
-                {time}
-              </div>
-              <div className="hidden lg:flex items-center text-xs text-emerald-300">
-                <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse mr-2 shadow-lg shadow-emerald-400/50"></div>
-                <span className="font-medium">LIVE</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // (Removed renderDateTimeTopBar – unified top bar is in Header)
 
   /**
    * Renders the rotating background images with clean, professional transitions

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import LanguageSelector from './LanguageSelector';
 import logoP from '../assets/logo-p.png';
+import flagSriLanka from '../assets/flag-sri-lanka.svg';
 
 const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistrationClick = () => {}, onAdminClick = () => {} }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -158,25 +159,33 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
       isScrolled ? 'bg-white shadow-lg border-b border-gray-200' : 'bg-white/95 backdrop-blur-md border-b border-gray-100'
     }`}>
       {/* AWS-style Top Info Bar */}
-      <div className={`bg-slate-900 text-white text-center relative overflow-hidden ${isScrolled ? 'py-0.5' : 'py-1'}`} role="banner" aria-label="Current Sri Lanka date and time bar">
-        <div className="container mx-auto px-4 flex items-center justify-between text-xs sm:text-sm">
-          <div className="flex items-center space-x-4 sm:space-x-6">
-            <span className="flex items-center font-medium tracking-tight" aria-live="polite">
-              <svg className="w-4 h-4 mr-2 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {currentTime}
-            </span>
+      <div className={`bg-slate-900 text-white ${isScrolled ? 'py-0.5' : 'py-1.5'} border-b border-slate-800`} role="banner" aria-label="Official Sri Lanka government site bar">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4 text-[11px] sm:text-xs md:text-sm text-center">
+          <div className="flex items-center gap-2 md:gap-3">
+            <img src={flagSriLanka} alt="Sri Lanka Flag" className="h-4 w-auto select-none" draggable="false" />
+            <span className="font-semibold tracking-tight whitespace-nowrap hidden md:inline">An Official Website of the Government of Sri Lanka</span>
+            <span className="font-semibold tracking-tight md:hidden">Official Sri Lanka Government Website</span>
           </div>
-          <div className="flex items-center space-x-4">
-            <span className="flex items-center">
-              <span className="mr-2">📞</span>
+          <span className="hidden md:inline text-slate-600">|</span>
+          <span className="flex items-center font-medium tracking-tight" aria-live="polite">
+            <svg className="w-4 h-4 mr-1.5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {currentTime}
+            <span className="ml-2 flex items-center text-[10px] text-emerald-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1" />LIVE
+            </span>
+          </span>
+          <span className="hidden md:inline text-slate-600">|</span>
+          <div className="flex items-center gap-4">
+            <span className="flex items-center whitespace-nowrap">
+              <span className="mr-1 sm:mr-2">📞</span>
               Hotline: +94 11 234 5678
             </span>
             <button
               title="Admin Login"
               onClick={onAdminClick}
-              className="flex items-center px-2 py-1 rounded text-xs hover:bg-slate-800 transition-colors"
+              className="hidden sm:flex items-center px-2 py-1 rounded hover:bg-slate-800 transition-colors"
             >
               <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M17 8V7a5 5 0 0 0-10 0v1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2zm-8-1a3 3 0 0 1 6 0v1h-6zm9 12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zm-6-3a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1z"/>

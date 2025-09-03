@@ -1,0 +1,21 @@
+<!-- Simplified flat Sri Lanka flag (public domain). Proportions approximate 1:2 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-label="Flag of Sri Lanka">
+  <rect width="960" height="480" fill="#FFB700"/>
+  <!-- Green and saffron panels -->
+  <rect x="40" y="40" width="120" height="400" fill="#006A4E"/>
+  <rect x="160" y="40" width="120" height="400" fill="#FF8C00"/>
+  <!-- Crimson panel -->
+  <rect x="300" y="40" width="620" height="400" fill="#8D153A" stroke="#FFB700" stroke-width="8"/>
+  <!-- Four Bo leaves -->
+  <g fill="#FFB700">
+    <path d="M350 90c14 0 32 18 32 32s-12 32-32 32-32-18-32-32 18-32 32-32z"/>
+    <path d="M870 90c14 0 32 18 32 32s-12 32-32 32-32-18-32-32 18-32 32-32z"/>
+    <path d="M350 330c14 0 32 18 32 32s-12 32-32 32-32-18-32-32 18-32 32-32z"/>
+    <path d="M870 330c14 0 32 18 32 32s-12 32-32 32-32-18-32-32 18-32 32-32z"/>
+  </g>
+  <!-- Stylized lion (simplified) -->
+  <g transform="translate(430,115) scale(0.8)" fill="#FFB700">
+    <path d="M80 180c-10-30 5-55 25-70l-15-25 30-20 20 25 35-10 10-25 35 5 5 25 30 5 10 25-25 20 15 35-20 25-30-10-15 30-35-5-5-25-30-5-10-25 20-25-25-30-20 30z"/>
+    <path d="M210 60l40-15 10 20-40 15z"/>
+  </g>
+</svg>
