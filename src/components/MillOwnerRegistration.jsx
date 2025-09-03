@@ -433,11 +433,18 @@ const MillOwnerRegistration = ({ userData, onRegistrationComplete, onBack }) => 
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-500/10 via-green-500/5 to-teal-500/10 backdrop-blur-sm">
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white/95 backdrop-blur-lg rounded-3xl max-w-5xl mx-auto shadow-2xl border border-emerald-200/50">
-          {/* Enhanced Header with Gradient */}
-          <div className="relative bg-gradient-to-r from-emerald-600/90 via-green-600/85 to-teal-600/90 backdrop-blur-sm p-8 text-white overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-green-400/20 to-emerald-400/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-emerald-400/20 to-teal-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-gradient-to-r from-teal-400/10 to-green-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
+
+      <div className="relative container mx-auto px-4 py-8">
+        <div className="bg-white/5 backdrop-blur-xl rounded-3xl max-w-5xl mx-auto shadow-2xl border border-white/10">
+          {/* Enhanced Header with Modern Gradient */}
+          <div className="relative bg-gradient-to-r from-green-600/80 via-emerald-600/75 to-teal-600/80 backdrop-blur-sm p-8 text-white overflow-hidden rounded-t-3xl">
             {/* Animated Background Pattern */}
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-0 left-0 w-40 h-40 bg-white rounded-full -translate-x-20 -translate-y-20 animate-pulse"></div>
@@ -460,7 +467,7 @@ const MillOwnerRegistration = ({ userData, onRegistrationComplete, onBack }) => 
             {/* Header Content */}
             <div className="relative z-10 flex items-center gap-6 mt-4">
               {/* Professional Icon */}
-              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
+              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm shadow-lg">
                 <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-6 0h-6m2 0v-4a2 2 0 012-2h2a2 2 0 012 2v4" />
                 </svg>
@@ -468,18 +475,18 @@ const MillOwnerRegistration = ({ userData, onRegistrationComplete, onBack }) => 
               
               {/* Title and Description */}
               <div className="flex-1">
-                <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-green-100 bg-clip-text">
-                  PMB License Registration
+                <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-green-100 bg-clip-text text-transparent">
+                  Mill Registration
                 </h1>
                 <p className="text-green-100 text-lg">
-                  Apply for your Paddy Marketing Board license and join Sri Lanka's premier rice mill network
+                  Join Sri Lanka's premier rice mill network through the Paddy Marketing Board
                 </p>
               </div>
               
               {/* Status Badge */}
               <div className="hidden lg:flex items-center gap-3 bg-white/10 px-6 py-3 rounded-2xl backdrop-blur-sm">
                 <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="font-semibold">Processing Application</span>
+                <span className="font-semibold">New Application</span>
               </div>
             </div>
           </div>
@@ -490,13 +497,13 @@ const MillOwnerRegistration = ({ userData, onRegistrationComplete, onBack }) => 
             {renderStepIndicator()}
 
             {/* Form Content */}
-            <div className="bg-gray-50 rounded-2xl p-8 min-h-[500px]">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 min-h-[500px] border border-white/20">
               {currentStep === 1 && renderPersonalInfoStep()}
               {/* Add other steps here... */}
             </div>
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+            <div className="flex justify-between items-center mt-8 pt-6 border-t border-white/20">
               <button
                 onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
                 disabled={currentStep === 1}

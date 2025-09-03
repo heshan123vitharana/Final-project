@@ -1,68 +1,87 @@
 import React, { useState } from "react";
 
-const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handleSubmit, onBackToHome }) => {
+const MillLogin = ({ isLoading, errors = {}, formData, handleInputChange, handleSubmit, onBackToHome, onForgotPassword, onRegister }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [loginMode, setLoginMode] = useState('login'); // 'login', 'register', 'forgot'
+
+  const handleModeSwitch = (mode) => {
+    setLoginMode(mode);
+    if (onRegister && mode === 'register') {
+      onRegister();
+    }
+    if (onForgotPassword && mode === 'forgot') {
+      onForgotPassword();
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-black flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900 flex items-center justify-center p-4">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-emerald-400/20 to-teal-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-blue-400/20 to-emerald-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-teal-400/10 to-emerald-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-green-400/20 to-emerald-400/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-emerald-400/20 to-teal-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/3 left-1/3 w-96 h-96 bg-gradient-to-r from-teal-400/10 to-green-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
 
-      <div className="relative w-full max-w-5xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-        {/* Left Section - Professional Branding */}
+      <div className="relative w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+        {/* Left Section - Professional Mill Branding */}
         <div className="hidden lg:flex flex-col justify-center space-y-8 text-white px-8">
           {/* Logo/Icon */}
           <div className="flex items-center space-x-4 mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center shadow-2xl">
+            <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-2xl">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-2m-6 0h-6m2 0v-4a2 2 0 012-2h2a2 2 0 012 2v4" />
               </svg>
             </div>
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                PMB Admin
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                Mill Portal
               </h1>
-              <p className="text-gray-400 text-sm">Secure Administrative Portal</p>
+              <p className="text-gray-400 text-sm">Paddy Marketing Board</p>
             </div>
           </div>
 
           <div className="space-y-6">
             <h2 className="text-4xl font-bold leading-tight">
-              Secure Access to
-              <span className="block bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                Admin Dashboard
+              Welcome to the
+              <span className="block bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                Mill Owner Dashboard
               </span>
             </h2>
             <p className="text-lg text-gray-300 leading-relaxed">
-              Manage the Paddy Marketing Board system with advanced administrative tools, 
-              real-time analytics, and comprehensive control panels.
+              Access your mill operations, manage paddy procurement, track inventory, 
+              and connect with farmers across Sri Lanka through our comprehensive platform.
             </p>
             
             {/* Feature highlights */}
             <div className="space-y-4 pt-6">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
                   </svg>
                 </div>
-                <span className="text-gray-300">Advanced user management</span>
+                <span className="text-gray-300">Real-time paddy price tracking</span>
               </div>
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
                   </svg>
                 </div>
-                <span className="text-gray-300">Real-time system monitoring</span>
+                <span className="text-gray-300">Inventory management system</span>
               </div>
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                  </svg>
+                </div>
+                <span className="text-gray-300">Direct farmer procurement network</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
                   </svg>
                 </div>
@@ -77,13 +96,13 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
           <div className="bg-white/5 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10 p-8 w-full">
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <h3 className="text-3xl font-bold text-white mb-2">Welcome Back</h3>
-              <p className="text-gray-400">Sign in to access your admin dashboard</p>
+              <h3 className="text-3xl font-bold text-white mb-2">Mill Owner Login</h3>
+              <p className="text-gray-400">Access your mill management dashboard</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -103,8 +122,8 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    placeholder="admin@pmb.gov.lk"
-                    className="block w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                    placeholder="mill@example.com"
+                    className="block w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   />
                 </div>
                 {errors.email && (
@@ -134,7 +153,7 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
                     value={formData.password}
                     onChange={handleInputChange}
                     placeholder="Enter your password"
-                    className="block w-full pl-10 pr-12 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                    className="block w-full pl-10 pr-12 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   />
                   <button
                     type="button"
@@ -166,12 +185,16 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
               {/* Remember me and Forgot password */}
               <div className="flex items-center justify-between">
                 <label className="flex items-center">
-                  <input type="checkbox" className="rounded border-white/20 bg-white/10 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0" />
+                  <input type="checkbox" className="rounded border-white/20 bg-white/10 text-green-500 focus:ring-green-500 focus:ring-offset-0" />
                   <span className="ml-2 text-sm text-gray-300">Remember me</span>
                 </label>
-                <a href="#" className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch('forgot')}
+                  className="text-sm text-green-400 hover:text-green-300 transition-colors"
+                >
                   Forgot password?
-                </a>
+                </button>
               </div>
 
               {/* Buttons */}
@@ -179,7 +202,7 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center space-x-2"
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] transition-all duration-200 flex items-center justify-center space-x-2"
                 >
                   {isLoading ? (
                     <>
@@ -187,7 +210,7 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <span>Authenticating...</span>
+                      <span>Signing In...</span>
                     </>
                   ) : (
                     <>
@@ -198,6 +221,18 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
                     </>
                   )}
                 </button>
+
+                {/* Register Link */}
+                <div className="text-center">
+                  <span className="text-gray-400 text-sm">Don't have an account? </span>
+                  <button
+                    type="button"
+                    onClick={() => handleModeSwitch('register')}
+                    className="text-green-400 hover:text-green-300 font-medium text-sm transition-colors"
+                  >
+                    Register your mill
+                  </button>
+                </div>
 
                 <button
                   type="button"
@@ -216,14 +251,14 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
 
         {/* Mobile branding for small screens */}
         <div className="lg:hidden text-center text-white mt-8">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-            PMB Admin Portal
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+            Mill Owner Portal
           </h1>
-          <p className="text-gray-400 text-sm mt-1">Secure Administrative Access</p>
+          <p className="text-gray-400 text-sm mt-1">Paddy Marketing Board</p>
         </div>
       </div>
     </div>
   );
 };
 
-export default AdminLogin;
+export default MillLogin;
