@@ -16,7 +16,8 @@
       "Bash(del /F /Q paddy_management.db*)",
       "Bash(taskkill:*)",
       "mcp__ide__getDiagnostics",
-      "WebFetch(domain:www.treasury.gov.lk)"
+      "WebFetch(domain:www.treasury.gov.lk)",
+      "Bash(tasklist:*)"
     ],
     "deny": [],
     "ask": []

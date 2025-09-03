@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 console.log('🛣️ PriceRoutes: Loading price controller...');
-const priceController = require('../controllers/priceController');
+const priceController = require('../controllers/priceController_mysql');
 console.log('🛣️ PriceRoutes: Controller exports:', Object.keys(priceController));
 
 const {
@@ -10,8 +10,7 @@ const {
   getPriceById,
   addPrice,
   updatePrice,
-  deletePrice,
-  getPriceStatistics
+  deletePrice
 } = priceController;
 
 console.log('🛣️ PriceRoutes: Functions check:');
@@ -20,7 +19,6 @@ console.log('  getPriceById:', typeof getPriceById);
 console.log('  addPrice:', typeof addPrice);
 console.log('  updatePrice:', typeof updatePrice);
 console.log('  deletePrice:', typeof deletePrice);
-console.log('  getPriceStatistics:', typeof getPriceStatistics);
 
 console.log('🛣️ PriceRoutes: Controller loaded, setting up routes...');
 
