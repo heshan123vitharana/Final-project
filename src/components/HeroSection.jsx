@@ -223,7 +223,7 @@ const HeroSection = () => {
               <img 
                 src="/farmer.png" 
                 alt="Sri Lankan Farmer" 
-                className="relative z-10 w-full h-full max-w-[24rem] max-h-[32rem] md:max-w-[28rem] md:max-h-[36rem] lg:max-w-[32rem] lg:max-h-[40rem] xl:max-w-[36rem] xl:max-h-[44rem] 2xl:max-w-[40rem] 2xl:max-h-[48rem] object-contain object-bottom"
+                className="relative z-10 w-full h-full max-w-[28rem] max-h-[36rem] md:max-w-[34rem] md:max-h-[42rem] lg:max-w-[40rem] lg:max-h-[48rem] xl:max-w-[46rem] xl:max-h-[54rem] 2xl:max-w-[52rem] 2xl:max-h-[60rem] object-contain object-bottom"
                 style={{
                   objectPosition: 'bottom center'
                 }}
@@ -233,7 +233,7 @@ const HeroSection = () => {
                 }}
               />
               {/* Fallback placeholder when image is not found */}
-              <div className="relative z-10 w-full h-full max-w-[24rem] max-h-[32rem] md:max-w-[28rem] md:max-h-[36rem] lg:max-w-[32rem] lg:max-h-[40rem] xl:max-w-[36rem] xl:max-h-[44rem] 2xl:max-w-[40rem] 2xl:max-h-[48rem] bg-gradient-to-br from-emerald-400/30 to-green-600/30 rounded-2xl backdrop-blur-sm border border-white/20 hidden items-center justify-center text-center p-8">
+              <div className="relative z-10 w-full h-full max-w-[28rem] max-h-[36rem] md:max-w-[34rem] md:max-h-[42rem] lg:max-w-[40rem] lg:max-h-[48rem] xl:max-w-[46rem] xl:max-h-[54rem] 2xl:max-w-[52rem] 2xl:max-h-[60rem] bg-gradient-to-br from-emerald-400/30 to-green-600/30 rounded-2xl backdrop-blur-sm border border-white/20 hidden items-center justify-center text-center p-8">
                 <div>
                   <div className="w-16 h-16 bg-white/20 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
