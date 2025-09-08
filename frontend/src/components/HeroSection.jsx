@@ -250,28 +250,6 @@ const HeroSection = () => {
     );
   }
 
-  /**
-   * Renders navigation dots for manual slide control
-   * @returns {JSX.Element} Navigation dots
-   */
-  function _UNUSED_renderNavigationDots() {
-    return (
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
-        {backgroundImages.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => handleSlideNavigation(index)}
-            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-              index === currentImageIndex 
-                ? 'bg-emerald-600 scale-110' 
-                : 'bg-emerald-300/60 hover:bg-emerald-400'
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
-      </div>
-    );
-  }
 
   /**
    * Renders professional navigation dots for manual slide control

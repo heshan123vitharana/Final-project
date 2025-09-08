@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { BrowserRouter as Router } from 'react-router-dom'
 import Header from './components/Header'
 import HeroSection from './components/HeroSection'
 import About from './components/About-New'

@@ -90,6 +90,7 @@ body {
   /* Modern Card Components */
   .gov-card {
     @apply bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     background: rgba(255, 255, 255, 0.95);
   }
@@ -97,6 +98,7 @@ body {
   .gov-card-elevated {
     @apply bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border-0 overflow-hidden;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+    -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.2);
   }
