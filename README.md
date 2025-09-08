@@ -1,84 +1,80 @@
-# Paddy Marketing Board Sri Lanka - E-commerce Website
+# Final Project - Paddy Marketing Board
 
-A modern, responsive e-commerce website for the Paddy Marketing Board of Sri Lanka, built with React, Vite, JavaScript, and Tailwind CSS.
+A full-stack web application for Sri Lanka's Paddy Marketing Board with separated frontend and backend architecture.
 
-## Features
+## 🏗️ Project Structure
 
-- **Modern Design**: Clean, professional interface inspired by leading e-commerce platforms
-- **Responsive Layout**: Fully responsive design that works on all devices
-- **Rice Product Showcase**: Comprehensive display of various rice varieties and their details
-- **E-commerce Functionality**: Product listings, pricing, and shopping cart functionality
-- **Agricultural Focus**: Tailored specifically for rice and paddy products
-- **Government Authority**: Official branding for Paddy Marketing Board Sri Lanka
+```
+Final-project/
+├── frontend/                 # React.js Frontend Application
+│   ├── src/                 # Source code
+│   │   ├── components/      # React components
+│   │   │   ├── Header.jsx         # Main navigation and branding
+│   │   │   ├── HeroSection.jsx    # Featured products and promotions
+│   │   │   ├── NewArrivals.jsx    # Latest rice varieties
+│   │   │   ├── Features.jsx       # Key benefits and services
+│   │   │   └── Footer.jsx         # Contact info and links
+│   │   ├── assets/         # Static assets
+│   │   ├── App.jsx         # Main application component
+│   │   ├── main.jsx        # Application entry point
+│   │   └── index.css       # Tailwind CSS imports
+│   ├── public/             # Public assets
+│   │   ├── farmer.png      # Farmer illustration
+│   │   ├── bg-1.jpg to bg-5.jpg  # Background images
+│   │   └── ...
+│   ├── package.json        # Frontend dependencies
+│   ├── vite.config.js      # Vite configuration
+│   ├── tailwind.config.js  # Tailwind CSS config
+│   └── index.html          # Main HTML file
+├── backend/                # Node.js Backend API
+│   ├── controllers/        # Route controllers
+│   ├── models/            # Database models
+│   ├── routes/            # API routes
+│   ├── middleware/        # Custom middleware
+│   ├── config/            # Configuration files
+│   └── package.json       # Backend dependencies
+└── README.md              # This file
+```
 
-## Tech Stack
+## 🚀 Getting Started
 
-- **Frontend**: React 18 with functional components and hooks
-- **Build Tool**: Vite for fast development and optimized builds
-- **Styling**: Tailwind CSS with custom color palette for agricultural theme
-- **Language**: JavaScript (ES6+)
-- **Icons**: SVG icons and emoji for visual elements
+### Frontend Development
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Frontend will run on: `http://localhost:5173`
 
-## Color Palette
+### Backend Development
+```bash
+cd backend
+npm install
+npm start
+```
+Backend API will run on: `http://localhost:5000`
+
+## 🔧 Technologies Used
+
+### Frontend
+- **React 18** with functional components and hooks
+- **Vite** for fast development and optimized builds
+- **Tailwind CSS** with custom color palette for agricultural theme
+- **JavaScript (ES6+)**
+- **SVG icons** and custom illustrations
+
+### Backend
+- **Node.js** server-side runtime
+- **Express.js** web framework
+- **MongoDB/Database** for data storage
+- **RESTful API** architecture
+
+## 🎨 Color Palette
 
 - **Rice Gold**: `#D4AF37` - Premium quality highlight
 - **Paddy Green**: `#4A6741` - Primary brand color
 - **Earth Brown**: `#8B4513` - Natural earth tones
 - **Fresh Green**: `#90EE90` - Growth and freshness
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (version 14 or higher)
-- npm or yarn package manager
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone [repository-url]
-cd final_project1
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Start the development server:
-```bash
-npm run dev
-```
-
-4. Open your browser and navigate to `http://localhost:5173`
-
-### Building for Production
-
-```bash
-npm run build
-```
-
-### Preview Production Build
-
-```bash
-npm run preview
-```
-
-## Project Structure
-
-```
-src/
-├── components/
-│   ├── Header.jsx         # Main navigation and branding
-│   ├── HeroSection.jsx    # Featured products and promotions
-│   ├── NewArrivals.jsx    # Latest rice varieties
-│   ├── Features.jsx       # Key benefits and services
-│   └── Footer.jsx         # Contact info and links
-├── App.jsx               # Main application component
-├── main.jsx             # Application entry point
-└── index.css            # Tailwind CSS imports
-```
 
 ## Components Overview
 

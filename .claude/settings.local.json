@@ -20,7 +20,8 @@
       "Bash(tasklist:*)",
       "Read(C:\\Users\\HESHAN WITHARANA\\OneDrive\\Desktop\\New folder (6)/**)",
       "Read(C:\\Users\\HESHAN WITHARANA\\OneDrive\\Desktop\\New folder (6)/**)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
