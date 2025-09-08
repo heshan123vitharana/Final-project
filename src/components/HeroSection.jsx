@@ -27,21 +27,21 @@ const HeroSection = () => {
     {
       image: "bg-1.jpg",
       gradient: "from-purple-600/60 to-pink-600/60",
-      title: "Premium Sri Lankan Rice",
+      title: "Premium Quality",
       mainTitle: "PREMIUM",
-      mainSubtitle: "QUALITY RICE",
-      subtitle: "From our fertile fields to your table",
-      description: "Experience the finest quality rice, carefully selected and processed by the Paddy Marketing Board of Sri Lanka for over 50 years.",
+      mainSubtitle: "SRI LANKAN RICE",
+      subtitle: "From fertile fields to your table",
+      description: "50+ years of trusted quality rice production by Sri Lanka's Paddy Marketing Board.",
       accent: "text-pink-200"
     },
     {
       image: "bg-2.jpg",
       gradient: "from-amber-600/60 to-orange-600/60",
-      title: "Quality Assurance",
-      mainTitle: "TRUSTED",
+      title: "Quality Assured",
+      mainTitle: "CERTIFIED",
       mainSubtitle: "EXCELLENCE",
-      subtitle: "Certified quality, batch by batch",
-      description: "Every grain meets our strict quality standards. Government-tested and certified rice varieties for your family's nutrition and health.",
+      subtitle: "Government-tested quality standards",
+      description: "Every grain certified for nutrition, health and family satisfaction.",
       accent: "text-amber-200"
     },
     {
@@ -49,29 +49,29 @@ const HeroSection = () => {
       gradient: "from-emerald-600/60 to-green-600/60",
       title: "Sustainable Farming",
       mainTitle: "ECO-FRIENDLY",
-      mainSubtitle: "CULTIVATION",
-      subtitle: "Protecting Sri Lanka's agricultural heritage",
-      description: "Supporting sustainable farming practices across the island, ensuring environmental protection while maintaining high productivity for future generations.",
+      mainSubtitle: "AGRICULTURE",
+      subtitle: "Protecting our agricultural heritage",
+      description: "Sustainable farming practices ensuring environmental protection and future productivity.",
       accent: "text-emerald-200"
     },
     {
       image: "bg-4.jpg",
-      gradient: "from-blue-600/60 to-indigo-600/60",
-      title: "Supporting Farmers",
-      mainTitle: "FARMER",
-      mainSubtitle: "EMPOWERMENT",
-      subtitle: "Fair prices, guaranteed procurement",
-      description: "Directly supporting over 1.8 million farming families across Sri Lanka with guaranteed minimum prices and reliable procurement services.",
-      accent: "text-blue-200"
+      gradient: "from-green-600/60 to-emerald-600/60",
+      title: "Farmer Support",
+      mainTitle: "EMPOWERING",
+      mainSubtitle: "FARMERS",
+      subtitle: "Fair prices, guaranteed support",
+      description: "Supporting 1.8 million farming families with guaranteed minimum prices nationwide.",
+      accent: "text-green-200"
     },
     {
       image: "bg-5.jpg",
       gradient: "from-yellow-600/60 to-red-600/60",
-      title: "Island-wide Network",
-      mainTitle: "NATIONWIDE",
-      mainSubtitle: "DISTRIBUTION",
-      subtitle: "Serving all 25 districts of Sri Lanka",
-      description: "Comprehensive distribution network ensuring fresh, quality rice reaches every corner of the island through our extensive collection centers and retail outlets.",
+      title: "Nationwide Service",
+      mainTitle: "ISLAND-WIDE",
+      mainSubtitle: "NETWORK",
+      subtitle: "Serving all 25 districts",
+      description: "Comprehensive distribution ensuring fresh, quality rice reaches every corner of Sri Lanka.",
       accent: "text-yellow-200"
     }
   ];
@@ -200,22 +200,51 @@ const HeroSection = () => {
    */
   function renderEnhancedMainContent() {
     return (
-  <div className="container mx-auto px-6 relative z-10 h-full flex items-center md:items-start justify-center md:justify-start pt-6 sm:pt-8 md:pt-24 lg:pt-32 xl:pt-36">
-        <div className="max-w-4xl w-full text-center md:text-left mx-auto md:mx-0">
-          <div className="inline-flex items-center rounded-full bg-emerald-400/20 px-3 py-1 text-[11px] font-semibold text-emerald-100 ring-1 ring-emerald-300/40 shadow-sm mb-3 animate-fade-in">
-            {currentSlide.title}
+      <div className="container mx-auto px-6 relative z-10 h-full flex items-start pt-6 sm:pt-8 md:pt-16 lg:pt-20">
+        <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-8 w-full min-h-full">
+          {/* Left side - Text content */}
+          <div className="text-center lg:text-left lg:pr-8 flex flex-col justify-center">
+            <h2 className="text-[2.5rem] md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1] drop-shadow-md animate-slide-up">
+              {currentSlide.mainTitle}
+              <br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-lime-200">{currentSlide.mainSubtitle}</span>
+            </h2>
+            <p className="text-lg md:text-xl lg:text-2xl text-white/90 mt-4 leading-relaxed animate-fade-in-delayed">
+              {currentSlide.subtitle}
+            </p>
+            <p className="text-base md:text-lg lg:text-xl text-white/85 mt-3 leading-relaxed animate-fade-in max-w-2xl">
+              {currentSlide.description}
+            </p>
           </div>
-          <h2 className="text-[2.75rem] md:text-6xl font-extrabold tracking-tight text-white leading-[1.1] drop-shadow-md animate-slide-up">
-            {currentSlide.mainTitle}
-            <br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 to-lime-200">{currentSlide.mainSubtitle}</span>
-          </h2>
-          <p className="text-lg md:text-2xl text-white/90 mt-4 leading-relaxed animate-fade-in-delayed">
-            {currentSlide.subtitle}
-          </p>
-          <p className="text-base md:text-xl text-white/85 mt-3 leading-relaxed animate-fade-in">
-            {currentSlide.description}
-          </p>
+          
+          {/* Right side - Farmer illustration */}
+          <div className="relative flex items-end justify-center lg:justify-end h-full overflow-hidden">
+            <div className="relative w-full h-full flex items-end justify-center">
+              <img 
+                src="/farmer.png" 
+                alt="Sri Lankan Farmer" 
+                className="relative z-10 w-full h-full max-w-[24rem] max-h-[32rem] md:max-w-[28rem] md:max-h-[36rem] lg:max-w-[32rem] lg:max-h-[40rem] xl:max-w-[36rem] xl:max-h-[44rem] 2xl:max-w-[40rem] 2xl:max-h-[48rem] object-contain object-bottom"
+                style={{
+                  objectPosition: 'bottom center'
+                }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextElementSibling.style.display = 'flex';
+                }}
+              />
+              {/* Fallback placeholder when image is not found */}
+              <div className="relative z-10 w-full h-full max-w-[24rem] max-h-[32rem] md:max-w-[28rem] md:max-h-[36rem] lg:max-w-[32rem] lg:max-h-[40rem] xl:max-w-[36rem] xl:max-h-[44rem] 2xl:max-w-[40rem] 2xl:max-h-[48rem] bg-gradient-to-br from-emerald-400/30 to-green-600/30 rounded-2xl backdrop-blur-sm border border-white/20 hidden items-center justify-center text-center p-8">
+                <div>
+                  <div className="w-16 h-16 bg-white/20 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </div>
+                  <p className="text-white/80 text-sm">Add farmer.png to public folder</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

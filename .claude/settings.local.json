@@ -19,7 +19,8 @@
       "WebFetch(domain:www.treasury.gov.lk)",
       "Bash(tasklist:*)",
       "Read(C:\\Users\\HESHAN WITHARANA\\OneDrive\\Desktop\\New folder (6)/**)",
-      "Read(C:\\Users\\HESHAN WITHARANA\\OneDrive\\Desktop\\New folder (6)/**)"
+      "Read(C:\\Users\\HESHAN WITHARANA\\OneDrive\\Desktop\\New folder (6)/**)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

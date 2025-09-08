@@ -1,0 +1,119 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#DEB887"/>
+      <stop offset="100%" style="stop-color:#CD853F"/>
+    </linearGradient>
+    <linearGradient id="shirtGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A6741"/>
+      <stop offset="100%" style="stop-color:#3A5631"/>
+    </linearGradient>
+    <linearGradient id="pantsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B4513"/>
+      <stop offset="100%" style="stop-color:#654321"/>
+    </linearGradient>
+    <linearGradient id="hatGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D2B48C"/>
+      <stop offset="100%" style="stop-color:#BC9A6A"/>
+    </linearGradient>
+    <linearGradient id="riceGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F5E6A3"/>
+      <stop offset="100%" style="stop-color:#E6D68A"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Sky background -->
+  <rect width="400" height="400" fill="none"/>
+  
+  <!-- Rice plants in background -->
+  <g opacity="0.3">
+    <!-- Left rice plants -->
+    <path d="M50 350 Q55 340 50 330 Q45 325 50 320 Q55 315 50 310" fill="none" stroke="#4A6741" stroke-width="3"/>
+    <circle cx="48" cy="308" r="2" fill="#D4AF37"/>
+    <circle cx="52" cy="310" r="2" fill="#D4AF37"/>
+    <circle cx="50" cy="312" r="1.5" fill="#D4AF37"/>
+    
+    <!-- Right rice plants -->
+    <path d="M350 360 Q355 350 350 340 Q345 335 350 330 Q355 325 350 320" fill="none" stroke="#4A6741" stroke-width="3"/>
+    <circle cx="348" cy="318" r="2" fill="#D4AF37"/>
+    <circle cx="352" cy="320" r="2" fill="#D4AF37"/>
+    <circle cx="350" cy="322" r="1.5" fill="#D4AF37"/>
+  </g>
+  
+  <!-- Farmer figure -->
+  <!-- Legs -->
+  <ellipse cx="180" cy="320" rx="12" ry="35" fill="url(#pantsGradient)"/>
+  <ellipse cx="220" cy="320" rx="12" ry="35" fill="url(#pantsGradient)"/>
+  
+  <!-- Shoes -->
+  <ellipse cx="180" cy="350" rx="15" ry="8" fill="#2F1B14"/>
+  <ellipse cx="220" cy="350" rx="15" ry="8" fill="#2F1B14"/>
+  
+  <!-- Body -->
+  <ellipse cx="200" cy="250" rx="35" ry="45" fill="url(#shirtGradient)"/>
+  
+  <!-- Arms -->
+  <ellipse cx="165" cy="235" rx="10" ry="30" fill="url(#skinGradient)" transform="rotate(-20 165 235)"/>
+  <ellipse cx="235" cy="235" rx="10" ry="30" fill="url(#skinGradient)" transform="rotate(20 235 235)"/>
+  
+  <!-- Hands -->
+  <circle cx="155" cy="255" r="8" fill="url(#skinGradient)"/>
+  <circle cx="245" cy="255" r="8" fill="url(#skinGradient)"/>
+  
+  <!-- Rice sack in left hand -->
+  <ellipse cx="155" cy="270" rx="12" ry="18" fill="url(#riceGradient)"/>
+  <rect x="145" y="252" width="20" height="8" fill="#8B4513"/>
+  <text x="155" y="275" font-family="Arial" font-size="6" text-anchor="middle" fill="#4A6741" font-weight="bold">RICE</text>
+  
+  <!-- Tool in right hand (farming tool handle) -->
+  <rect x="242" y="245" width="6" height="25" fill="#8B4513" transform="rotate(15 245 255)"/>
+  <ellipse cx="248" cy="240" rx="8" ry="4" fill="#C0C0C0" transform="rotate(15 248 240)"/>
+  
+  <!-- Head -->
+  <circle cx="200" cy="180" r="25" fill="url(#skinGradient)"/>
+  
+  <!-- Hat -->
+  <ellipse cx="200" cy="165" rx="30" ry="15" fill="url(#hatGradient)"/>
+  <ellipse cx="200" cy="155" rx="20" ry="8" fill="url(#hatGradient)"/>
+  
+  <!-- Face features -->
+  <!-- Eyes -->
+  <circle cx="192" cy="175" r="2" fill="#000"/>
+  <circle cx="208" cy="175" r="2" fill="#000"/>
+  <circle cx="193" cy="174" r="0.5" fill="#FFF"/>
+  <circle cx="209" cy="174" r="0.5" fill="#FFF"/>
+  
+  <!-- Nose -->
+  <ellipse cx="200" cy="182" rx="1.5" ry="3" fill="#CD853F"/>
+  
+  <!-- Mouth -->
+  <path d="M195 188 Q200 192 205 188" fill="none" stroke="#000" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Mustache -->
+  <path d="M192 185 Q200 187 208 185" fill="none" stroke="#654321" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Sun in background -->
+  <circle cx="320" cy="80" r="25" fill="#FFD700" opacity="0.7"/>
+  <g opacity="0.7">
+    <line x1="320" y1="40" x2="320" y2="50" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/>
+    <line x1="320" y1="110" x2="320" y2="120" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/>
+    <line x1="280" y1="80" x2="290" y2="80" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/>
+    <line x1="350" y1="80" x2="360" y2="80" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/>
+    <line x1="297" y1="57" x2="304" y2="64" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/>
+    <line x1="336" y1="96" x2="343" y2="103" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/>
+    <line x1="343" y1="57" x2="336" y2="64" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/>
+    <line x1="304" y1="96" x2="297" y2="103" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Rice grains scattered around -->
+  <circle cx="120" cy="300" r="2" fill="#D4AF37" opacity="0.6"/>
+  <circle cx="125" cy="305" r="1.5" fill="#D4AF37" opacity="0.6"/>
+  <circle cx="280" cy="290" r="2" fill="#D4AF37" opacity="0.6"/>
+  <circle cx="285" cy="295" r="1.5" fill="#D4AF37" opacity="0.6"/>
+  <circle cx="290" cy="285" r="1" fill="#D4AF37" opacity="0.6"/>
+  
+  <!-- Small grass details -->
+  <path d="M80 360 Q85 355 80 350" fill="none" stroke="#4A6741" stroke-width="2" opacity="0.5"/>
+  <path d="M320 370 Q325 365 320 360" fill="none" stroke="#4A6741" stroke-width="2" opacity="0.5"/>
+  <path d="M100 365 Q105 360 100 355" fill="none" stroke="#4A6741" stroke-width="2" opacity="0.5"/>
+</svg>
