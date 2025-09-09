@@ -6,6 +6,8 @@ import express from 'express';
 import adminRoutes from './routes/adminRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import stockRoutes from './routes/stockRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
+import { initDB } from './db.js';
 
 dotenv.config();
 
@@ -45,6 +47,11 @@ app.use('/api/auth', authRoutes);
 console.log('Registering stock routes at /api/stock');
 app.use('/api/stock', stockRoutes);
 console.log('Stock routes registered');
+initDB();
+
+// Reports API
+app.use('/api/reports', reportRoutes);
+console.log('Reports routes registered');
 
 // 404 handler for undefined routes (must be after all other routes)
 app.use((req, res) => {
