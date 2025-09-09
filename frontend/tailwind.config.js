@@ -6,6 +6,12 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'inter': ['Inter', 'system-ui', 'sans-serif'],
+        'poppins': ['Poppins', 'system-ui', 'sans-serif'],
+        'roboto': ['Roboto', 'system-ui', 'sans-serif'],
+        'work-sans': ['Work Sans', 'system-ui', 'sans-serif'],
+      },
       colors: {
         'rice-gold': '#D4AF37',
         'paddy-green': '#4A6741',
