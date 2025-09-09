@@ -4,10 +4,6 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import adminRoutes from './routes/adminRoutes.js';
-import authRoutes from './routes/authRoutes.js';
-import stockRoutes from './routes/stockRoutes.js';
-import reportRoutes from './routes/reportRoutes.js';
-import { initDB } from './db.js';
 
 dotenv.config();
 
@@ -38,20 +34,11 @@ app.use((req, res, next) => {
 
 // Basic route
 app.get('/', (req, res) => {
-    res.json({ message: 'Paddy Management System API' });
+    res.json({ message: 'PMB Admin Dashboard API' });
 });
 
 // Routes
 app.use('/api/admin', adminRoutes);
-app.use('/api/auth', authRoutes);
-console.log('Registering stock routes at /api/stock');
-app.use('/api/stock', stockRoutes);
-console.log('Stock routes registered');
-initDB();
-
-// Reports API
-app.use('/api/reports', reportRoutes);
-console.log('Reports routes registered');
 
 // 404 handler for undefined routes (must be after all other routes)
 app.use((req, res) => {
@@ -73,5 +60,5 @@ app.use((err, req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`✅ Admin Dashboard API running on port ${PORT}`);
 });

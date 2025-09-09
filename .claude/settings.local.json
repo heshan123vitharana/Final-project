@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node server.js)"
+      "Bash(node server.js)",
+      "Bash(rm:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
