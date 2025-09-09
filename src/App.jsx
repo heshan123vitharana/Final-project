@@ -1,4 +1,435 @@
 
-export default null;
+import React, { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Header from './components/Header'
+import HeroSection from './components/HeroSection'
+import About from './components/About-New'
+import Features from './components/Features'
+import CollectionCenters from './components/CollectionCenters'
+import LivePaddyPrices from './components/LivePaddyPrices'
+import Contact from './components/Contact'
+import Footer from './components/Footer'
+import AdminLogin from './components/AdminLogin'
+import MillOwnerRegistration from './components/MillOwnerRegistration'
+import AuthPage from './components/AuthPage'
+import AdminDashboard from './components/admin/AdminDashboard'
+import { SectionTransition } from './components/PageTransition'
+import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from './utils/scroll'
+import MillLayout from './MillComponents/MillLayout'
 
+function App() {
+  const [currentPage, setCurrentPage] = useState('home')
+  const [isNavigating, setIsNavigating] = useState(false)
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false)
+  const [adminData, setAdminData] = useState(null)
+  
+  // Admin section navigation state
 
+  // Admin login form state
+  const [adminFormData, setAdminFormData] = useState({ email: '', password: '' });
+  const [adminLoginErrors, setAdminLoginErrors] = useState({});
+  const [adminLoginLoading, setAdminLoginLoading] = useState(false);
+
+  // Handle admin login form input change
+  const handleAdminInputChange = (e) => {
+    const { name, value } = e.target;
+    setAdminFormData((prev) => ({ ...prev, [name]: value }));
+    setAdminLoginErrors((prev) => ({ ...prev, [name]: undefined, general: undefined }));
+  };
+
+  // Handle admin login form submit
+  const handleAdminLoginSubmit = async (e) => {
+    e.preventDefault();
+    setAdminLoginLoading(true);
+    setAdminLoginErrors({});
+    // Simple validation
+    if (!adminFormData.email || !adminFormData.password) {
+      setAdminLoginErrors({
+        email: !adminFormData.email ? 'Email is required' : undefined,
+        password: !adminFormData.password ? 'Password is required' : undefined,
+      });
+      setAdminLoginLoading(false);
+      return;
+    }
+    try {
+      // Use correct backend API route for admin login
+      const response = await fetch('http://localhost:5000/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: adminFormData.email,
+          password: adminFormData.password
+        })
+      });
+      const result = await response.json();
+      if (response.ok && result.message === 'Login successful') {
+        setAdminData(result.admin);
+        setUserFlowState('adminDashboard');
+        setIsAdminLoginOpen(false);
+        setAdminFormData({ email: '', password: '' });
+      } else {
+        setAdminLoginErrors({ general: result.message || 'Login failed' });
+      }
+    } catch {
+      setAdminLoginErrors({ general: 'Server error. Please try again.' });
+    }
+    setAdminLoginLoading(false);
+  };
+  
+  // User authentication and flow state
+  const [userFlowState, setUserFlowState] = useState('home') // 'home', 'auth', 'dashboard', 'pmb_registration'
+  const [userData, setUserData] = useState(null)
+  
+  // Set page title based on user flow state
+  useEffect(() => {
+    if (userFlowState === 'home') {
+      document.title = 'Paddy Marketing Board In Sri Lanka';
+    } else if (userFlowState === 'auth') {
+      document.title = 'Sign In | Paddy Marketing Board Sri Lanka';
+    } else if (userFlowState === 'adminDashboard') {
+      document.title = 'Admin Dashboard | PMB Sri Lanka';
+    }
+    // Mill dashboard pages handle their own titles via individual components
+  }, [userFlowState]);
+  
+  const [sectionsVisible, setSectionsVisible] = useState({
+    home: true,
+    about: true,
+    features: true,
+    'collection-centers': true,
+    'live-paddy-prices': true,
+    contact: true
+  })
+
+  // Check for existing user session on app load
+  useEffect(() => {
+    const savedUserData = sessionStorage.getItem('millOwnerData')
+    if (savedUserData) {
+      const user = JSON.parse(savedUserData)
+      setUserData(user)
+      setUserFlowState('dashboard')
+    }
+  }, [])
+
+  // Handle mill owner registration button click
+  const handleMillRegistrationClick = () => {
+    setUserFlowState('auth')
+  }
+
+  // Handle successful authentication
+  const handleAuthSuccess = (user) => {
+    setUserData(user)
+    // Store user data in sessionStorage for session persistence
+    sessionStorage.setItem('millOwnerData', JSON.stringify(user))
+    setUserFlowState('dashboard')
+  }
+
+  // Handle admin logout
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem('adminData');
+    setAdminData(null);
+    setUserFlowState('home');
+  }
+
+  // Handle successful admin login
+  const handleAdminLogin = (data) => {
+    setAdminData(data)
+    setUserFlowState('adminDashboard')
+  }
+
+  // Handle PMB registration completion
+  const handlePMBRegistrationComplete = (registrationData) => {
+    // Update user data with registration info
+    const updatedUserData = {
+      ...userData,
+      pmbRegistration: registrationData
+    }
+    setUserData(updatedUserData)
+    sessionStorage.setItem('millOwnerData', JSON.stringify(updatedUserData))
+    setUserFlowState('dashboard')
+  }
+
+  // Handle back to dashboard from PMB registration
+  const handleBackToDashboard = () => {
+    setUserFlowState('dashboard')
+  }
+
+  const handleNavigation = (page) => {
+    const doScroll = () => {
+      setIsNavigating(true)
+      setCurrentPage(page)
+      // Compute dynamic header height (top banner + header)
+      const headerHeight = getHeaderHeight(80)
+
+      if (page === 'home') {
+        smoothScrollTo(0)
+      } else {
+        const element = document.getElementById(page)
+        if (element) {
+          scrollIntoViewWithOffset(element, headerHeight)
+        }
+      }
+      setTimeout(() => setIsNavigating(false), 800)
+    }
+
+    // If not on home flow, switch to home first, then scroll on next tick
+    if (userFlowState !== 'home') {
+      setUserFlowState('home')
+      // wait a tick for sections to mount, then scroll
+      setTimeout(doScroll, 100)
+    } else {
+      doScroll()
+    }
+  }
+
+  const scrollToTop = () => {
+    smoothScrollTo(0)
+  }
+
+  useEffect(() => {
+    // Make mill registration function available globally for HeroSection
+    window.openMillRegistration = () => {
+      console.log('Global mill registration function called');
+      handleMillRegistrationClick();
+    };
+
+    // Handle custom events for modal opening
+    const handleOpenAdminLogin = () => {
+      console.log('handleOpenAdminLogin triggered');
+      setIsAdminLoginOpen(true);
+    }
+    const handleOpenMillRegistration = () => {
+      console.log('handleOpenMillRegistration triggered');
+      handleMillRegistrationClick();
+    }
+
+    // Add event listeners
+    console.log('Adding event listeners for modals');
+    window.addEventListener('openAdminLogin', handleOpenAdminLogin)
+    window.addEventListener('openMillRegistration', handleOpenMillRegistration)
+
+    const handleScroll = () => {
+  const sections = ['home', 'about', 'features', 'collection-centers', 'live-paddy-prices', 'contact']
+      const headerHeight = 60
+      
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const section = document.getElementById(sections[i])
+        if (section) {
+          const rect = section.getBoundingClientRect()
+          if (rect.top <= headerHeight && rect.bottom > headerHeight) {
+            setCurrentPage(sections[i])
+            break
+          }
+        }
+      }
+    }
+
+    // Create intersection observer for section animations
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '-20% 0px -20% 0px'
+    }
+
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const sectionId = entry.target.id
+          setSectionsVisible(prev => ({
+            ...prev,
+            [sectionId]: true
+          }))
+        }
+      })
+    }, observerOptions)
+
+    // Observe all sections
+  const sectionElements = document.querySelectorAll('section[id]')
+    sectionElements.forEach(section => sectionObserver.observe(section))
+
+    window.addEventListener('scroll', handleScroll)
+    
+    // Restore last visited section on reload (if present)
+  const lastSection = sessionStorage.getItem('lastVisitedSection')
+    if (lastSection) {
+      // Delay slightly to ensure sections are mounted
+      setTimeout(() => handleNavigation(lastSection), 50)
+    }
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('openAdminLogin', handleOpenAdminLogin)
+      window.removeEventListener('openMillRegistration', handleOpenMillRegistration)
+      // Clean up global function
+      delete window.openMillRegistration
+      sectionObserver.disconnect()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Persist last visited section as it changes
+  useEffect(() => {
+    try { sessionStorage.setItem('lastVisitedSection', currentPage) } catch { /* ignore */ }
+  }, [currentPage])
+
+  // (removed) scroll speed preference control
+
+  return (
+    <Router>
+      <div className="min-h-screen bg-white relative">
+        {/* Render different flows based on user state */}
+      {userFlowState === 'auth' && (
+        <AuthPage 
+          onAuthSuccess={handleAuthSuccess}
+          onExit={() => setUserFlowState('home')}
+        />
+      )}
+      
+      {userFlowState === 'dashboard' && userData && (
+        <MillLayout userData={userData} onBackToHome={() => setUserFlowState('home')} />
+      )}
+      {userFlowState === 'adminDashboard' && adminData && (
+        <AdminDashboard adminData={adminData} onLogout={handleAdminLogout} />
+      )}
+      
+      {userFlowState === 'pmb_registration' && userData && (
+        <MillOwnerRegistration 
+          userData={userData}
+          onRegistrationComplete={handlePMBRegistrationComplete}
+          onBack={handleBackToDashboard}
+        />
+      )}
+      
+      {userFlowState === 'home' && (
+        <>
+          {/* Navigation progress indicator */}
+          {isNavigating && (
+            <div className="fixed top-0 left-0 w-full h-1 bg-gray-200 z-50">
+              <div className="h-full bg-gradient-to-r from-green-500 to-emerald-600 transition-all duration-800 ease-out" 
+                   style={{ width: '100%' }}>
+              </div>
+            </div>
+          )}
+          
+          <Header 
+            onNavigate={handleNavigation} 
+            currentPage={currentPage}
+            onAdminClick={() => setIsAdminLoginOpen(true)}
+            onMillRegistrationClick={handleMillRegistrationClick}
+          />
+          
+          <main className="relative">
+        {/* Hero Section with enhanced animations */}
+        <section id="home" className="relative">
+          <SectionTransition trigger={sectionsVisible.home} direction="up">
+            <HeroSection onNavigate={handleNavigation} />
+          </SectionTransition>
+        </section>
+        
+  {/* About Section with slide-in effect (id matches navigation bar) */}
+  <section id="platform-features-section" className="relative overflow-hidden">
+          <SectionTransition trigger={true} direction="left" delay={200}>
+            <div className="relative z-10">
+              <About />
+            </div>
+          </SectionTransition>
+          
+          {/* Background decoration for smooth transition */}
+          <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-emerald-50/50 -z-10"></div>
+        </section>
+        
+        {/* Features Section with scale-in effect */}
+        <SectionTransition trigger={sectionsVisible.features} direction="up" delay={300}>
+          <section id="features" className="relative">
+            <Features />
+            
+            {/* Transition decoration */}
+            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-green-200 to-transparent"></div>
+          </section>
+        </SectionTransition>
+        
+        {/* Collection Centers Section */}
+        <SectionTransition trigger={sectionsVisible['collection-centers']} direction="up" delay={300}>
+          <section id="collection-centers" className="relative">
+            <CollectionCenters />
+          </section>
+        </SectionTransition>
+
+        {/* Live Paddy Prices Section */}
+        <SectionTransition trigger={sectionsVisible['live-paddy-prices']} direction="up" delay={300}>
+          <section id="live-paddy-prices" className="relative">
+            <LivePaddyPrices />
+          </section>
+        </SectionTransition>
+        
+        {/* Contact Section with slide-in effect */}
+        <section id="contact" className="py-16 relative overflow-hidden">
+          <SectionTransition trigger={sectionsVisible.contact} direction="left" delay={250}>
+            <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+              <Contact />
+            </div>
+          </SectionTransition>
+          
+          {/* Contact section background enhancement */}
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-50 to-transparent -z-10"></div>
+        </section>
+      </main>
+      
+      {/* Website footer with transition */}
+      <SectionTransition trigger={true} direction="up" delay={500}>
+        <Footer />
+      </SectionTransition>
+      
+      {/* Quick Action Buttons */}
+      <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40">
+        <button
+          onClick={scrollToTop}
+          className="group w-14 h-14 rounded-full flex items-center justify-center bg-emerald-600 text-white shadow-lg ring-1 ring-white/20 backdrop-blur-sm transition-all duration-300 hover:bg-emerald-700 hover:shadow-xl hover:-translate-y-0.5"
+          aria-label="Scroll to top"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </button>
+        <SectionTransition trigger={true} direction="up" delay={300}>
+          {/* Add content here if needed for transition effect */}
+        </SectionTransition>
+        <a
+          href="tel:+94112345678"
+          className="group w-14 h-14 rounded-full flex items-center justify-center bg-red-600 text-white shadow-lg ring-1 ring-white/20 backdrop-blur-sm transition-all duration-300 hover:bg-red-700 hover:shadow-xl hover:-translate-y-0.5"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+        </a>
+        <SectionTransition trigger={true} direction="left" delay={250}>
+          {/* Add content here if needed for transition effect */}
+        </SectionTransition>
+      </div>
+
+  {/* removed scroll speed preference control */}
+
+      {/* Modal Components */}
+      {isAdminLoginOpen && (
+        <AdminLogin
+          onClose={() => setIsAdminLoginOpen(false)}
+          onLogin={handleAdminLogin}
+          isLoading={adminLoginLoading}
+          errors={adminLoginErrors}
+          formData={adminFormData}
+          handleInputChange={handleAdminInputChange}
+          handleSubmit={handleAdminLoginSubmit}
+          onBackToHome={() => {
+            setIsAdminLoginOpen(false);
+            setUserFlowState('home');
+            handleNavigation('home');
+          }}
+        />
+      )}
+        </>
+        )}
+      </div>
+    </Router>
+  )
+}
+
+export default App
