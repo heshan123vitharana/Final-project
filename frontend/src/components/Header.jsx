@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import logoP from '../assets/logo-p.png';
+import LanguageSelector from './LanguageSelector';
 
 const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistrationClick = () => {}, onAdminClick = () => {} }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -288,7 +289,8 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
             </nav>
             {/* Enhanced Action Section */}
             <div className="flex items-center space-x-4 ml-8">
-              
+              {/* Language Selector */}
+              <LanguageSelector />
               
               {/* Enhanced Mill Owner Portal Button */}
               <button
@@ -375,6 +377,10 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
               
               {/* Mobile Action Section */}
               <div className="mt-6 pt-4 border-t border-gray-200 space-y-4">
+                {/* Language Selector for Mobile */}
+                <div className="flex justify-center">
+                  <LanguageSelector />
+                </div>
                 
                 {/* Mobile Search Bar */}
                 <div className="relative">
