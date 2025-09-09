@@ -1,30 +1,35 @@
-const db = require('../database');
-const bcrypt = require('bcrypt');
 
-const createAdmin = async (username, email, password) => {
+import { getDB } from '../db.js';
+import bcrypt from 'bcrypt';
+
+
+export async function createAdmin(username, email, password) {
   const hashedPassword = await bcrypt.hash(password, 10);
-  await db.execute(
+  const db = await getDB();
+  await db.run(
     'INSERT INTO admin (username, email, password, status) VALUES (?, ?, ?, ?)',
     [username, email, hashedPassword, 'active']
   );
-};
+  await db.close();
+}
 
-const findActiveByEmail = async (email) => {
+
+export async function findActiveByEmail(email) {
   console.log('🔍 Searching for email:', email);
   try {
-    const [rows] = await db.execute(
+    const db = await getDB();
+    const row = await db.get(
       'SELECT * FROM admin WHERE email = ? AND status = ?',
       [email, 'active']
     );
-    console.log('📊 Query returned:', rows.length, 'rows');
-    if (rows.length > 0) {
-      console.log('✅ Found admin:', { id: rows[0].id, username: rows[0].username, email: rows[0].email });
+    await db.close();
+    if (row) {
+      console.log('✅ Found admin:', { id: row.id, username: row.username, email: row.email });
     }
-    return rows[0];
+    return row;
   } catch (error) {
     console.error('❌ Database query error:', error.message);
     throw error;
   }
-};
+}
 
-module.exports = { createAdmin, findActiveByEmail };

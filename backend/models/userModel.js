@@ -1,7 +1,7 @@
-// models/userModel.js
-const db = require('../database');
+import { getDB } from '../db.js';
 
-const createUser = async (user) => {
+export const createUser = async (user) => {
+  const db = getDB();
   try {
     const {
       first_name,
@@ -13,52 +13,59 @@ const createUser = async (user) => {
       passwordHash,
     } = user;
 
-    console.log('🔄 Creating user:', { email, business_name, business_type });
-    
-    const result = await db.execute(
-      "INSERT INTO users (first_name, last_name, business_name, business_type, phone, email, password) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [
-        first_name,
-        last_name,
-        business_name,
-        business_type,
-        phone,
-        email,
-        passwordHash,
-      ]
-    );
-    
-    console.log('✅ User created successfully:', { userId: result[0].lastID, email });
-    return result[0];
+    console.log('Creating user:', { email, business_name, business_type });
+
+    return await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO users (first_name, last_name, business_name, business_type, phone, email, password) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          first_name,
+          last_name,
+          business_name,
+          business_type,
+          phone,
+          email,
+          passwordHash,
+        ],
+        function (err) {
+          if (err) {
+            console.error('Error creating user:', err.message);
+            if (err.message.includes('UNIQUE constraint failed')) {
+              return reject(new Error('Email already exists'));
+            }
+            return reject(err);
+          }
+          console.log('User created successfully:', { userId: this.lastID, email });
+          resolve({ id: this.lastID });
+        }
+      );
+    });
   } catch (error) {
-    console.error('❌ Error creating user:', error.message);
-    if (error.message.includes('UNIQUE constraint failed')) {
-      throw new Error('Email already exists');
-    }
+    console.error('Error creating user:', error.message);
     throw error;
   }
 };
 
-const findByEmail = async (email) => {
+export const findByEmail = async (email) => {
+  const db = getDB();
   try {
-    console.log('🔍 Finding user by email:', email);
-    const [rows] = await db.execute(`SELECT * FROM users WHERE email = ? LIMIT 1`, [email]);
-    const user = rows[0];
-    
-    if (user) {
-      console.log('✅ User found:', { id: user.id, email: user.email });
-    } else {
-      console.log('❌ User not found for email:', email);
-    }
-    
-    return user;
+    console.log('Finding user by email:', email);
+    return await new Promise((resolve, reject) => {
+      db.get(`SELECT * FROM users WHERE email = ? LIMIT 1`, [email], (err, row) => {
+        if (err) {
+          console.error('Error finding user by email:', err.message);
+          return reject(err);
+        }
+        if (row) {
+          console.log('User found:', { id: row.id, email: row.email });
+        } else {
+          console.log('User not found for email:', email);
+        }
+        resolve(row);
+      });
+    });
   } catch (error) {
-    console.error('❌ Error finding user by email:', error.message);
+    console.error('Error finding user by email:', error.message);
     throw error;
   }
-};
-
-module.exports = {
-  createUser,
-  findByEmail,
 };

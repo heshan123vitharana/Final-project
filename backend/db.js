@@ -4,7 +4,7 @@ import { open } from 'sqlite';
 // Open a database connection
 export async function getDB() {
   return open({
-    filename: './backend/reports.db',
+    filename: './reports.db',
     driver: sqlite3.Database
   });
 }

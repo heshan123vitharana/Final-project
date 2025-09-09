@@ -1,5 +1,11 @@
-// controllers/stockController.js
-const StockModel = require('../models/stockModel');
+
+import {
+  addStockEntry,
+  getStockEntries as getStockEntriesModel,
+  getStockSummary as getStockSummaryModel,
+  getStockStats as getStockStatsModel,
+  deleteStockEntry
+} from '../models/stockModel.js';
 
 const validateStockData = (data) => {
   const errors = [];
@@ -48,7 +54,7 @@ const validateStockData = (data) => {
   return errors;
 };
 
-const addStock = async (req, res) => {
+export const addStock = async (req, res) => {
   try {
     const mill_id = req.user.sub; // From JWT token
     const stockData = { ...req.body, mill_id };
@@ -67,7 +73,7 @@ const addStock = async (req, res) => {
     stockData.price_per_kg = parseFloat(stockData.price_per_kg);
 
     // Add stock entry
-    const result = await StockModel.addStockEntry(stockData);
+  const result = await addStockEntry(stockData);
 
     res.status(201).json({
       message: 'Stock entry added successfully',
@@ -82,7 +88,7 @@ const addStock = async (req, res) => {
   }
 };
 
-const getStockEntries = async (req, res) => {
+export const getStockEntries = async (req, res) => {
   try {
     const mill_id = req.user.sub;
     const filters = {
@@ -98,7 +104,7 @@ const getStockEntries = async (req, res) => {
       if (!filters[key]) delete filters[key];
     });
 
-    const entries = await StockModel.getStockEntries(mill_id, filters);
+  const entries = await getStockEntriesModel(mill_id, filters);
 
     res.json({
       message: 'Stock entries retrieved successfully',
@@ -114,10 +120,10 @@ const getStockEntries = async (req, res) => {
   }
 };
 
-const getStockSummary = async (req, res) => {
+export const getStockSummary = async (req, res) => {
   try {
     const mill_id = req.user.sub;
-    const summary = await StockModel.getStockSummary(mill_id);
+  const summary = await getStockSummaryModel(mill_id);
 
     res.json({
       message: 'Stock summary retrieved successfully',
@@ -132,10 +138,10 @@ const getStockSummary = async (req, res) => {
   }
 };
 
-const getStockStats = async (req, res) => {
+export const getStockStats = async (req, res) => {
   try {
     const mill_id = req.user.sub;
-    const stats = await StockModel.getStockStats(mill_id);
+  const stats = await getStockStatsModel(mill_id);
 
     res.json({
       message: 'Stock statistics retrieved successfully',
@@ -150,7 +156,7 @@ const getStockStats = async (req, res) => {
   }
 };
 
-const deleteStock = async (req, res) => {
+export const deleteStock = async (req, res) => {
   try {
     const mill_id = req.user.sub;
     const { id } = req.params;
@@ -161,7 +167,7 @@ const deleteStock = async (req, res) => {
       });
     }
 
-    const result = await StockModel.deleteStockEntry(parseInt(id), mill_id);
+  const result = await deleteStockEntry(parseInt(id), mill_id);
 
     res.json({
       message: 'Stock entry deleted successfully',
@@ -181,10 +187,5 @@ const deleteStock = async (req, res) => {
   }
 };
 
-module.exports = {
-  addStock,
-  getStockEntries,
-  getStockSummary,
-  getStockStats,
-  deleteStock
-};
+
+// All exports are now ES module exports above
