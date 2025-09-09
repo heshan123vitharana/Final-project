@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import LanguageSelector from './LanguageSelector';
 import logoP from '../assets/logo-p.png';
 
 const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistrationClick = () => {}, onAdminClick = () => {} }) => {
@@ -289,7 +288,6 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
             </nav>
             {/* Enhanced Action Section */}
             <div className="flex items-center space-x-4 ml-8">
-              <LanguageSelector />
               
               
               {/* Enhanced Mill Owner Portal Button */}
@@ -377,7 +375,6 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
               
               {/* Mobile Action Section */}
               <div className="mt-6 pt-4 border-t border-gray-200 space-y-4">
-                <LanguageSelector />
                 
                 {/* Mobile Search Bar */}
                 <div className="relative">

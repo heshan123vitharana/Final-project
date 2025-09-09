@@ -1,99 +1,4 @@
-// const db = require('../database');
-require('dotenv').config();
-
-console.log('🔧 PriceController: Module loaded for demo mode');
-
-// Sample data that matches the frontend expectations
-const samplePrices = [
-  {
-    id: 1,
-    district: 'Colombo',
-    province: 'Western',
-    market: 'Colombo Center',
-    variety: 'Red Rice',
-    type: 'Local',
-    pricePerKg: 250.00,
-    previousPrice: 245.00,
-    currency: 'LKR',
-    trend: 'rising',
-    priceChange: 5.00,
-    availability: 'Available',
-    status: 'Active',
-    description: 'Red Rice - Local variety from Colombo',
-    lastUpdated: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    currentPrice: 250.00,
-    unit: 'LKR/kg',
-    qualityGrade: 'Grade A+',
-    collectionCenter: 'Colombo Center'
-  },
-  {
-    id: 2,
-    district: 'Kandy',
-    province: 'Central',
-    market: 'Kandy Center',
-    variety: 'White Rice',
-    type: 'Keeri Samba',
-    pricePerKg: 270.00,
-    previousPrice: 265.00,
-    currency: 'LKR',
-    trend: 'rising',
-    priceChange: 5.00,
-    availability: 'Available',
-    status: 'Active',
-    description: 'White Rice - Premium Keeri Samba',
-    lastUpdated: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    currentPrice: 270.00,
-    unit: 'LKR/kg',
-    qualityGrade: 'Premium',
-    collectionCenter: 'Kandy Center'
-  },
-  {
-    id: 3,
-    district: 'Gampaha',
-    province: 'Western',
-    market: 'Gampaha Center',
-    variety: 'Red Rice',
-    type: 'Nadu',
-    pricePerKg: 240.00,
-    previousPrice: 242.00,
-    currency: 'LKR',
-    trend: 'falling',
-    priceChange: -2.00,
-    availability: 'Available',
-    status: 'Active',
-    description: 'Red Rice - Nadu variety',
-    lastUpdated: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    currentPrice: 240.00,
-    unit: 'LKR/kg',
-    qualityGrade: 'Grade A',
-    collectionCenter: 'Gampaha Center'
-  },
-  {
-    id: 4,
-    district: 'Matara',
-    province: 'Southern',
-    market: 'Matara Center',
-    variety: 'White Rice',
-    type: 'Samba',
-    pricePerKg: 260.00,
-    previousPrice: 255.00,
-    currency: 'LKR',
-    trend: 'rising',
-    priceChange: 5.00,
-    availability: 'Available',
-    status: 'Active',
-    description: 'White Rice - Samba variety',
-    lastUpdated: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    currentPrice: 260.00,
-    unit: 'LKR/kg',
-    qualityGrade: 'Premium',
-    collectionCenter: 'Matara Center'
-  }
-];
+const db = require('../database');
 
 // Get all paddy prices with filtering
 const getAllPrices = async (req, res) => {
@@ -106,46 +11,104 @@ const getAllPrices = async (req, res) => {
       province,
       variety,
       type,
-      status = 'Active'
+      status = 'Active',
+      sortBy = 'updated_at',
+      sortOrder = 'DESC',
+      limit = 100
     } = req.query;
 
-    let filteredPrices = [...samplePrices];
+    let query = `
+      SELECT 
+        id,
+        district,
+        province,
+        market,
+        variety,
+        type,
+        price_per_kg as pricePerKg,
+        previous_price as previousPrice,
+        currency,
+        trend,
+        price_change as priceChange,
+        availability,
+        status,
+        description,
+        created_at as createdAt,
+        updated_at as lastUpdated
+      FROM paddy_prices 
+      WHERE status = ?
+    `;
+    
+    const params = [status];
 
-    // Apply filters
-    if (district) {
-      filteredPrices = filteredPrices.filter(price => 
-        price.district.toLowerCase().includes(district.toLowerCase())
-      );
+    // Add filters
+    if (district && district !== 'All Districts') {
+      query += ' AND district = ?';
+      params.push(district);
+    }
+    
+    if (province && province !== 'All Provinces') {
+      query += ' AND province = ?';
+      params.push(province);
     }
 
-    if (province) {
-      filteredPrices = filteredPrices.filter(price => 
-        price.province.toLowerCase().includes(province.toLowerCase())
-      );
+    if (variety && variety !== 'All Varieties') {
+      query += ' AND variety = ?';
+      params.push(variety);
     }
 
-    if (variety) {
-      filteredPrices = filteredPrices.filter(price => 
-        price.variety.toLowerCase().includes(variety.toLowerCase())
-      );
+    if (type && type !== 'All Types') {
+      query += ' AND type = ?';
+      params.push(type);
     }
 
-    if (type) {
-      filteredPrices = filteredPrices.filter(price => 
-        price.type.toLowerCase().includes(type.toLowerCase())
-      );
+    // Add sorting
+    const validSortFields = ['district', 'variety', 'price_per_kg', 'updated_at'];
+    const validSortOrders = ['ASC', 'DESC'];
+    
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'updated_at';
+    const order = validSortOrders.includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+    
+    query += ` ORDER BY ${sortField} ${order}`;
+    
+    // Add limit (use string interpolation instead of parameter binding for LIMIT)
+    if (limit && !isNaN(limit) && parseInt(limit) > 0) {
+      query += ` LIMIT ${parseInt(limit)}`;
     }
 
-    if (status) {
-      filteredPrices = filteredPrices.filter(price => price.status === status);
-    }
+    const [rows] = await db.execute(query, params);
 
-    console.log('✅ PriceController: Returning', filteredPrices.length, 'records');
+    // Transform data to match frontend expectations
+    const transformedData = rows.map(row => ({
+      id: row.id,
+      district: row.district,
+      province: row.province,
+      market: row.market,
+      variety: row.variety,
+      type: row.type,
+      pricePerKg: parseFloat(row.pricePerKg),
+      previousPrice: parseFloat(row.previousPrice || 0),
+      currency: row.currency || 'LKR',
+      trend: row.trend === 'up' ? 'rising' : row.trend === 'down' ? 'falling' : 'stable',
+      priceChange: parseFloat(row.priceChange || 0),
+      availability: row.availability === 'High' ? 'Available' : row.availability === 'Medium' ? 'Available' : row.availability === 'Low' ? 'Limited' : 'Available',
+      status: row.status,
+      description: row.description,
+      lastUpdated: row.lastUpdated,
+      createdAt: row.createdAt,
+      // Additional fields for frontend compatibility
+      currentPrice: parseFloat(row.pricePerKg),
+      unit: 'LKR/kg',
+      qualityGrade: row.pricePerKg >= 260 ? 'Premium' : row.pricePerKg >= 240 ? 'Grade A+' : 'Grade A',
+      collectionCenter: `${row.district} Center`
+    }));
+
+    console.log('✅ PriceController: Returning', transformedData.length, 'records');
     
     res.json({
       success: true,
-      data: filteredPrices,
-      count: filteredPrices.length
+      data: transformedData,
+      count: transformedData.length
     });
 
   } catch (error) {
@@ -162,18 +125,65 @@ const getAllPrices = async (req, res) => {
 const getPriceById = async (req, res) => {
   try {
     const { id } = req.params;
-    const price = samplePrices.find(p => p.id === parseInt(id));
+    
+    const query = `
+      SELECT 
+        id,
+        district,
+        province,
+        market,
+        variety,
+        type,
+        price_per_kg as pricePerKg,
+        previous_price as previousPrice,
+        currency,
+        trend,
+        price_change as priceChange,
+        availability,
+        status,
+        description,
+        created_at as createdAt,
+        updated_at as lastUpdated
+      FROM paddy_prices 
+      WHERE id = ?
+    `;
+    
+    const [rows] = await db.execute(query, [id]);
 
-    if (!price) {
+    if (rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Price not found'
       });
     }
+
+    const row = rows[0];
+    const transformedData = {
+      id: row.id,
+      district: row.district,
+      province: row.province,
+      market: row.market,
+      variety: row.variety,
+      type: row.type,
+      pricePerKg: parseFloat(row.pricePerKg),
+      previousPrice: parseFloat(row.previousPrice || 0),
+      currency: row.currency || 'LKR',
+      trend: row.trend === 'up' ? 'rising' : row.trend === 'down' ? 'falling' : 'stable',
+      priceChange: parseFloat(row.priceChange || 0),
+      availability: row.availability === 'High' ? 'Available' : row.availability === 'Medium' ? 'Available' : row.availability === 'Low' ? 'Limited' : 'Available',
+      status: row.status,
+      description: row.description,
+      lastUpdated: row.lastUpdated,
+      createdAt: row.createdAt,
+      currentPrice: parseFloat(row.pricePerKg),
+      unit: 'LKR/kg',
+      qualityGrade: row.pricePerKg >= 260 ? 'Premium' : row.pricePerKg >= 240 ? 'Grade A+' : 'Grade A',
+      collectionCenter: `${row.district} Center`
+    };
     
     res.json({
       success: true,
-      data: price
+      data: transformedData
     });
 
   } catch (error) {
@@ -191,9 +201,15 @@ const addPrice = async (req, res) => {
   try {
     const {
       district,
+      province,
+      market,
       variety,
       type,
-      price
+      price,
+      currency = 'LKR',
+      trend = 'flat',
+      availability = 'Medium',
+      description
     } = req.body;
 
     // Validation
@@ -204,12 +220,40 @@ const addPrice = async (req, res) => {
       });
     }
 
-    console.log('📝 Adding new price:', { district, variety, type, price });
+    const query = `
+      INSERT INTO paddy_prices (
+        district, province, market, variety, type, 
+        price_per_kg, previous_price, currency, trend,
+        price_change, availability, status, description,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+    `;
+
+    const previousPrice = parseFloat(price) - 1; // Simple calculation
+    const priceChange = 1.00; // Default change
+
+    const params = [
+      district,
+      province || '',
+      market || `${district} Center`,
+      variety,
+      type,
+      parseFloat(price),
+      previousPrice,
+      currency,
+      trend,
+      priceChange,
+      availability,
+      'Active',
+      description || `${variety} - ${type}`
+    ];
+
+    const [result] = await db.execute(query, params);
     
     res.status(201).json({
       success: true,
-      message: 'Price added successfully (demo mode)',
-      id: Date.now() // Simple ID generation
+      message: 'Price added successfully',
+      id: result.insertId
     });
 
   } catch (error) {
@@ -235,12 +279,34 @@ const updatePrice = async (req, res) => {
       });
     }
 
-    console.log('📝 Updating price for ID:', id, 'New price:', price);
+    // First get the current price to set as previous
+    const getCurrentQuery = 'SELECT price_per_kg FROM paddy_prices WHERE id = ?';
+    const [currentRows] = await db.execute(getCurrentQuery, [id]);
+
+    if (currentRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Price not found'
+      });
+    }
+
+    const currentPrice = parseFloat(currentRows[0].price_per_kg);
+    const newPrice = parseFloat(price);
+    const priceChange = newPrice - currentPrice;
+    const trend = priceChange > 0 ? 'up' : priceChange < 0 ? 'down' : 'flat';
+
+    const updateQuery = `
+      UPDATE paddy_prices 
+      SET price_per_kg = ?, previous_price = ?, price_change = ?, trend = ?, updated_at = NOW()
+      WHERE id = ?
+    `;
+
+    const [result] = await db.execute(updateQuery, [newPrice, currentPrice, priceChange, trend, id]);
     
     res.json({
       success: true,
-      message: 'Price updated successfully (demo mode)',
-      changes: 1
+      message: 'Price updated successfully',
+      changes: result.affectedRows
     });
 
   } catch (error) {
@@ -257,12 +323,20 @@ const updatePrice = async (req, res) => {
 const deletePrice = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    console.log('🗑️ Deleting price ID:', id);
+
+    const query = 'DELETE FROM paddy_prices WHERE id = ?';
+    const [result] = await db.execute(query, [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Price not found'
+      });
+    }
     
     res.json({
       success: true,
-      message: 'Price deleted successfully (demo mode)'
+      message: 'Price deleted successfully'
     });
 
   } catch (error) {

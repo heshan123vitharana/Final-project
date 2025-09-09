@@ -21,7 +21,12 @@
       "Read(C:\\Users\\HESHAN WITHARANA\\OneDrive\\Desktop\\New folder (6)/**)",
       "Read(C:\\Users\\HESHAN WITHARANA\\OneDrive\\Desktop\\New folder (6)/**)",
       "WebSearch",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(rm:*)",
+      "Bash(npm install)",
+      "Bash(timeout 10 npm start)",
+      "Bash(timeout 5 npm run dev)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

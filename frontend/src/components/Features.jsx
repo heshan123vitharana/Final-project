@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import PageTitle from './PageTitle';
-import Card from './ui/Card';
 
 const Features = () => {
   const [activeFeature, setActiveFeature] = useState(0);

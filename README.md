@@ -9,29 +9,44 @@ Final-project/
 ├── frontend/                 # React.js Frontend Application
 │   ├── src/                 # Source code
 │   │   ├── components/      # React components
-│   │   │   ├── Header.jsx         # Main navigation and branding
-│   │   │   ├── HeroSection.jsx    # Featured products and promotions
-│   │   │   ├── NewArrivals.jsx    # Latest rice varieties
-│   │   │   ├── Features.jsx       # Key benefits and services
-│   │   │   └── Footer.jsx         # Contact info and links
-│   │   ├── assets/         # Static assets
+│   │   │   ├── Header.jsx         # Navigation and branding
+│   │   │   ├── HeroSection.jsx    # Hero section with CTA
+│   │   │   ├── About-New.jsx      # About section with leadership
+│   │   │   ├── Features.jsx       # Key features and services
+│   │   │   ├── CollectionCenters.jsx # Collection centers map
+│   │   │   ├── LivePaddyPrices.jsx # Real-time price display
+│   │   │   ├── Contact.jsx        # Contact information
+│   │   │   ├── Footer.jsx         # Site footer
+│   │   │   ├── AdminLogin.jsx     # Admin authentication
+│   │   │   ├── AuthPage.jsx       # User authentication
+│   │   │   ├── MillOwnerRegistration.jsx # Mill owner registration
+│   │   │   ├── PageTransition.jsx # Page animations
+│   │   │   └── admin/             # Admin dashboard components
+│   │   ├── MillComponents/  # Mill owner dashboard
+│   │   ├── hooks/          # Custom React hooks
+│   │   ├── utils/          # Utility functions
+│   │   ├── i18n/           # Internationalization
 │   │   ├── App.jsx         # Main application component
 │   │   ├── main.jsx        # Application entry point
 │   │   └── index.css       # Tailwind CSS imports
 │   ├── public/             # Public assets
-│   │   ├── farmer.png      # Farmer illustration
-│   │   ├── bg-1.jpg to bg-5.jpg  # Background images
-│   │   └── ...
 │   ├── package.json        # Frontend dependencies
 │   ├── vite.config.js      # Vite configuration
 │   ├── tailwind.config.js  # Tailwind CSS config
 │   └── index.html          # Main HTML file
 ├── backend/                # Node.js Backend API
 │   ├── controllers/        # Route controllers
+│   │   ├── priceController.js     # Paddy price operations (MySQL)
+│   │   ├── adminController.js     # Admin operations
+│   │   ├── authController.js      # Authentication
+│   │   └── stockController.js     # Stock management
 │   ├── models/            # Database models
 │   ├── routes/            # API routes
 │   ├── middleware/        # Custom middleware
 │   ├── config/            # Configuration files
+│   │   └── database.js    # MySQL database configuration
+│   ├── database.js        # Database connection
+│   ├── server.js          # Express server entry point
 │   └── package.json       # Backend dependencies
 └── README.md              # This file
 ```
@@ -66,8 +81,9 @@ Backend API will run on: `http://localhost:5000`
 ### Backend
 - **Node.js** server-side runtime
 - **Express.js** web framework
-- **MongoDB/Database** for data storage
+- **MySQL** database for data storage
 - **RESTful API** architecture
+- **CORS** enabled for frontend communication
 
 ## 🎨 Color Palette
 
@@ -76,13 +92,15 @@ Backend API will run on: `http://localhost:5000`
 - **Earth Brown**: `#8B4513` - Natural earth tones
 - **Fresh Green**: `#90EE90` - Growth and freshness
 
-## Components Overview
+## Key Features
 
-- **Header**: Navigation menu, search functionality, cart, and mobile-responsive design
-- **HeroSection**: Eye-catching banner with featured products and free delivery promotion
-- **NewArrivals**: Grid display of latest rice varieties with pricing and discounts
-- **Features**: Key benefits like quality assurance, farmer support, and delivery
-- **Footer**: Comprehensive footer with contact information and links
+- **Multi-User System**: Admin, Mill Owners, and public access
+- **Real-Time Paddy Prices**: Live price updates from collection centers
+- **Mill Owner Dashboard**: Registration, price tracking, stock management
+- **Admin Panel**: User management, price updates, system administration
+- **Collection Centers**: Interactive map and location information
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
+- **Database Integration**: MySQL backend with proper API endpoints
 
 ## Development Guidelines
 
