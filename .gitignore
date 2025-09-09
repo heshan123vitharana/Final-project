@@ -26,3 +26,6 @@ dist-ssr
 # Windows accidental device file names
 nul
 backend/nul
+
+# Claude AI local settings
+.claude/
