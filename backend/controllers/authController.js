@@ -1,7 +1,6 @@
-// controllers/authController.js
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const userModel = require('../models/userModel');
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { createUser, findByEmail } from '../models/userModel.js';
 
 const toEnumBusinessType = (value) => {
   if (!value) return null;
@@ -53,7 +52,7 @@ const validateRegistration = (body) => {
   return { errors, normalizedBusinessType: bt };
 };
 
-const register = async (req, res) => {
+export const register = async (req, res) => {
   try {
     const { errors, normalizedBusinessType } = validateRegistration(req.body);
     if (errors.length) return res.status(400).json({ errors });
@@ -67,14 +66,14 @@ const register = async (req, res) => {
       password,
     } = req.body;
 
-    const existing = await userModel.findByEmail(email);
+    const existing = await findByEmail(email);
     if (existing) {
       return res.status(409).json({ message: 'Email already registered' });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await userModel.createUser({
+    await createUser({
       first_name: String(first_name).trim(),
       last_name: String(last_name).trim(),
       business_name: String(business_name).trim(),
@@ -85,7 +84,7 @@ const register = async (req, res) => {
     });
 
     // Fetch the newly created user
-    const newUser = await userModel.findByEmail(String(email).toLowerCase().trim());
+    const newUser = await findByEmail(String(email).toLowerCase().trim());
     return res.status(201).json({
       message: 'User registered successfully',
       user: {
@@ -104,14 +103,14 @@ const register = async (req, res) => {
   }
 };
 
-const login = async (req, res) => {
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password)
       return res.status(400).json({ message: 'email and password are required' });
 
-    const user = await userModel.findByEmail(String(email).toLowerCase().trim());
+    const user = await findByEmail(String(email).toLowerCase().trim());
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
     const ok = await bcrypt.compare(password, user.password);
@@ -123,8 +122,8 @@ const login = async (req, res) => {
         email: user.email,
         business_type: user.business_type,
       },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+      globalThis.process.env.JWT_SECRET,
+      { expiresIn: globalThis.process.env.JWT_EXPIRES_IN || '1d' }
     );
 
     return res.json({
@@ -146,10 +145,9 @@ const login = async (req, res) => {
   }
 };
 
-const getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
   try {
-    const userId = req.user.sub;
-    const user = await userModel.findByEmail(req.user.email);
+    const user = await findByEmail(req.user.email);
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -175,7 +173,7 @@ const getProfile = async (req, res) => {
   }
 };
 
-const logout = async (req, res) => {
+export const logout = async (req, res) => {
   try {
     // For JWT-based auth, we don't need to do anything server-side
     // since JWTs are stateless. The client will remove the token.
@@ -194,4 +192,4 @@ const logout = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getProfile, logout };
+// All exports are now ES module exports above

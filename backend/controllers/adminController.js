@@ -1,15 +1,22 @@
-const db = require('../database');
+import { getDB } from '../db.js';
 
-const adminLogin = async (req, res) => {
+export const adminLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
         console.log('Login attempt for email:', email);
        
+        const db = getDB();
+        
         // First, let's test if we can query the table at all
         try {
             const testQuery = 'SELECT COUNT(*) as total FROM admin';
-            const [countResult] = await db.execute(testQuery);
-            console.log('Total admin records:', countResult[0].total);
+            const countResult = await new Promise((resolve, reject) => {
+                db.get(testQuery, [], (err, row) => {
+                    if (err) return reject(err);
+                    resolve(row);
+                });
+            });
+            console.log('Total admin records:', countResult.total);
         } catch (testError) {
             console.log('Count query failed:', testError.message);
             return res.status(500).json({ message: 'Database connection error', error: testError.message });
@@ -20,7 +27,12 @@ const adminLogin = async (req, res) => {
         console.log('Executing query:', query);
         console.log('With parameters:', [email, 'active']);
        
-        const [rows] = await db.execute(query, [email, 'active']);
+        const rows = await new Promise((resolve, reject) => {
+            db.all(query, [email, 'active'], (err, rows) => {
+                if (err) return reject(err);
+                resolve(rows);
+            });
+        });
         console.log('Query successful, found records:', rows.length);
        
         if (rows.length === 0) {
@@ -63,8 +75,4 @@ const adminLogin = async (req, res) => {
             error: error.message
         });
     }
-};
-
-module.exports = {
-    adminLogin
 };
