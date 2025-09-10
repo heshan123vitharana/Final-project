@@ -23,5 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# Claude AI assistant files
+
+nul
+backend/nul
+
 .claude/

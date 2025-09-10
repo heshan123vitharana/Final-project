@@ -7,5 +7,6 @@ const { requireAuth } = require('../middleware/authMiddleware');
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.get('/profile', requireAuth, authController.getProfile);
+router.post('/logout', requireAuth, authController.logout);
 
 module.exports = router;

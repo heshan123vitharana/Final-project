@@ -14,8 +14,8 @@ const createUser = async (user) => {
     } = user;
 
     console.log('🔄 Creating user:', { email, business_name, business_type });
-    
-    const result = await db.execute(
+
+    const [result] = await db.execute(
       "INSERT INTO users (first_name, last_name, business_name, business_type, phone, email, password) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [
         first_name,
@@ -27,12 +27,19 @@ const createUser = async (user) => {
         passwordHash,
       ]
     );
-    
-    console.log('✅ User created successfully:', { userId: result[0].lastID, email });
-    return result[0];
+
+    const userId = result?.insertId ?? result?.lastID ?? result?.lastId ?? null;
+    console.log('✅ User created successfully:', { userId, email });
+    return { insertId: userId };
   } catch (error) {
     console.error('❌ Error creating user:', error.message);
-    if (error.message.includes('UNIQUE constraint failed')) {
+    const msg = String(error?.message || '');
+    if (
+      (error?.code && error.code === 'ER_DUP_ENTRY') ||
+      (error?.code && error.code === 'SQLITE_CONSTRAINT') ||
+      msg.includes('UNIQUE constraint failed') ||
+      msg.includes('Duplicate entry')
+    ) {
       throw new Error('Email already exists');
     }
     throw error;
@@ -43,7 +50,7 @@ const findByEmail = async (email) => {
   try {
     console.log('🔍 Finding user by email:', email);
     const [rows] = await db.execute(`SELECT * FROM users WHERE email = ? LIMIT 1`, [email]);
-    const user = rows[0];
+    const user = rows && rows[0];
     
     if (user) {
       console.log('✅ User found:', { id: user.id, email: user.email });
