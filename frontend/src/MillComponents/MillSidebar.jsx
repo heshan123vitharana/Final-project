@@ -47,7 +47,7 @@ const MillSidebar = ({ onBackToHome }) => {
     // Sidebar container with responsive width and rainbow nature background
     <aside
       className={`text-white transition-all duration-300 ease-in-out
-        ${isCollapsed ? 'w-20' : 'w-64'} flex flex-col min-h-screen shadow-2xl relative`}
+        ${isCollapsed ? 'w-20' : 'w-64'} flex flex-col h-full shadow-2xl relative`}
       style={{
         backgroundImage: `url(${rainbowNature})`,
         backgroundSize: 'cover',

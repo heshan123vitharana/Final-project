@@ -17,13 +17,13 @@ import MillNotifications from '../MillPages/MillNotifications.jsx';
 // Main layout component for Mill section
 const MillLayout = ({ userData, onBackToHome }) => {
   return (
-    // Flex container for sidebar and main content
-    <div className="flex">
-      {/* Sidebar navigation */}
+    // Fixed height flex container for sidebar and main content
+    <div className="flex h-screen">
+      {/* Fixed sidebar navigation */}
       <MillSidebar userData={userData} onBackToHome={onBackToHome} />
 
-      {/* Main content area */}
-      <main className="flex-grow bg-gray-50 p-6 md:p-8 lg:p-10 overflow-y-auto">
+      {/* Scrollable main content area */}
+      <main className="flex-grow bg-gray-50 p-6 md:p-8 lg:p-10 overflow-y-auto h-full">
         {/* Define all routes for Mill pages */}
         <Routes>
           <Route index element={<MillHome userData={userData} />} /> {/* Default home page */}
