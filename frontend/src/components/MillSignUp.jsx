@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+// Import validation utilities
+import { validateFormWithToast, handleApiError, handleNetworkError, handleRegistrationSuccess } from '../utils/validation';
 
 const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
   const [formData, setFormData] = useState({
@@ -12,7 +14,6 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
     confirmPassword: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errors, setErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -38,106 +39,62 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
       ...prev,
       [name]: value
     }))
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }))
-    }
-  }
-
-  const validateForm = () => {
-    const newErrors = {}
-
-    if (!formData.firstName) {
-      newErrors.firstName = 'This field is required'
-    }
-
-    if (!formData.lastName) {
-      newErrors.lastName = 'This field is required'
-    }
-
-    if (!formData.phoneNumber) {
-      newErrors.phoneNumber = 'This field is required'
-    }
-
-    if (!formData.businessName) {
-      newErrors.businessName = 'This field is required'
-    }
-
-    if (!formData.businessType) {
-      newErrors.businessType = 'This field is required'
-    }
-
-    if (!formData.email) {
-      newErrors.email = 'This field is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address'
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'This field is required'
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'This field is required'
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!validateForm()) {
-      return
+    
+    // Validate form with toast notifications
+    const { isValid } = validateFormWithToast(formData, [
+      'firstName', 
+      'lastName', 
+      'phoneNumber', 
+      'businessName', 
+      'businessType', 
+      'email', 
+      'password', 
+      'confirmPassword'
+    ]);
+    
+    if (!isValid) {
+      return;
     }
+
     setIsSubmitting(true)
     try {
-      const url = 'http://localhost:5000/api/auth/register';
-      const payload = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        business_name: formData.businessName,
-        business_type: formData.businessType,
-        phone: formData.phoneNumber,
-        email: formData.email,
-        password: formData.password,
-        confirm_password: formData.confirmPassword,
-      };
-
-      const response = await fetch(url, {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          business_name: formData.businessName,
+          business_type: formData.businessType,
+          phone: formData.phoneNumber,
+          email: formData.email,
+          password: formData.password,
+          confirm_password: formData.confirmPassword,
+        }),
       });
       const result = await response.json();
-      setIsSubmitting(false);
+      
       if (response.ok) {
+        handleRegistrationSuccess();
         onSignUpSuccess(result.user);
       } else {
-        setErrors({ api: result.errors ? result.errors.join(', ') : result.message || 'Registration failed' });
+        handleApiError(null, result);
       }
-    } catch {
+    } catch (error) {
+      handleNetworkError();
+    } finally {
       setIsSubmitting(false);
-      setErrors({ api: 'Network error. Please try again.' });
     }
   }
 
   return (
     <>
-      {errors.api && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 p-3 bg-red-100 text-red-700 rounded-xl text-center font-semibold shadow-lg">
-          {errors.api}
-        </div>
-      )}
       <div className="fixed inset-0 z-40 min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex items-center justify-center p-6 font-inter"
            style={{
              backgroundImage: `linear-gradient(to bottom right, rgba(248, 250, 252, 0.4), rgba(255, 255, 255, 0.4), rgba(249, 250, 251, 0.4)), url('/bg-1.jpg')`,
@@ -199,16 +156,9 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                       type="text"
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      className={`w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm ${
-                        errors.firstName ? 'border-red-500 bg-red-50' : ''
-                      }`}
+                      className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm"
                       placeholder="First name"
                     />
-                    {errors.firstName && (
-                      <p className="text-xs text-red-500 flex items-center space-x-1">
-                        <span>{errors.firstName}</span>
-                      </p>
-                    )}
                   </div>
                   <div className="space-y-1">
                     <label htmlFor="lastName" className="block text-xs font-semibold text-gray-700 tracking-wide">
@@ -220,16 +170,9 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                       type="text"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      className={`w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm ${
-                        errors.lastName ? 'border-red-500 bg-red-50' : ''
-                      }`}
+                      className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm"
                       placeholder="Last name"
                     />
-                    {errors.lastName && (
-                      <p className="text-xs text-red-500 flex items-center space-x-1">
-                        <span>{errors.lastName}</span>
-                      </p>
-                    )}
                   </div>
                 </div>
 
@@ -244,16 +187,9 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className={`w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm ${
-                      errors.email ? 'border-red-500 bg-red-50' : ''
-                    }`}
+                    className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm"
                     placeholder="yourname@gmail.com"
                   />
-                  {errors.email && (
-                    <p className="text-xs text-red-500 flex items-center space-x-1">
-                      <span>{errors.email}</span>
-                    </p>
-                  )}
                 </div>
 
                 {/* Phone */}
@@ -267,16 +203,9 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                     type="tel"
                     value={formData.phoneNumber}
                     onChange={handleInputChange}
-                    className={`w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm ${
-                      errors.phoneNumber ? 'border-red-500 bg-red-50' : ''
-                    }`}
+                    className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm"
                     placeholder="Phone number"
                   />
-                  {errors.phoneNumber && (
-                    <p className="text-xs text-red-500 flex items-center space-x-1">
-                      <span>{errors.phoneNumber}</span>
-                    </p>
-                  )}
                 </div>
 
                 {/* Business Name */}
@@ -290,16 +219,9 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                     type="text"
                     value={formData.businessName}
                     onChange={handleInputChange}
-                    className={`w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm ${
-                      errors.businessName ? 'border-red-500 bg-red-50' : ''
-                    }`}
+                    className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm"
                     placeholder="Your business name"
                   />
-                  {errors.businessName && (
-                    <p className="text-xs text-red-500 flex items-center space-x-1">
-                      <span>{errors.businessName}</span>
-                    </p>
-                  )}
                 </div>
 
                 {/* Business Type */}
@@ -312,18 +234,11 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                     name="businessType"
                     value={formData.businessType}
                     onChange={handleInputChange}
-                    className={`w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm ${
-                      errors.businessType ? 'border-red-500 bg-red-50' : ''
-                    }`}
+                    className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm"
                   >
                     <option value="private">Private</option>
                     <option value="government">Government</option>
                   </select>
-                  {errors.businessType && (
-                    <p className="text-xs text-red-500 flex items-center space-x-1">
-                      <span>{errors.businessType}</span>
-                    </p>
-                  )}
                 </div>
               </form>
             </div>
@@ -350,9 +265,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={handleInputChange}
-                      className={`w-full px-2 py-1.5 bg-white border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm ${
-                        errors.password ? 'border-red-500 bg-red-50' : ''
-                      }`}
+                      className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm"
                       placeholder="********"
                     />
                     <button
@@ -372,11 +285,6 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                       )}
                     </button>
                   </div>
-                  {errors.password && (
-                    <p className="text-xs text-red-500 flex items-center space-x-1">
-                      <span>{errors.password}</span>
-                    </p>
-                  )}
                 </div>
 
                 <div className="space-y-1">
@@ -390,9 +298,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                       type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
-                      className={`w-full px-2 py-1.5 bg-white border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm ${
-                        errors.confirmPassword ? 'border-red-500 bg-red-50' : ''
-                      }`}
+                      className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm"
                       placeholder="********"
                     />
                     <button
@@ -412,11 +318,6 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                       )}
                     </button>
                   </div>
-                  {errors.confirmPassword && (
-                    <p className="text-xs text-red-500 flex items-center space-x-1">
-                      <span>{errors.confirmPassword}</span>
-                    </p>
-                  )}
                 </div>
               </div>
 

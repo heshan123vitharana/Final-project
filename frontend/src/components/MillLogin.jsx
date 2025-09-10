@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import millSlide1 from '../assets/mill-slide-1.png';
 import millSlide2 from '../assets/mill-slide-2.png';
 import millSlide3 from '../assets/mill-slide-3.png';
+// Import validation utilities
+import { validateFormWithToast, handleApiError, handleNetworkError, handleLoginSuccess } from '../utils/validation';
 
 const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit }) => {
   const [formData, setFormData] = useState({
@@ -10,7 +12,6 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit }) => {
     password: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errors, setErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
   
   // Slideshow state
@@ -56,75 +57,48 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit }) => {
       ...prev,
       [name]: value
     }))
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }))
-    }
-  }
-
-  const validateForm = () => {
-    const newErrors = {}
-
-    if (!formData.email) {
-      newErrors.email = 'This field is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address'
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'This field is required'
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!validateForm()) {
-      return
+    
+    // Validate form with toast notifications
+    const { isValid } = validateFormWithToast(formData, ['email', 'password']);
+    
+    if (!isValid) {
+      return;
     }
+
     setIsSubmitting(true)
     try {
-      const url = 'http://localhost:5000/api/auth/login';
-      const payload = {
-        email: formData.email,
-        password: formData.password,
-      };
-
-      const response = await fetch(url, {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
       });
       const result = await response.json();
-      setIsSubmitting(false);
+      
       if (response.ok) {
+        handleLoginSuccess('Mill Owner');
         const userData = { ...result.user, token: result.token };
         onLoginSuccess(userData);
       } else {
-        setErrors({ api: result.errors ? result.errors.join(', ') : result.message || 'Sign in failed' });
+        handleApiError(null, result);
       }
-    } catch {
+    } catch (error) {
+      handleNetworkError();
+    } finally {
       setIsSubmitting(false);
-      setErrors({ api: 'Network error. Please try again.' });
     }
   }
 
   return (
     <>
-      {errors.api && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 p-3 bg-red-100 text-red-700 rounded-xl text-center font-semibold shadow-lg">
-          {errors.api}
-        </div>
-      )}
       <div className="fixed inset-0 z-40 min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex items-center justify-center p-6 font-inter"
            style={{
              backgroundImage: `linear-gradient(to bottom right, rgba(248, 250, 252, 0.4), rgba(255, 255, 255, 0.4), rgba(249, 250, 251, 0.4)), url('/bg-1.jpg')`,
@@ -185,19 +159,9 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit }) => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide ${
-                      errors.email ? 'border-red-500 bg-red-50' : ''
-                    }`}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide"
                     placeholder="yourname@gmail.com"
                   />
-                  {errors.email && (
-                    <p className="text-xs text-red-500 flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      <span>{errors.email}</span>
-                    </p>
-                  )}
                 </div>
 
                 {/* Password */}
@@ -212,9 +176,7 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit }) => {
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={handleInputChange}
-                      className={`w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide ${
-                        errors.password ? 'border-red-500 bg-red-50' : ''
-                      }`}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide"
                       placeholder="********"
                     />
                     <button
@@ -234,14 +196,6 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit }) => {
                       )}
                     </button>
                   </div>
-                  {errors.password && (
-                    <p className="text-xs text-red-500 flex items-center space-x-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                      <span>{errors.password}</span>
-                    </p>
-                  )}
                 </div>
 
                 {/* Submit Button */}

@@ -16,6 +16,8 @@ import AdminDashboard from './components/admin/AdminDashboard'
 import { SectionTransition } from './components/PageTransition'
 import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from './utils/scroll'
 import MillLayout from './MillComponents/MillLayout'
+// Import ToastProvider
+import ToastProvider from './components/ToastProvider'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home')
@@ -274,7 +276,8 @@ function App() {
   // (removed) scroll speed preference control
 
   return (
-    <Router>
+    <ToastProvider>
+      <Router>
       <div className="min-h-screen bg-white relative">
         {/* Render different flows based on user state */}
       {userFlowState === 'auth' && (
@@ -429,6 +432,7 @@ function App() {
         )}
       </div>
     </Router>
+    </ToastProvider>
   )
 }
 

@@ -3,9 +3,16 @@ import React, { useState, useEffect } from "react";
 import slideshow1 from '../assets/admin-login-slide-1.png';
 import slideshow2 from '../assets/admin-login-slide-2.png';
 import slideshow3 from '../assets/admin-login-slide-3.png';
+// Import validation utilities
+import { validateFormWithToast, handleApiError, handleNetworkError, handleLoginSuccess } from '../utils/validation';
 
-const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handleSubmit, onBackToHome }) => {
+const AdminLogin = ({ onBackToHome }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
   
   // Slideshow state
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -43,6 +50,56 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
 
     return () => clearInterval(timer);
   }, [slides.length]);
+
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle form submission with validation
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validate form with toast notifications
+    const { isValid } = validateFormWithToast(formData, ['email', 'password']);
+    
+    if (!isValid) {
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        handleLoginSuccess('Admin');
+        // Handle successful login (redirect, store token, etc.)
+        // You can add your success logic here
+      } else {
+        handleApiError(null, result);
+      }
+    } catch (error) {
+      handleNetworkError();
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex items-center justify-center p-6 font-inter" 
@@ -107,14 +164,6 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
                     className="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide"
                   />
                 </div>
-                {errors.email && (
-                  <p className="text-xs text-red-500 flex items-center space-x-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <span>{errors.email}</span>
-                  </p>
-                )}
               </div>
 
               {/* Password Field */}
@@ -148,14 +197,6 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
                     )}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="text-xs text-red-500 flex items-center space-x-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <span>{errors.password}</span>
-                  </p>
-                )}
               </div>
 
               {/* Login Button */}
