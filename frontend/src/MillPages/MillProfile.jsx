@@ -297,287 +297,258 @@ const MillProfile = ({ userData }) => {
           </div>
         </div>
 
-        {/* Enhanced Profile Photo Section */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-green-100">
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="relative group">
+        {/* Modern Profile Header with Background */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+          {/* Background Banner */}
+          <div 
+            className="h-48 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 relative"
+            style={{
+              backgroundImage: `linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(37, 99, 235, 0.9)), url('https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=1926&q=80')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          >
+            {/* Edit Button */}
+            {!isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg hover:bg-white/30 transition-all duration-200 flex items-center gap-2 border border-white/30"
+              >
+                <PencilIcon className="h-4 w-4" />
+                <span className="text-sm font-medium">Edit</span>
+              </button>
+            )}
+          </div>
+          
+          {/* Profile Content */}
+          <div className="px-8 pb-8 -mt-20 relative z-10">
+            {/* Profile Picture */}
+            <div className="flex justify-center mb-4">
               <div className="relative">
                 {isLoading && (
-                  <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center z-10">
+                  <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center z-20">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
                   </div>
                 )}
                 <img
                   src={formData.profilePhoto || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}
                   alt="Profile"
-                  className="w-40 h-40 rounded-full object-cover border-4 border-green-500 shadow-lg transition-all duration-300"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-xl bg-white"
                 />
                 {/* Profile completion indicator */}
-                <div className="absolute -bottom-2 -right-2">
+                <div className="absolute -bottom-1 -right-1">
                   {profileStats.completeness >= 80 ? (
-                    <CheckCircleIcon className="h-8 w-8 text-green-500 bg-white rounded-full" />
+                    <div className="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+                      <CheckCircleIcon className="h-5 w-5 text-white" />
+                    </div>
                   ) : profileStats.completeness >= 50 ? (
-                    <ExclamationCircleIcon className="h-8 w-8 text-yellow-500 bg-white rounded-full" />
+                    <div className="h-8 w-8 bg-yellow-500 rounded-full flex items-center justify-center border-2 border-white">
+                      <ExclamationCircleIcon className="h-5 w-5 text-white" />
+                    </div>
                   ) : (
-                    <div className="h-8 w-8 bg-red-500 rounded-full flex items-center justify-center">
+                    <div className="h-8 w-8 bg-red-500 rounded-full flex items-center justify-center border-2 border-white">
                       <span className="text-white text-xs font-bold">{profileStats.completeness}%</span>
                     </div>
                   )}
                 </div>
               </div>
+            </div>
+            
+            {/* Profile Info */}
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                {formData.firstName || formData.lastName 
+                  ? `${formData.firstName} ${formData.lastName}`.trim() 
+                  : 'Mill Owner'}
+              </h2>
+              <p className="text-blue-600 font-medium text-sm mb-3">
+                {formData.businessName || 'Rice Mill Business'}
+              </p>
               
-              {/* Photo edit controls - Always visible for better UX */}
-              <div className="mt-4 flex justify-center gap-2">
+              {/* Social/Contact Icons */}
+              <div className="flex justify-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <EnvelopeIcon className="h-4 w-4 text-green-600" />
+                </div>
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <PhoneIcon className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <MapPinIcon className="h-4 w-4 text-purple-600" />
+                </div>
+                <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <BuildingOfficeIcon className="h-4 w-4 text-orange-600" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Photo Controls (only visible when editing or no photo) */}
+            {(isEditing || !formData.profilePhoto) && (
+              <div className="flex justify-center gap-2 mb-4">
                 <button
                   type="button"
                   onClick={triggerFileInput}
                   disabled={isLoading}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   title="Upload Photo"
                 >
                   <CameraIcon className="h-4 w-4" />
-                  <span className="text-sm font-medium">
-                    {formData.profilePhoto ? 'Change' : 'Upload'}
-                  </span>
+                  <span>{formData.profilePhoto ? 'Change Photo' : 'Upload Photo'}</span>
                 </button>
                 {formData.profilePhoto && (
                   <button
                     type="button"
                     onClick={removeProfilePicture}
                     disabled={isLoading}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors shadow-md text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Remove Photo"
                   >
-                    <span className="text-sm font-medium">Remove</span>
+                    Remove
                   </button>
                 )}
               </div>
-              
-              {/* File upload hints */}
-              <div className="mt-2 text-center">
-                <p className="text-xs text-gray-500">
-                  Max size: 5MB • PNG, JPG, JPEG, GIF, WebP
-                </p>
-              </div>
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-                onChange={handlePhotoChange}
-                className="hidden"
-              />
-            </div>
+            )}
             
-            {/* Profile Summary */}
-            <div className="text-center md:text-left flex-1">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {formData.firstName || formData.lastName 
-                  ? `${formData.firstName} ${formData.lastName}`.trim() 
-                  : 'Complete Your Profile'}
-              </h2>
-              <p className="text-green-600 font-medium mb-1">{formData.businessName || 'Business Name Not Set'}</p>
-              <p className="text-gray-600 mb-4">{formData.email || 'Email Not Set'}</p>
-              
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <PhoneIcon className="h-4 w-4" />
-                  <span className="text-sm">{formData.phoneNumber || 'Phone not set'}</span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
+          </div>
+        </div>
+
+        {/* Information Cards */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Personal Information Card */}
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <UserIcon className="h-5 w-5 text-blue-600" />
+              Personal Information
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500 block mb-1">Email</span>
+                  <span className="text-gray-900 font-medium">
+                    {formData.email || 'Not set'}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <MapPinIcon className="h-4 w-4" />
-                  <span className="text-sm">{formData.city && formData.district ? `${formData.city}, ${formData.district}` : 'Location not set'}</span>
+                <div>
+                  <span className="text-gray-500 block mb-1">Phone</span>
+                  <span className="text-gray-900 font-medium">
+                    {formData.phoneNumber || 'Not set'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block mb-1">City</span>
+                  <span className="text-gray-900 font-medium">
+                    {formData.city || 'Not set'}
+                  </span>
                 </div>
               </div>
-              
-              {!isEditing && (
-                <div className="mt-6">
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                    Edit Profile
-                  </button>
+            </div>
+          </div>
+
+          {/* Business Information Card */}
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <BuildingOfficeIcon className="h-5 w-5 text-green-600" />
+              Business Details
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500 block mb-1">Business Type</span>
+                  <span className="text-gray-900 font-medium capitalize">
+                    {formData.businessType || 'Not set'}
+                  </span>
                 </div>
-              )}
+                <div>
+                  <span className="text-gray-500 block mb-1">Mill Capacity</span>
+                  <span className="text-gray-900 font-medium">
+                    {formData.millCapacity ? `${formData.millCapacity} tons/day` : 'Not set'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block mb-1">District</span>
+                  <span className="text-gray-900 font-medium">
+                    {formData.district || 'Not set'}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Profile Content */}
+        {/* Information Cards */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Personal Information Card */}
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <UserIcon className="h-5 w-5 text-blue-600" />
+              Personal Information
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500 block mb-1">Email</span>
+                  <span className="text-gray-900 font-medium">
+                    {formData.email || 'Not set'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block mb-1">Phone</span>
+                  <span className="text-gray-900 font-medium">
+                    {formData.phoneNumber || 'Not set'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block mb-1">City</span>
+                  <span className="text-gray-900 font-medium">
+                    {formData.city || 'Not set'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Business Information Card */}
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <BuildingOfficeIcon className="h-5 w-5 text-green-600" />
+              Business Details
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500 block mb-1">Business Type</span>
+                  <span className="text-gray-900 font-medium capitalize">
+                    {formData.businessType || 'Not set'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block mb-1">Mill Capacity</span>
+                  <span className="text-gray-900 font-medium">
+                    {formData.millCapacity ? `${formData.millCapacity} tons/day` : 'Not set'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block mb-1">District</span>
+                  <span className="text-gray-900 font-medium">
+                    {formData.district || 'Not set'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Profile viewing mode (not editing) */}
         {!isEditing ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Personal Information Card */}
-            <div className="bg-white rounded-2xl shadow-xl p-6 border border-green-100 h-fit">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <UserIcon className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">Personal Information</h3>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">First Name</label>
-                    <p className="text-gray-900 font-medium">{formData.firstName || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Last Name</label>
-                    <p className="text-gray-900 font-medium">{formData.lastName || 'Not set'}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <EnvelopeIcon className="h-4 w-4 text-gray-400" />
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-gray-500">Email Address</label>
-                    <p className="text-gray-900 font-medium">{formData.email || 'Not set'}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <PhoneIcon className="h-4 w-4 text-gray-400" />
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-gray-500">Phone Number</label>
-                    <p className="text-gray-900 font-medium">{formData.phoneNumber || 'Not set'}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-2">
-                  <MapPinIcon className="h-4 w-4 text-gray-400 mt-1" />
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-gray-500">Address</label>
-                    <p className="text-gray-900 font-medium">
-                      {formData.address && formData.city && formData.district 
-                        ? `${formData.address}, ${formData.city}, ${formData.district}${formData.postalCode ? ` - ${formData.postalCode}` : ''}` 
-                        : 'Address not set'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Business Information Card */}
-            <div className="bg-white rounded-2xl shadow-xl p-6 border border-green-100 h-fit">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <BuildingOfficeIcon className="h-6 w-6 text-blue-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">Business Information</h3>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Business Name</label>
-                  <p className="text-gray-900 font-medium">{formData.businessName || 'Not set'}</p>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Business Type</label>
-                    <p className="text-gray-900 font-medium capitalize">{formData.businessType}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Mill Capacity</label>
-                    <p className="text-gray-900 font-medium">{formData.millCapacity || 'Not set'}</p>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Mill Location</label>
-                  <p className="text-gray-900 font-medium">{formData.millLocation || 'Not set'}</p>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">License Number</label>
-                    <p className="text-gray-900 font-medium">{formData.licenseNumber || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Registration Date</label>
-                    <p className="text-gray-900 font-medium">
-                      {formData.registrationDate 
-                        ? new Date(formData.registrationDate).toLocaleDateString()
-                        : 'Not set'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Quick Actions Card */}
-            <div className="bg-white rounded-2xl shadow-xl p-6 border border-green-100 h-fit">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
-                <div className="bg-purple-100 p-3 rounded-lg">
-                  <CheckCircleIcon className="h-6 w-6 text-purple-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">Quick Actions</h3>
-              </div>
-              
-              <div className="space-y-4">
-                <button className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group">
-                  <div className="bg-blue-100 p-2 rounded-lg group-hover:bg-blue-200 transition-colors">
-                    <ArrowUpTrayIcon className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-medium text-gray-900">Update Stock</div>
-                    <div className="text-sm text-gray-500">Add new inventory records</div>
-                  </div>
-                </button>
-                
-                <button className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group">
-                  <div className="bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
-                    <CurrencyDollarIcon className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-medium text-gray-900">Check Paddy Price</div>
-                    <div className="text-sm text-gray-500">View current market rates</div>
-                  </div>
-                </button>
-                
-                <button className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group">
-                  <div className="bg-orange-100 p-2 rounded-lg group-hover:bg-orange-200 transition-colors">
-                    <BellIcon className="h-4 w-4 text-orange-600" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-medium text-gray-900">Notifications</div>
-                    <div className="text-sm text-gray-500">Check latest updates</div>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Account Status Card */}
-            <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl shadow-xl p-6 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Account Status</h3>
-                  <p className="opacity-90">Your account is active and in good standing</p>
-                  {profileStats.lastUpdated && (
-                    <p className="text-sm opacity-75 mt-2">
-                      Last updated: {profileStats.lastUpdated}
-                    </p>
-                  )}
-                  <div className="mt-4 flex items-center gap-4">
-                    <div className="text-center">
-                      <div className="text-sm opacity-75">Profile Score</div>
-                      <div className="text-2xl font-bold">{profileStats.completeness}%</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-sm opacity-75">Status</div>
-                      <div className="font-semibold">
-                        {profileStats.completeness >= 80 ? 'Excellent' : 
-                         profileStats.completeness >= 60 ? 'Good' : 
-                         profileStats.completeness >= 40 ? 'Fair' : 'Needs Attention'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <CheckCircleIcon className="h-16 w-16 opacity-20" />
-              </div>
-            </div>
+          <div className="mt-6">
+            <p className="text-center text-gray-600">Profile displayed above with modern design</p>
           </div>
         ) : (
           // Enhanced Edit Profile Form
