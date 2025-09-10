@@ -176,14 +176,6 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
                   <span className="font-bold tracking-wide">Login</span>
                 )}
               </button>
-
-              {/* Remember Me Checkbox */}
-              <div className="flex items-center justify-center text-xs text-gray-600 pt-2">
-                <label className="flex items-center">
-                  <input type="checkbox" className="rounded border-gray-300 text-green-600 focus:ring-green-500 w-3 h-3" />
-                  <span className="ml-1.5 font-medium tracking-wide">Remember me</span>
-                </label>
-              </div>
             </form>
           </div>
 
