@@ -133,7 +133,7 @@ const MillProfile = ({ userData }) => {
   // Toggle password visibility for a given field
   const togglePasswordVisibility = (field) => setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
 
-  // Enhanced profile photo upload with validation
+  // Enhanced profile photo upload with validation and preview
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -145,14 +145,22 @@ const MillProfile = ({ userData }) => {
       
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        showErrorToast('Please select a valid image file');
+        showErrorToast('Please select a valid image file (PNG, JPG, JPEG, GIF, WebP)');
         return;
       }
       
+      // Show loading state
+      setIsLoading(true);
+      
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({ ...formData, profilePhoto: reader.result });
-        showSuccessToast('Profile picture updated');
+        setFormData(prev => ({ ...prev, profilePhoto: reader.result }));
+        showSuccessToast('Profile picture uploaded successfully!');
+        setIsLoading(false);
+      };
+      reader.onerror = () => {
+        showErrorToast('Failed to load image. Please try again.');
+        setIsLoading(false);
       };
       reader.readAsDataURL(file);
     }
@@ -163,10 +171,12 @@ const MillProfile = ({ userData }) => {
     fileInputRef.current?.click();
   };
   
-  // Remove profile picture
+  // Remove profile picture with confirmation
   const removeProfilePicture = () => {
-    setFormData({ ...formData, profilePhoto: '' });
-    showSuccessToast('Profile picture removed');
+    if (formData.profilePhoto) {
+      setFormData(prev => ({ ...prev, profilePhoto: '' }));
+      showSuccessToast('Profile picture removed successfully');
+    }
   };
 
 
@@ -292,10 +302,15 @@ const MillProfile = ({ userData }) => {
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="relative group">
               <div className="relative">
+                {isLoading && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center z-10">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                  </div>
+                )}
                 <img
                   src={formData.profilePhoto || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}
                   alt="Profile"
-                  className="w-40 h-40 rounded-full object-cover border-4 border-green-500 shadow-lg"
+                  className="w-40 h-40 rounded-full object-cover border-4 border-green-500 shadow-lg transition-all duration-300"
                 />
                 {/* Profile completion indicator */}
                 <div className="absolute -bottom-2 -right-2">
@@ -304,41 +319,51 @@ const MillProfile = ({ userData }) => {
                   ) : profileStats.completeness >= 50 ? (
                     <ExclamationCircleIcon className="h-8 w-8 text-yellow-500 bg-white rounded-full" />
                   ) : (
-                    <XCircleIcon className="h-8 w-8 text-red-500 bg-white rounded-full" />
+                    <div className="h-8 w-8 bg-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">{profileStats.completeness}%</span>
+                    </div>
                   )}
                 </div>
               </div>
               
-              {/* Photo edit controls */}
-              {isEditing && (
-                <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={triggerFileInput}
-                      className="bg-green-600 text-white p-3 rounded-full hover:bg-green-700 transition-colors shadow-lg"
-                      title="Upload Photo"
-                    >
-                      <CameraIcon className="h-5 w-5" />
-                    </button>
-                    {formData.profilePhoto && (
-                      <button
-                        type="button"
-                        onClick={removeProfilePicture}
-                        className="bg-red-600 text-white p-3 rounded-full hover:bg-red-700 transition-colors shadow-lg"
-                        title="Remove Photo"
-                      >
-                        <XCircleIcon className="h-5 w-5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* Photo edit controls - Always visible for better UX */}
+              <div className="mt-4 flex justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={triggerFileInput}
+                  disabled={isLoading}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Upload Photo"
+                >
+                  <CameraIcon className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    {formData.profilePhoto ? 'Change' : 'Upload'}
+                  </span>
+                </button>
+                {formData.profilePhoto && (
+                  <button
+                    type="button"
+                    onClick={removeProfilePicture}
+                    disabled={isLoading}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Remove Photo"
+                  >
+                    <span className="text-sm font-medium">Remove</span>
+                  </button>
+                )}
+              </div>
+              
+              {/* File upload hints */}
+              <div className="mt-2 text-center">
+                <p className="text-xs text-gray-500">
+                  Max size: 5MB • PNG, JPG, JPEG, GIF, WebP
+                </p>
+              </div>
               
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
                 onChange={handlePhotoChange}
                 className="hidden"
               />
