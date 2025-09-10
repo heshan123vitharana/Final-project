@@ -45,7 +45,13 @@ const AdminLogin = ({ isLoading, errors = {}, formData, handleInputChange, handl
   }, [slides.length]);
 
   return (
-    <div className="fixed inset-0 z-50 min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex items-center justify-center p-6 font-inter">
+    <div className="fixed inset-0 z-50 min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex items-center justify-center p-6 font-inter" 
+         style={{
+           backgroundImage: `linear-gradient(to bottom right, rgba(248, 250, 252, 0.4), rgba(255, 255, 255, 0.4), rgba(249, 250, 251, 0.4)), url('/bg-1.jpg')`,
+           backgroundSize: 'cover',
+           backgroundPosition: 'center',
+           backgroundRepeat: 'no-repeat'
+         }}>
       <div className="relative w-full max-w-4xl mx-auto h-[450px] bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
         <div className="grid lg:grid-cols-2 h-full">
           

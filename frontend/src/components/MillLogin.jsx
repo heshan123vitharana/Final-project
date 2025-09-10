@@ -125,18 +125,13 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit }) => {
           {errors.api}
         </div>
       )}
-      <div className="fixed inset-0 z-40 min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex items-center justify-center p-6 font-inter">
-        {/* Video Background */}
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="fixed inset-0 w-full h-full object-cover z-[-1]"
-          style={{ filter: 'brightness(0.3) blur(1px)' }}
-        >
-          <source src="/src/assets/mill-bg-vedio.MP4" type="video/mp4" />
-        </video>
+      <div className="fixed inset-0 z-40 min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex items-center justify-center p-6 font-inter"
+           style={{
+             backgroundImage: `linear-gradient(to bottom right, rgba(248, 250, 252, 0.4), rgba(255, 255, 255, 0.4), rgba(249, 250, 251, 0.4)), url('/bg-1.jpg')`,
+             backgroundSize: 'cover',
+             backgroundPosition: 'center',
+             backgroundRepeat: 'no-repeat'
+           }}>
         
         <div className="relative w-full max-w-5xl mx-auto h-[500px] bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-gray-100/50">
           <div className="grid lg:grid-cols-2 h-full">
