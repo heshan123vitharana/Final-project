@@ -18,6 +18,8 @@ import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from './uti
 import MillLayout from './MillComponents/MillLayout'
 // Import ToastProvider
 import ToastProvider from './components/ToastProvider'
+// Import logout toast handler
+import { handleLogoutSuccess } from './utils/validation'
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home')
@@ -131,6 +133,15 @@ function App() {
     sessionStorage.removeItem('adminData');
     setAdminData(null);
     setUserFlowState('home');
+    handleLogoutSuccess('Admin');
+  }
+
+  // Handle mill owner logout
+  const handleMillLogout = () => {
+    sessionStorage.removeItem('millOwnerData');
+    setUserData(null);
+    setUserFlowState('home');
+    handleLogoutSuccess('Mill Owner');
   }
 
   // Handle successful admin login
@@ -288,7 +299,7 @@ function App() {
       )}
       
       {userFlowState === 'dashboard' && userData && (
-        <MillLayout userData={userData} onBackToHome={() => setUserFlowState('home')} />
+        <MillLayout userData={userData} onBackToHome={handleMillLogout} />
       )}
       {userFlowState === 'adminDashboard' && adminData && (
         <AdminDashboard adminData={adminData} onLogout={handleAdminLogout} />

@@ -177,3 +177,7 @@ export const handleLoginSuccess = (userType = 'User') => {
 export const handleRegistrationSuccess = () => {
   showSuccessToast('Account created successfully! Welcome to our platform.');
 };
+
+export const handleLogoutSuccess = (userType = 'User') => {
+  showSuccessToast(`${userType} logged out successfully. See you next time!`);
+};

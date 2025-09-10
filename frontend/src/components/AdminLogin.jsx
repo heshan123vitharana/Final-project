@@ -6,7 +6,7 @@ import slideshow3 from '../assets/admin-login-slide-3.png';
 // Import validation utilities
 import { validateFormWithToast, handleApiError, handleNetworkError, handleLoginSuccess } from '../utils/validation';
 
-const AdminLogin = ({ onBackToHome }) => {
+const AdminLogin = ({ onBackToHome, onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -89,8 +89,12 @@ const AdminLogin = ({ onBackToHome }) => {
       
       if (response.ok) {
         handleLoginSuccess('Admin');
-        // Handle successful login (redirect, store token, etc.)
-        // You can add your success logic here
+        // Store admin data and navigate to dashboard
+        const adminData = { ...result.user, token: result.token };
+        sessionStorage.setItem('adminData', JSON.stringify(adminData));
+        if (onLogin) {
+          onLogin(adminData);
+        }
       } else {
         handleApiError(null, result);
       }
