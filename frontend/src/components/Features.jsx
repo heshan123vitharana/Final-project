@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 
 const Features = () => {
-  const [activeFeature, setActiveFeature] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
-  const [hoveredFeature, setHoveredFeature] = useState(null);
+  // Removed unused state variables: activeFeature, setActiveFeature, hoveredFeature, setHoveredFeature
 
   useEffect(() => {
     setIsVisible(true);

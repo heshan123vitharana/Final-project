@@ -55,34 +55,38 @@ const MillOwnerRegistration = ({ userData, onRegistrationComplete, onBack }) => 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // License types available
-  const licenseTypes = [
-    { value: 'rice_mill', label: 'Rice Mill License' },
-    { value: 'paddy_processing', label: 'Paddy Processing License' },
-    { value: 'wholesale_distribution', label: 'Wholesale Distribution License' },
-    { value: 'storage_facility', label: 'Storage Facility License' }
-  ];
+  // TODO: Uncomment when implementing business information step (step 2)
+  // const licenseTypes = [
+  //   { value: 'rice_mill', label: 'Rice Mill License' },
+  //   { value: 'paddy_processing', label: 'Paddy Processing License' },
+  //   { value: 'wholesale_distribution', label: 'Wholesale Distribution License' },
+  //   { value: 'storage_facility', label: 'Storage Facility License' }
+  // ];
 
   // Sri Lankan districts
-  const districts = [
-    'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
-    'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kilinochchi', 'Mannar',
-    'Vavuniya', 'Mullaitivu', 'Batticaloa', 'Ampara', 'Trincomalee',
-    'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa', 'Badulla',
-    'Moneragala', 'Ratnapura', 'Kegalle'
-  ];
+  // TODO: Uncomment when implementing business information step (step 2)
+  // const districts = [
+  //   'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
+  //   'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kilinochchi', 'Mannar',
+  //   'Vavuniya', 'Mullaitivu', 'Batticaloa', 'Ampara', 'Trincomalee',
+  //   'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa', 'Badulla',
+  //   'Moneragala', 'Ratnapura', 'Kegalle'
+  // ];
 
   // Mill types
-  const millTypes = [
-    { value: 'traditional', label: 'Traditional Mill' },
-    { value: 'modern', label: 'Modern Mill' },
-    { value: 'semi_automatic', label: 'Semi-Automatic Mill' },
-    { value: 'fully_automatic', label: 'Fully Automatic Mill' }
-  ];
+  // TODO: Uncomment when implementing technical information step (step 3)
+  // const millTypes = [
+  //   { value: 'traditional', label: 'Traditional Mill' },
+  //   { value: 'modern', label: 'Modern Mill' },
+  //   { value: 'semi_automatic', label: 'Semi-Automatic Mill' },
+  //   { value: 'fully_automatic', label: 'Fully Automatic Mill' }
+  // ];
 
   // Quality standards
-  const qualityStandards = [
-    'ISO 9001', 'HACCP', 'SLS Standards', 'Organic Certification', 'Fair Trade'
-  ];
+  // TODO: Uncomment when implementing technical information step (step 3)
+  // const qualityStandards = [
+  //   'ISO 9001', 'HACCP', 'SLS Standards', 'Organic Certification', 'Fair Trade'
+  // ];
 
   /**
    * Handles input field changes
@@ -121,18 +125,19 @@ const MillOwnerRegistration = ({ userData, onRegistrationComplete, onBack }) => 
    * @param {Event} e - File input change event
    * @param {string} documentType - Type of document being uploaded
    */
-  const handleFileUpload = (e, documentType) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData(prev => ({
-        ...prev,
-        documents: {
-          ...prev.documents,
-          [documentType]: file
-        }
-      }));
-    }
-  };
+  // TODO: Uncomment when implementing documents step (step 4)
+  // const handleFileUpload = (e, documentType) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       documents: {
+  //         ...prev.documents,
+  //         [documentType]: file
+  //       }
+  //     }));
+  //   }
+  // };
 
   /**
    * Validates the current step

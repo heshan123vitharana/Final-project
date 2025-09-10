@@ -35,7 +35,7 @@ export const validationRules = {
   },
   phoneNumber: {
     required: true,
-    pattern: /^[\+]?[1-9][\d]{0,15}$/,
+    pattern: /^[+]?[1-9][\d]{0,15}$/,
     message: 'Please enter a valid phone number'
   },
   businessName: {

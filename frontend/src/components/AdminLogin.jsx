@@ -98,7 +98,7 @@ const AdminLogin = ({ onBackToHome, onLogin }) => {
       } else {
         handleApiError(null, result);
       }
-    } catch (error) {
+    } catch {
       handleNetworkError();
     } finally {
       setIsLoading(false);

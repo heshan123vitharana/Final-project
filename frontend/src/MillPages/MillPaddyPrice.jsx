@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, RefreshCw, AlertCircle } from 'lucide-react';
 
 // Paddy Price page component for Mill Dashboard
-const MillPaddyPrice = ({ userData }) => {
+const MillPaddyPrice = () => {
   // State for selected variety filter (variety name)
   const [selectedType, setSelectedType] = useState("");
   // State for selected condition filter (Dry/Wet)
@@ -151,15 +151,16 @@ const MillPaddyPrice = ({ userData }) => {
   // Get unique districts for dropdown
   const uniqueDistricts = [...new Set(paddyPrices.map((p) => p.district))];
 
-  // Calculate filtered results stats for display purposes
-  const calculateFilteredStats = () => {
-    if (filteredPrices.length === 0) {
-      return { totalFiltered: 0 };
-    }
-    return { totalFiltered: filteredPrices.length };
-  };
+  // Calculate filtered results stats for display purposes (unused - reserved for future statistics feature)
+  // const calculateFilteredStats = () => {
+  //   if (filteredPrices.length === 0) {
+  //     return { totalFiltered: 0 };
+  //   }
+  //   return { totalFiltered: filteredPrices.length };
+  // };
 
-  const filteredStats = calculateFilteredStats();
+  // Calculate filtered statistics (currently unused)
+  // const filteredStats = calculateFilteredStats();
 
   // Get price change direction and percentage
   const getPriceChange = (current, previous) => {

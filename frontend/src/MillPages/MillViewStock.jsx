@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const MillViewStock = ({ userData }) => {
   // State for stock data
@@ -26,7 +26,7 @@ const MillViewStock = ({ userData }) => {
   }, []);
 
   // Fetch stock data
-  const fetchStockData = async () => {
+  const fetchStockData = useCallback(async () => {
     try {
       setLoading(true);
       const token = userData?.token;
@@ -64,14 +64,14 @@ const MillViewStock = ({ userData }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userData?.token, filters, setLoading, setStockEntries, setStockSummary, setStockStats, setError]);
 
   // Load data on component mount and filter changes
   useEffect(() => {
     if (userData?.token) {
       fetchStockData();
     }
-  }, [userData?.token, filters]);
+  }, [userData?.token, filters, fetchStockData]);
 
   // Handle filter changes
   const handleFilterChange = (e) => {

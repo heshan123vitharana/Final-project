@@ -90,7 +90,7 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit }) => {
       } else {
         handleApiError(null, result);
       }
-    } catch (error) {
+    } catch {
       handleNetworkError();
     } finally {
       setIsSubmitting(false);

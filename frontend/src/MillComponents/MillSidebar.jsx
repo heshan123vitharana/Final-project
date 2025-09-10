@@ -17,7 +17,7 @@ import rainbowNature from '../assets/beautiful-rainbow-nature.jpg';
 import pmbLogo from '../assets/logo-p.png';
 
 // Sidebar component for navigation
-const MillSidebar = ({ userData, onBackToHome }) => {
+const MillSidebar = ({ onBackToHome }) => {
   // State to control sidebar collapse (responsive)
   const [isCollapsed, setIsCollapsed] = useState(false);
 

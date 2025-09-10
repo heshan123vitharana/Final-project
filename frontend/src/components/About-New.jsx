@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const positions = [
   {
@@ -96,18 +96,18 @@ export default function AboutNew() {
   };
 
   // Function to navigate to next image
-  const nextImage = () => {
+  const nextImage = useCallback(() => {
     const newIndex = (currentImageIndex + 1) % galleryImages.length;
     setCurrentImageIndex(newIndex);
     setSelectedImage(galleryImages[newIndex]);
-  };
+  }, [currentImageIndex]);
 
   // Function to navigate to previous image
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
     const newIndex = currentImageIndex === 0 ? galleryImages.length - 1 : currentImageIndex - 1;
     setCurrentImageIndex(newIndex);
     setSelectedImage(galleryImages[newIndex]);
-  };
+  }, [currentImageIndex]);
 
   // Function to toggle full gallery view
   const toggleFullGallery = () => {
@@ -144,7 +144,7 @@ export default function AboutNew() {
       // Restore body scrolling when modal closes
       document.body.style.overflow = 'unset';
     };
-  }, [selectedImage, currentImageIndex]);
+  }, [selectedImage, currentImageIndex, nextImage, prevImage]);
 
   return (
     <section className="py-20 bg-white min-h-screen">

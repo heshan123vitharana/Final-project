@@ -7,7 +7,7 @@ const initialNotifications = [
   { id: 2, title: "Payment deadline extended", message: "New deadline: 2025-08-15", date: "2025-08-05" },
 ];
 
-const MillNotifications = ({ userData }) => {
+const MillNotifications = () => {
   // State to hold notifications
   const [notifications, setNotifications] = useState(initialNotifications);
 
