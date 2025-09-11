@@ -89,12 +89,36 @@ const initializeTables = async () => {
     `);
     console.log('✅ Paddy prices table ready');
 
+    // User profile photos table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS user_profile_photos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        photo_data LONGTEXT NOT NULL,
+        filename VARCHAR(255) NOT NULL,
+        file_size INT NOT NULL,
+        mime_type VARCHAR(100) NOT NULL,
+        uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_user_photo (user_id)
+      )
+    `);
+    console.log('✅ User profile photos table ready');
+
     // Insert default admin (use INSERT IGNORE to avoid duplicates)
     await pool.execute(`
       INSERT IGNORE INTO admin (username, email, password, status) 
       VALUES ('admin01', 'admin@paddy.lk', 'admin123', 'active')
     `);
     console.log('✅ Default admin user ready');
+
+    // Insert test user for profile photo testing (use INSERT IGNORE to avoid duplicates)
+    await pool.execute(`
+      INSERT IGNORE INTO users (id, first_name, last_name, business_name, business_type, phone, email, password) 
+      VALUES (1, 'Test', 'User', 'Test Mill', 'private', '0123456789', 'test@mill.lk', 'password123')
+    `);
+    console.log('✅ Test user ready');
 
     console.log('✅ MySQL database initialized successfully');
   } catch (error) {

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Profile Photo Upload</title>
+</head>
+<body>
+    <h2>Test Profile Photo Upload</h2>
+    <input type="file" id="photoInput" accept="image/*">
+    <button onclick="testUpload()">Test Upload</button>
+    <div id="result"></div>
+
+    <script>
+        async function testUpload() {
+            const fileInput = document.getElementById('photoInput');
+            const resultDiv = document.getElementById('result');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = '<p style="color: red;">Please select a file</p>';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            
+            // Convert file to base64
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                try {
+                    const response = await fetch('http://localhost:5000/api/profile/upload-photo', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            userId: 1, // Test user ID
+                            photoData: reader.result,
+                            filename: file.name,
+                            fileSize: file.size,
+                            mimeType: file.type
+                        }),
+                    });
+
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        resultDiv.innerHTML = `<p style="color: green;">Success: ${data.message}</p>`;
+                    } else {
+                        resultDiv.innerHTML = `<p style="color: red;">Error: ${data.message}</p>`;
+                    }
+                } catch (error) {
+                    resultDiv.innerHTML = `<p style="color: red;">Network Error: ${error.message}</p>`;
+                }
+            };
+            
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>

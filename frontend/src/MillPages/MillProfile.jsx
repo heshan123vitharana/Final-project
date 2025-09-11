@@ -73,36 +73,67 @@ const MillProfile = ({ userData }) => {
     }));
   }, [formData]);
 
+  // Load profile photo from database
+  const loadProfilePhoto = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/profile/photo/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.photoData;
+      } else if (response.status === 404) {
+        // No profile photo found, that's okay
+        return "";
+      } else {
+        console.error('Failed to load profile photo:', response.status);
+        return "";
+      }
+    } catch (error) {
+      console.error('Error loading profile photo:', error);
+      return "";
+    }
+  };
+
   // Load profile data from sessionStorage on mount (only run once)
   useEffect(() => {
-    const savedProfile = sessionStorage.getItem("profileData");
-    if (savedProfile) {
-      const parsed = JSON.parse(savedProfile);
-      setFormData(parsed);
-      setOriginalData(parsed);
-    } else if (userData) {
-      // Initialize with userData if no saved profile exists
-      const initialData = {
-        firstName: userData.first_name || "",
-        lastName: userData.last_name || "",
-        email: userData.email || "",
-        phoneNumber: userData.phone || "",
-        address: "",
-        city: "",
-        district: "",
-        postalCode: "",
-        businessName: userData.business_name || "",
-        businessType: userData.business_type || "private",
-        millCapacity: "",
-        millLocation: "",
-        licenseNumber: "",
-        registrationDate: userData.created_at ? new Date(userData.created_at).toISOString().split('T')[0] : "",
-        profilePhoto: "",
-        password: "",
-      };
+    const loadData = async () => {
+      const savedProfile = sessionStorage.getItem("profileData");
+      let initialData = {};
+
+      if (savedProfile) {
+        initialData = JSON.parse(savedProfile);
+      } else if (userData) {
+        // Initialize with userData if no saved profile exists
+        initialData = {
+          firstName: userData.first_name || "",
+          lastName: userData.last_name || "",
+          email: userData.email || "",
+          phoneNumber: userData.phone || "",
+          address: "",
+          city: "",
+          district: "",
+          postalCode: "",
+          businessName: userData.business_name || "",
+          businessType: userData.business_type || "private",
+          millCapacity: "",
+          millLocation: "",
+          licenseNumber: "",
+          registrationDate: userData.created_at ? new Date(userData.created_at).toISOString().split('T')[0] : "",
+          profilePhoto: "",
+          password: "",
+        };
+      }
+
+      // Load profile photo from database if user ID is available
+      if (userData?.id && !initialData.profilePhoto) {
+        const photoData = await loadProfilePhoto(userData.id);
+        initialData.profilePhoto = photoData;
+      }
+
       setFormData(initialData);
       setOriginalData(initialData);
-    }
+    };
+
+    loadData();
     
     // Set member since date
     if (userData?.created_at) {
@@ -133,8 +164,53 @@ const MillProfile = ({ userData }) => {
   // Toggle password visibility for a given field
   const togglePasswordVisibility = (field) => setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
 
-  // Enhanced profile photo upload with validation and preview
-  const handlePhotoChange = (e) => {
+  // Upload profile photo to database
+  const uploadPhotoToDatabase = async (photoData, filename, fileSize, mimeType) => {
+    try {
+      // For testing purposes, use test user ID if userData is not available
+      const testUserId = userData?.id || 1; // Use test user ID 1 for now
+      
+      console.log('Uploading photo with data:', {
+        userId: testUserId,
+        filename,
+        fileSize,
+        mimeType,
+        photoDataLength: photoData ? photoData.length : 0
+      });
+
+      const response = await fetch('http://localhost:5001/api/profile/upload-photo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: testUserId,
+          photoData: photoData,
+          filename: filename,
+          fileSize: fileSize,
+          mimeType: mimeType
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Photo uploaded successfully:', result.message);
+        return true;
+      } else {
+        const error = await response.json();
+        console.error('Upload failed:', error.message);
+        showErrorToast(error.message || 'Failed to upload photo');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      showErrorToast('Failed to upload photo. Please try again.');
+      return false;
+    }
+  };
+
+  // Enhanced profile photo upload with validation and database storage
+  const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       // Validate file size (max 5MB)
@@ -148,14 +224,28 @@ const MillProfile = ({ userData }) => {
         showErrorToast('Please select a valid image file (PNG, JPG, JPEG, GIF, WebP)');
         return;
       }
+
+      // Check if user is logged in
+      console.log('userData:', userData);
+      console.log('userData.id:', userData?.id);
       
       // Show loading state
       setIsLoading(true);
       
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, profilePhoto: reader.result }));
-        showSuccessToast('Profile picture uploaded successfully!');
+      reader.onloadend = async () => {
+        // Upload to database
+        const uploadSuccess = await uploadPhotoToDatabase(
+          reader.result,
+          file.name,
+          file.size,
+          file.type
+        );
+
+        if (uploadSuccess) {
+          setFormData(prev => ({ ...prev, profilePhoto: reader.result }));
+          showSuccessToast('Profile picture uploaded successfully!');
+        }
         setIsLoading(false);
       };
       reader.onerror = () => {
@@ -171,11 +261,46 @@ const MillProfile = ({ userData }) => {
     fileInputRef.current?.click();
   };
   
-  // Remove profile picture with confirmation
-  const removeProfilePicture = () => {
+  // Delete profile photo from database
+  const deletePhotoFromDatabase = async () => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/profile/photo/${userData?.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Photo deleted successfully:', result.message);
+        return true;
+      } else {
+        const error = await response.json();
+        console.error('Delete failed:', error.message);
+        showErrorToast(error.message || 'Failed to delete photo');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      showErrorToast('Failed to delete photo. Please try again.');
+      return false;
+    }
+  };
+
+  // Remove profile picture with confirmation and database deletion
+  const removeProfilePicture = async () => {
     if (formData.profilePhoto) {
-      setFormData(prev => ({ ...prev, profilePhoto: '' }));
-      showSuccessToast('Profile picture removed successfully');
+      if (!userData?.id) {
+        showErrorToast('Please login to delete profile photo');
+        return;
+      }
+
+      setIsLoading(true);
+      const deleteSuccess = await deletePhotoFromDatabase();
+      
+      if (deleteSuccess) {
+        setFormData(prev => ({ ...prev, profilePhoto: '' }));
+        showSuccessToast('Profile picture removed successfully');
+      }
+      setIsLoading(false);
     }
   };
 

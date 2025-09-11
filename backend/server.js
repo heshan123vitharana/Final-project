@@ -4,6 +4,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const authRoutes = require('./routes/authRoutes');
 const priceRoutes = require('./routes/priceRoutes');
 const stockRoutes = require('./routes/stockRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -23,7 +24,9 @@ app.use((req, res, next) => {
     
     next();
 });
-app.use(express.json());
+// Increase payload limit for image uploads (50MB)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Request logging middleware
 app.use((req, _res, next) => {
@@ -37,10 +40,17 @@ app.get('/', (_req, res) => {
 });
 
 // Routes
+console.log('📍 Registering routes...');
 app.use('/api/admin', adminRoutes);
+console.log('✅ Admin routes registered');
 app.use('/api/auth', authRoutes);
+console.log('✅ Auth routes registered');
 app.use('/api/prices', priceRoutes);
+console.log('✅ Price routes registered');
 app.use('/api/stock', stockRoutes);
+console.log('✅ Stock routes registered');
+app.use('/api/profile', profileRoutes);
+console.log('✅ Profile routes registered');
 
 // 404 handler for undefined routes (must be after all other routes)
 app.use((req, res, _next) => {
