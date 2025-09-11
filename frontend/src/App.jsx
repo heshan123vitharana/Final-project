@@ -289,7 +289,7 @@ function App() {
   return (
     <ToastProvider>
       <Router>
-      <div className="min-h-screen bg-white relative">
+      <div className="min-h-screen bg-white relative overflow-hidden">
         {/* Render different flows based on user state */}
       {userFlowState === 'auth' && (
         <AuthPage 

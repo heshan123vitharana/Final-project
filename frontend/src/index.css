@@ -7,6 +7,51 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide Scrollbars Globally - Cross-browser Compatible */
+/* Use webkit for modern browsers */
+*::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+  background: transparent;
+  display: none;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+/* Internet Explorer and Edge Legacy */
+* {
+  -ms-overflow-style: none;
+}
+
+/* Firefox - applied to html element for better compatibility */
+/* Note: scrollbar-width is progressive enhancement - graceful degradation in older browsers */
+@supports (scrollbar-width: none) {
+  html {
+    scrollbar-width: none;
+  }
+}
+
+/* Fallback overflow control */
+body {
+  overflow-x: hidden;
+}
+
+/* Ensure smooth scrolling remains functional */
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+}
+
 /* Government Website Professional Color Palette */
 :root {
   /* Primary Government Colors */
