@@ -335,22 +335,6 @@ const MillProfile = ({ userData }) => {
                   alt="Profile"
                   className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-xl bg-white"
                 />
-                {/* Profile completion indicator */}
-                <div className="absolute -bottom-1 -right-1">
-                  {profileStats.completeness >= 80 ? (
-                    <div className="h-8 w-8 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-                      <CheckCircleIcon className="h-5 w-5 text-white" />
-                    </div>
-                  ) : profileStats.completeness >= 50 ? (
-                    <div className="h-8 w-8 bg-yellow-500 rounded-full flex items-center justify-center border-2 border-white">
-                      <ExclamationCircleIcon className="h-5 w-5 text-white" />
-                    </div>
-                  ) : (
-                    <div className="h-8 w-8 bg-red-500 rounded-full flex items-center justify-center border-2 border-white">
-                      <span className="text-white text-xs font-bold">{profileStats.completeness}%</span>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
             
@@ -482,73 +466,10 @@ const MillProfile = ({ userData }) => {
           </div>
         </div>
 
-        {/* Information Cards */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Personal Information Card */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <UserIcon className="h-5 w-5 text-blue-600" />
-              Personal Information
-            </h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500 block mb-1">Email</span>
-                  <span className="text-gray-900 font-medium">
-                    {formData.email || 'Not set'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500 block mb-1">Phone</span>
-                  <span className="text-gray-900 font-medium">
-                    {formData.phoneNumber || 'Not set'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500 block mb-1">City</span>
-                  <span className="text-gray-900 font-medium">
-                    {formData.city || 'Not set'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Business Information Card */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <BuildingOfficeIcon className="h-5 w-5 text-green-600" />
-              Business Details
-            </h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500 block mb-1">Business Type</span>
-                  <span className="text-gray-900 font-medium capitalize">
-                    {formData.businessType || 'Not set'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500 block mb-1">Mill Capacity</span>
-                  <span className="text-gray-900 font-medium">
-                    {formData.millCapacity ? `${formData.millCapacity} tons/day` : 'Not set'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500 block mb-1">District</span>
-                  <span className="text-gray-900 font-medium">
-                    {formData.district || 'Not set'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Profile viewing mode (not editing) */}
         {!isEditing ? (
           <div className="mt-6">
-            <p className="text-center text-gray-600">Profile displayed above with modern design</p>
+            {/* Modern profile design is complete above */}
           </div>
         ) : (
           // Enhanced Edit Profile Form
