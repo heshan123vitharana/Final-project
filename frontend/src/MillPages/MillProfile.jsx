@@ -282,15 +282,15 @@ const MillProfile = ({ userData }) => {
             </div>
           </div>
           
-          {/* Profile Completeness Bar */}
-          <div className="mt-6">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">Profile Completeness</span>
-              <span className="text-sm text-gray-500">{profileStats.completeness}%</span>
+          {/* Minimized Profile Completeness Bar */}
+          <div className="mt-4">
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs font-medium text-gray-600">Completeness</span>
+              <span className="text-xs text-gray-400">{profileStats.completeness}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-100 rounded-full h-1">
               <div 
-                className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
+                className="bg-green-400 h-1 rounded-full transition-all duration-300"
                 style={{ width: `${profileStats.completeness}%` }}
               ></div>
             </div>
