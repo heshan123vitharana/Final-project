@@ -10,8 +10,6 @@ import {
   PhoneIcon,
   EnvelopeIcon,
   MapPinIcon,
-  IdentificationIcon,
-  CalendarIcon,
 } from "@heroicons/react/24/outline";
 import { validateFormWithToast, showSuccessToast, showErrorToast } from '../utils/validation';
 
@@ -44,7 +42,7 @@ const MillProfile = ({ userData }) => {
   const [originalData, setOriginalData] = useState(emptyProfile);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [profileStats, setProfileStats] = useState({
+  const [_profileStats, setProfileStats] = useState({
     completeness: 0,
     lastUpdated: null,
     memberSince: null,
@@ -320,53 +318,6 @@ const MillProfile = ({ userData }) => {
     }
   };
   
-  // Trigger file input click
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-  
-  // Delete profile photo from database
-  const deletePhotoFromDatabase = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/profile/photo/${userData?.id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Photo deleted successfully:', result.message);
-        return true;
-      } else {
-        const error = await response.json();
-        console.error('Delete failed:', error.message);
-        showErrorToast(error.message || 'Failed to delete photo');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error deleting photo:', error);
-      showErrorToast('Failed to delete photo. Please try again.');
-      return false;
-    }
-  };
-
-  // Remove profile picture with confirmation and database deletion
-  const removeProfilePicture = async () => {
-    if (formData.profilePhoto) {
-      if (!userData?.id) {
-        showErrorToast('Please login to delete profile photo');
-        return;
-      }
-
-      setIsLoading(true);
-      const deleteSuccess = await deletePhotoFromDatabase();
-      
-      if (deleteSuccess) {
-        setFormData(prev => ({ ...prev, profilePhoto: '' }));
-        showSuccessToast('Profile picture removed successfully');
-      }
-      setIsLoading(false);
-    }
-  };
 
 
   // Cancel editing and revert changes
@@ -407,15 +358,41 @@ const MillProfile = ({ userData }) => {
         }
       }
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Update password if changed
-      if (passwords.new) {
-        formData.password = passwords.new;
+      // Make API call to update profile in database
+      const profileData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phoneNumber,
+        address: formData.address,
+        city: formData.city,
+        district: formData.district,
+        postalCode: formData.postalCode,
+        businessName: formData.businessName,
+        businessType: formData.businessType,
+        millCapacity: formData.millCapacity,
+        millLocation: formData.millLocation,
+        licenseNumber: formData.licenseNumber,
+        registrationDate: formData.registrationDate
+      };
+
+      const response = await fetch(`http://localhost:5000/api/profile/update/${userData?.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update profile');
       }
+
+      const result = await response.json();
+      console.log('Profile updated successfully:', result);
       
-      // Save updated profile
+      // Update local state with API response
       const updatedProfile = {
         ...formData,
         lastUpdated: new Date().toISOString()
@@ -447,239 +424,185 @@ const MillProfile = ({ userData }) => {
   const handleSaveProfile = handleSave;
 
   return (
-    <div className="min-h-full bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Modern Header */}
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-200/50 overflow-hidden">
-          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-8 py-12">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4">
-                  <IdentificationIcon className="h-8 w-8 text-white" />
+    <div className="p-6 bg-green-50 min-h-screen">
+      {/* Page heading */}
+      <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
+        👤 Profile Management
+      </h1>
+
+      {/* Profile Overview Card */}
+      <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            {/* Profile Picture */}
+            <div className="relative">
+              {isLoading && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center z-20">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">
-                    Profile Management
-                  </h1>
-                  <p className="text-slate-300">Update your personal and business details</p>
-                </div>
-              </div>
-              
-              {/* Status Indicator */}
-              <div className="mt-6 md:mt-0 flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                  <span className="text-slate-300 text-sm">Online</span>
-                </div>
-                {profileStats.memberSince && (
-                  <div className="bg-white/5 backdrop-blur-sm rounded-xl px-4 py-2">
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-300 text-sm">Since {profileStats.memberSince}</span>
-                    </div>
+              )}
+              <img
+                src={formData.profilePhoto || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}
+                alt="Profile"
+                className="w-24 h-24 rounded-lg object-cover border-2 border-green-200 shadow-lg bg-white"
+              />
+              {/* Photo Upload Overlay */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 rounded-lg flex items-center justify-center transition-all duration-200 group"
+                title="Change profile photo"
+              >
+                <CameraIcon className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoUpload}
+              />
+            </div>
+
+            {/* User Info */}
+            <div>
+              <h2 className="text-2xl font-bold text-green-700 mb-2">
+                {formData.firstName && formData.lastName ? 
+                  `${formData.firstName} ${formData.lastName}` : 
+                  'Complete Your Profile'
+                }
+              </h2>
+              <div className="flex items-center gap-4 text-gray-600">
+                {formData.businessName && (
+                  <div className="flex items-center gap-2">
+                    <BuildingOfficeIcon className="h-4 w-4" />
+                    <span className="text-sm font-medium">{formData.businessName}</span>
+                  </div>
+                )}
+                {formData.email && (
+                  <div className="flex items-center gap-2">
+                    <EnvelopeIcon className="h-4 w-4" />
+                    <span className="text-sm">{formData.email}</span>
                   </div>
                 )}
               </div>
             </div>
           </div>
+
+          {/* Action Button */}
+          {!isEditing ? (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors flex items-center gap-2"
+            >
+              <PencilIcon className="h-4 w-4" />
+              Edit Profile
+            </button>
+          ) : (
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelEdit}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                disabled={isLoading}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Saving...
+                  </div>
+                ) : (
+                  'Save Changes'
+                )}
+              </button>
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Profile Overview Card */}
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-200/50 overflow-hidden">
-          {/* Clean Header */}
-          <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-8 border-b border-slate-100">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="flex items-center gap-6">
-                {/* Profile Picture */}
-                <div className="relative">
-                  {isLoading && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center z-20">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600"></div>
-                    </div>
-                  )}
-                  <img
-                    src={formData.profilePhoto || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"}
-                    alt="Profile"
-                    className="w-24 h-24 rounded-2xl object-cover border-2 border-slate-200 shadow-lg bg-white"
-                  />
-                  {/* Photo Upload Overlay */}
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 rounded-2xl flex items-center justify-center transition-all duration-200 group"
-                    title="Change profile photo"
-                  >
-                    <CameraIcon className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handlePhotoUpload}
-                  />
-                </div>
-
-                {/* User Info */}
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                    {formData.firstName && formData.lastName ? 
-                      `${formData.firstName} ${formData.lastName}` : 
-                      'Complete Your Profile'
-                    }
-                  </h2>
-                  <div className="flex items-center gap-4 text-slate-600">
-                    {formData.businessName && (
-                      <div className="flex items-center gap-2">
-                        <BuildingOfficeIcon className="h-4 w-4" />
-                        <span className="text-sm font-medium">{formData.businessName}</span>
-                      </div>
-                    )}
-                    {formData.email && (
-                      <div className="flex items-center gap-2">
-                        <EnvelopeIcon className="h-4 w-4" />
-                        <span className="text-sm">{formData.email}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+      {/* Information Overview */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Personal Information Card */}
+        <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
+          <h3 className="text-lg font-semibold text-green-700 flex items-center gap-3 mb-4">
+            <UserIcon className="h-5 w-5 text-green-600" />
+            Personal Information
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+              <div className="flex items-center gap-3">
+                <EnvelopeIcon className="h-4 w-4 text-slate-400" />
+                <span className="text-slate-600 text-sm">Email</span>
               </div>
-
-              {/* Action Button */}
-              {!isEditing ? (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors duration-200 shadow-sm"
-                >
-                  <PencilIcon className="h-4 w-4" />
-                  <span className="font-medium">Edit Profile</span>
-                </button>
-              ) : (
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleCancelEdit}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors duration-200"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={isLoading}
-                    className="inline-flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 shadow-sm"
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Saving...
-                      </>
-                    ) : (
-                      'Save Changes'
-                    )}
-                  </button>
-                </div>
-              )}
+              <span className="text-slate-900 font-medium text-sm">
+                {formData.email || <span className="text-slate-400">Not set</span>}
+              </span>
             </div>
-          </div>
-          
-          {/* Profile Content */}
-          <div className="px-8 py-8">
-          </div>
-        </div>
-
-        {/* Information Overview */}
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Personal Information Card */}
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/50 overflow-hidden">
-            <div className="bg-gradient-to-r from-slate-50 to-white px-6 py-4 border-b border-slate-100">
-              <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-xl">
-                  <UserIcon className="h-5 w-5 text-blue-600" />
-                </div>
-                Personal Information
-              </h3>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <EnvelopeIcon className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600 text-sm">Email</span>
-                    </div>
-                    <span className="text-slate-900 font-medium text-sm">
-                      {formData.email || <span className="text-slate-400">Not set</span>}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <PhoneIcon className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600 text-sm">Phone</span>
-                    </div>
-                    <span className="text-slate-900 font-medium text-sm">
-                      {formData.phoneNumber || <span className="text-slate-400">Not set</span>}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <MapPinIcon className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600 text-sm">City</span>
-                    </div>
-                    <span className="text-slate-900 font-medium text-sm">
-                      {formData.city || <span className="text-slate-400">Not set</span>}
-                    </span>
-                  </div>
-                </div>
+            <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+              <div className="flex items-center gap-3">
+                <PhoneIcon className="h-4 w-4 text-slate-400" />
+                <span className="text-slate-600 text-sm">Phone</span>
               </div>
+              <span className="text-slate-900 font-medium text-sm">
+                {formData.phoneNumber || <span className="text-slate-400">Not set</span>}
+              </span>
             </div>
-          </div>
-
-          {/* Business Information Card */}
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/50 overflow-hidden">
-            <div className="bg-gradient-to-r from-slate-50 to-white px-6 py-4 border-b border-slate-100">
-              <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-3">
-                <div className="p-2 bg-emerald-100 rounded-xl">
-                  <BuildingOfficeIcon className="h-5 w-5 text-emerald-600" />
-                </div>
-                Business Information
-              </h3>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <BuildingOfficeIcon className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600 text-sm">Business Type</span>
-                    </div>
-                    <span className="text-slate-900 font-medium text-sm capitalize">
-                      {formData.businessType || <span className="text-slate-400">Not set</span>}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <UserIcon className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600 text-sm">Mill Capacity</span>
-                    </div>
-                    <span className="text-slate-900 font-medium text-sm">
-                      {formData.millCapacity ? `${formData.millCapacity} tons/day` : <span className="text-slate-400">Not set</span>}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <MapPinIcon className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-600 text-sm">District</span>
-                    </div>
-                    <span className="text-slate-900 font-medium text-sm">
-                      {formData.district || <span className="text-slate-400">Not set</span>}
-                    </span>
-                  </div>
-                </div>
+            <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+              <div className="flex items-center gap-3">
+                <MapPinIcon className="h-4 w-4 text-slate-400" />
+                <span className="text-slate-600 text-sm">City</span>
               </div>
+              <span className="text-slate-900 font-medium text-sm">
+                {formData.city || <span className="text-slate-400">Not set</span>}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Profile viewing mode (not editing) */}
-        {!isEditing ? (
+        {/* Business Information Card */}
+          <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-semibold text-green-700 flex items-center gap-3 mb-4">
+              <BuildingOfficeIcon className="h-5 w-5 text-green-600" />
+              Business Information
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <BuildingOfficeIcon className="h-4 w-4 text-gray-400" />
+                  <span className="text-gray-600 text-sm">Business Type</span>
+                </div>
+                <span className="text-gray-900 font-medium text-sm capitalize">
+                  {formData.businessType || <span className="text-gray-400">Not set</span>}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <UserIcon className="h-4 w-4 text-gray-400" />
+                  <span className="text-gray-600 text-sm">Mill Capacity</span>
+                </div>
+                <span className="text-gray-900 font-medium text-sm">
+                  {formData.millCapacity ? `${formData.millCapacity} tons/day` : <span className="text-gray-400">Not set</span>}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <MapPinIcon className="h-4 w-4 text-gray-400" />
+                  <span className="text-gray-600 text-sm">District</span>
+                </div>
+                <span className="text-gray-900 font-medium text-sm">
+                  {formData.district || <span className="text-gray-400">Not set</span>}
+                </span>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      {/* Profile viewing mode (not editing) */}
+      {!isEditing ? (
           <div className="mt-6">
             {/* Modern profile design is complete above */}
           </div>
@@ -687,12 +610,10 @@ const MillProfile = ({ userData }) => {
           // Enhanced Edit Profile Form
           <form onSubmit={handleSave} className="space-y-6">
             {/* Personal Information Section */}
-            <div className="bg-white rounded-2xl shadow-xl p-8 border border-green-100">
-              <div className="flex items-center gap-3 mb-8 pb-4 border-b border-gray-200">
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <UserIcon className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">Personal Information</h3>
+            <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+                <UserIcon className="h-6 w-6 text-green-600" />
+                <h3 className="text-xl font-semibold text-green-700">Personal Information</h3>
               </div>
               
               <div className="space-y-6">
@@ -809,12 +730,10 @@ const MillProfile = ({ userData }) => {
             </div>
 
             {/* Business Information Section */}
-            <div className="bg-white rounded-2xl shadow-xl p-8 border border-green-100">
-              <div className="flex items-center gap-3 mb-8 pb-4 border-b border-gray-200">
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <BuildingOfficeIcon className="h-6 w-6 text-blue-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">Business Information</h3>
+            <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+                <BuildingOfficeIcon className="h-6 w-6 text-green-600" />
+                <h3 className="text-xl font-semibold text-green-700">Business Information</h3>
               </div>
               
               <div className="space-y-6">
@@ -897,16 +816,14 @@ const MillProfile = ({ userData }) => {
             </div>
 
             {/* Password Change Section */}
-            <div className="bg-white rounded-2xl shadow-xl p-8 border border-green-100">
-              <div className="flex items-center gap-3 mb-8 pb-4 border-b border-gray-200">
-                <div className="bg-orange-100 p-3 rounded-lg">
-                  <LockClosedIcon className="h-6 w-6 text-orange-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">Change Password</h3>
+            <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+                <LockClosedIcon className="h-6 w-6 text-green-600" />
+                <h3 className="text-xl font-semibold text-green-700">Change Password</h3>
               </div>
               
               <div className="space-y-6">
-                <p className="text-sm text-gray-600 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <p className="text-sm text-gray-600 bg-green-50 p-4 rounded-lg border border-green-200">
                   Leave password fields empty if you don't want to change your password.
                 </p>
                 
@@ -956,7 +873,7 @@ const MillProfile = ({ userData }) => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
@@ -970,7 +887,6 @@ const MillProfile = ({ userData }) => {
             </div>
           </form>
         )}
-      </div>
     </div>
   );
 };

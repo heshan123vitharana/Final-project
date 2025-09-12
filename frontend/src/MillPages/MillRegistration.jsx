@@ -116,33 +116,21 @@ const MillRegistration = () => {
           console.error('Error fetching from API:', apiError);
         }
         
-        // Load license history (static data)
-        const dummyHistory = [
-          { 
-            id: 1, 
-            application_number: 'ML20251001', 
-            applied_date: '2025-05-01', 
-            status: 'approved',
-            created_at: '2025-05-01T10:00:00.000Z'
-          },
-          { 
-            id: 2, 
-            application_number: 'ML20251015', 
-            applied_date: '2025-06-15', 
-            status: 'pending',
-            created_at: '2025-06-15T14:30:00.000Z'
-          },
-          { 
-            id: 3, 
-            application_number: 'ML20251020', 
-            applied_date: '2025-07-10', 
-            status: 'rejected',
-            created_at: '2025-07-10T09:15:00.000Z'
+        // Load license history from API
+        try {
+          const historyResponse = await fetch(`http://localhost:5000/api/licenses/applications/${userId}`);
+          if (historyResponse.ok) {
+            const historyData = await historyResponse.json();
+            setHistory(historyData.applications || []);
+            console.log('📜 License history loaded from API:', historyData.applications?.length || 0, 'applications');
+          } else {
+            console.log('📜 No license applications found or API error');
+            setHistory([]);
           }
-        ];
-        
-        setHistory(dummyHistory);
-        console.log('📜 License history loaded (demo data)');
+        } catch (historyError) {
+          console.error('Error loading license history:', historyError);
+          setHistory([]);
+        }
         
       } catch (error) {
         console.error('Error loading data:', error);
@@ -239,7 +227,7 @@ const MillRegistration = () => {
     setError('');
   };
 
-  // Submit license application (demo version)
+  // Submit license application to backend API
   const handleSubmitApplication = async (e) => {
     e.preventDefault();
     
@@ -252,29 +240,70 @@ const MillRegistration = () => {
       setSubmitLoading(true);
       setError('');
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Get current user ID
+      const getCurrentUserId = () => {
+        try {
+          const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+          return userData.id || userData.user_id || 1; // fallback to 1 for development
+        } catch (error) {
+          console.error('Error getting user ID from session:', error);
+          return 1; // fallback to 1 for development
+        }
+      };
 
-      // Generate demo application number
-      const applicationNumber = `ML${Date.now()}`;
+      const userId = getCurrentUserId();
+
+      // Prepare application data
+      const applicationData = {
+        userId: userId,
+        licenseType: formData.licenseType,
+        paymentReceipt: formData.paymentReceipt,
+        brDocument: formData.brDocument,
+        comments: formData.comments
+      };
+
+      console.log('📋 Submitting license application:', {
+        userId,
+        licenseType: formData.licenseType,
+        hasPaymentReceipt: !!formData.paymentReceipt,
+        hasBrDocument: !!formData.brDocument,
+        comments: formData.comments?.substring(0, 50) + '...'
+      });
+
+      // Make API call to submit license application
+      const response = await fetch('http://localhost:5000/api/licenses/apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(applicationData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to submit license application');
+      }
+
+      const result = await response.json();
+      console.log('✅ License application submitted successfully:', result);
       
-      // Add to history (demo)
+      // Add to history
       const newApplication = {
-        id: Date.now(),
-        application_number: applicationNumber,
+        id: result.applicationId,
+        application_number: result.applicationNumber,
         applied_date: new Date().toISOString().split('T')[0],
-        status: 'pending',
+        status: result.status,
         created_at: new Date().toISOString()
       };
       
       setHistory(prev => [newApplication, ...prev]);
       
-      alert(`License application submitted successfully! Application Number: ${applicationNumber}`);
+      alert(`License application submitted successfully! Application Number: ${result.applicationNumber}`);
       handleCloseForm();
       console.log('📝 Demo license application submitted');
     } catch (error) {
       console.error('Error submitting application:', error);
-      setError('Error while submitting application');
+      setError(error.message || 'Error while submitting application. Please try again.');
     } finally {
       setSubmitLoading(false);
     }
