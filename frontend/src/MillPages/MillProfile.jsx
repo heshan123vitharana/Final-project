@@ -10,9 +10,11 @@ import {
   PhoneIcon,
   EnvelopeIcon,
   MapPinIcon,
+  IdentificationIcon,
+  CalendarIcon,
 } from "@heroicons/react/24/outline";
 import { validateFormWithToast, showSuccessToast, showErrorToast } from '../utils/validation';
-
+the
 // Enhanced profile structure outside component to avoid dependency issues
 const emptyProfile = {
   firstName: "",
@@ -42,7 +44,7 @@ const MillProfile = ({ userData }) => {
   const [originalData, setOriginalData] = useState(emptyProfile);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [_profileStats, setProfileStats] = useState({
+  const [profileStats, setProfileStats] = useState({
     completeness: 0,
     lastUpdated: null,
     memberSince: null,
@@ -318,6 +320,53 @@ const MillProfile = ({ userData }) => {
     }
   };
   
+  // Trigger file input click
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+  
+  // Delete profile photo from database
+  const deletePhotoFromDatabase = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/profile/photo/${userData?.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Photo deleted successfully:', result.message);
+        return true;
+      } else {
+        const error = await response.json();
+        console.error('Delete failed:', error.message);
+        showErrorToast(error.message || 'Failed to delete photo');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      showErrorToast('Failed to delete photo. Please try again.');
+      return false;
+    }
+  };
+
+  // Remove profile picture with confirmation and database deletion
+  const removeProfilePicture = async () => {
+    if (formData.profilePhoto) {
+      if (!userData?.id) {
+        showErrorToast('Please login to delete profile photo');
+        return;
+      }
+
+      setIsLoading(true);
+      const deleteSuccess = await deletePhotoFromDatabase();
+      
+      if (deleteSuccess) {
+        setFormData(prev => ({ ...prev, profilePhoto: '' }));
+        showSuccessToast('Profile picture removed successfully');
+      }
+      setIsLoading(false);
+    }
+  };
 
 
   // Cancel editing and revert changes
@@ -358,41 +407,15 @@ const MillProfile = ({ userData }) => {
         }
       }
       
-      // Make API call to update profile in database
-      const profileData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phoneNumber,
-        address: formData.address,
-        city: formData.city,
-        district: formData.district,
-        postalCode: formData.postalCode,
-        businessName: formData.businessName,
-        businessType: formData.businessType,
-        millCapacity: formData.millCapacity,
-        millLocation: formData.millLocation,
-        licenseNumber: formData.licenseNumber,
-        registrationDate: formData.registrationDate
-      };
-
-      const response = await fetch(`http://localhost:5000/api/profile/update/${userData?.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profileData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update profile');
-      }
-
-      const result = await response.json();
-      console.log('Profile updated successfully:', result);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Update local state with API response
+      // Update password if changed
+      if (passwords.new) {
+        formData.password = passwords.new;
+      }
+      
+      // Save updated profile
       const updatedProfile = {
         ...formData,
         lastUpdated: new Date().toISOString()
@@ -515,16 +538,16 @@ const MillProfile = ({ userData }) => {
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     Saving...
                   </div>
-                ) : (
-                  'Save Changes'
-                )}
-              </button>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
-          )}
         </div>
-      </div>
 
-      {/* Information Overview */}
+        {/* Information Overview */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Personal Information Card */}
         <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
@@ -533,37 +556,39 @@ const MillProfile = ({ userData }) => {
             Personal Information
           </h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-              <div className="flex items-center gap-3">
-                <EnvelopeIcon className="h-4 w-4 text-slate-400" />
-                <span className="text-slate-600 text-sm">Email</span>
+            <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <EnvelopeIcon className="h-4 w-4 text-slate-400" />
+                      <span className="text-slate-600 text-sm">Email</span>
+                    </div>
+                    <span className="text-slate-900 font-medium text-sm">
+                      {formData.email || <span className="text-slate-400">Not set</span>}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <PhoneIcon className="h-4 w-4 text-slate-400" />
+                      <span className="text-slate-600 text-sm">Phone</span>
+                    </div>
+                    <span className="text-slate-900 font-medium text-sm">
+                      {formData.phoneNumber || <span className="text-slate-400">Not set</span>}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                    <div className="flex items-center gap-3">
+                      <MapPinIcon className="h-4 w-4 text-slate-400" />
+                      <span className="text-slate-600 text-sm">City</span>
+                    </div>
+                    <span className="text-slate-900 font-medium text-sm">
+                      {formData.city || <span className="text-slate-400">Not set</span>}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <span className="text-slate-900 font-medium text-sm">
-                {formData.email || <span className="text-slate-400">Not set</span>}
-              </span>
-            </div>
-            <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-              <div className="flex items-center gap-3">
-                <PhoneIcon className="h-4 w-4 text-slate-400" />
-                <span className="text-slate-600 text-sm">Phone</span>
-              </div>
-              <span className="text-slate-900 font-medium text-sm">
-                {formData.phoneNumber || <span className="text-slate-400">Not set</span>}
-              </span>
-            </div>
-            <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-              <div className="flex items-center gap-3">
-                <MapPinIcon className="h-4 w-4 text-slate-400" />
-                <span className="text-slate-600 text-sm">City</span>
-              </div>
-              <span className="text-slate-900 font-medium text-sm">
-                {formData.city || <span className="text-slate-400">Not set</span>}
-              </span>
             </div>
           </div>
-        </div>
 
-        {/* Business Information Card */}
+          {/* Business Information Card */}
           <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
             <h3 className="text-lg font-semibold text-green-700 flex items-center gap-3 mb-4">
               <BuildingOfficeIcon className="h-5 w-5 text-green-600" />
@@ -599,10 +624,10 @@ const MillProfile = ({ userData }) => {
               </div>
             </div>
           </div>
-      </div>
+        </div>
 
-      {/* Profile viewing mode (not editing) */}
-      {!isEditing ? (
+        {/* Profile viewing mode (not editing) */}
+        {!isEditing ? (
           <div className="mt-6">
             {/* Modern profile design is complete above */}
           </div>
@@ -887,6 +912,7 @@ const MillProfile = ({ userData }) => {
             </div>
           </form>
         )}
+      </div>
     </div>
   );
 };
