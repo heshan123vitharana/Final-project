@@ -106,6 +106,29 @@ const initializeTables = async () => {
     `);
     console.log('✅ User profile photos table ready');
 
+    // Mill licenses table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS mill_licenses (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        application_number VARCHAR(50) NOT NULL UNIQUE,
+        license_type VARCHAR(100) DEFAULT 'Standard Mill License',
+        payment_receipt LONGTEXT NOT NULL,
+        br_document LONGTEXT NOT NULL,
+        comments TEXT,
+        status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+        applied_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        approved_date TIMESTAMP NULL,
+        expiry_date TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_user_status (user_id, status),
+        INDEX idx_application_number (application_number)
+      )
+    `);
+    console.log('✅ Mill licenses table ready');
+
     // Insert default admin (use INSERT IGNORE to avoid duplicates)
     await pool.execute(`
       INSERT IGNORE INTO admin (username, email, password, status) 

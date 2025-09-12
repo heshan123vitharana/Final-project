@@ -67,7 +67,10 @@ const MillProfile = ({ userData }) => {
     }));
   }, [formData]);
 
-  // Load profile photo from database
+  // Test user ID for development
+  const testUserId = 1;
+
+  // Load profile photo from database (use working port 5001)
   const loadProfilePhoto = async (userId) => {
     try {
       const response = await fetch(`http://localhost:5001/api/profile/photo/${userId}`);
@@ -87,14 +90,32 @@ const MillProfile = ({ userData }) => {
     }
   };
 
-  // Load profile data from sessionStorage on mount (only run once)
+  // Update profile completeness from database
+  const updateCompletenessFromDatabase = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${testUserId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setProfileStats(prev => ({
+          ...prev,
+          completeness: data.completeness
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching profile completeness:', error);
+    }
+  };
+
+  // Load profile data and photo from database (always fresh after login)
   useEffect(() => {
     const loadData = async () => {
+      // Start with sessionStorage or userData as fallback
       const savedProfile = sessionStorage.getItem("profileData");
       let initialData = {};
 
       if (savedProfile) {
         initialData = JSON.parse(savedProfile);
+        console.log('📦 Profile data loaded from sessionStorage');
       } else if (userData) {
         // Initialize with userData if no saved profile exists
         initialData = {
@@ -115,12 +136,20 @@ const MillProfile = ({ userData }) => {
           profilePhoto: "",
           password: "",
         };
+        console.log('👤 Profile data initialized from userData');
       }
 
-      // Load profile photo from database if user ID is available
-      if (userData?.id && !initialData.profilePhoto) {
-        const photoData = await loadProfilePhoto(userData.id);
-        initialData.profilePhoto = photoData;
+      // ALWAYS load fresh profile photo from database (important after login)
+      try {
+        const photoData = await loadProfilePhoto(testUserId);
+        if (photoData) {
+          initialData.profilePhoto = photoData;
+          console.log('📸 Profile photo loaded fresh from database');
+        } else {
+          console.log('📸 No profile photo found for user');
+        }
+      } catch (error) {
+        console.log('⚠️ Profile photo load failed:', error);
       }
 
       setFormData(initialData);
@@ -161,8 +190,7 @@ const MillProfile = ({ userData }) => {
   // Upload profile photo to database
   const uploadPhotoToDatabase = async (photoData, filename, fileSize, mimeType) => {
     try {
-      // For testing purposes, use test user ID if userData is not available
-      const testUserId = userData?.id || 1; // Use test user ID 1 for now
+      // Use consistent test user ID
       
       console.log('Uploading photo with data:', {
         userId: testUserId,
