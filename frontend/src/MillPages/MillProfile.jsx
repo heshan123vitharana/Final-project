@@ -12,6 +12,7 @@ import {
   MapPinIcon,
 } from "@heroicons/react/24/outline";
 import { validateFormWithToast, showSuccessToast, showErrorToast } from '../utils/validation';
+import GoogleMapPicker from '../components/GoogleMapPicker';
 
 // Enhanced profile structure outside component to avoid dependency issues
 const emptyProfile = {
@@ -46,6 +47,12 @@ const MillProfile = ({ userData }) => {
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
   // State to control password visibility
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
+
+  // State for Google Maps modals
+  const [showAddressMap, setShowAddressMap] = useState(false);
+  const [showMillLocationMap, setShowMillLocationMap] = useState(false);
+  const [selectedAddressLocation, setSelectedAddressLocation] = useState(null);
+  const [selectedMillLocation, setSelectedMillLocation] = useState(null);
 
   // Get actual user ID from session data
   const getCurrentUserId = () => {
@@ -156,6 +163,33 @@ const MillProfile = ({ userData }) => {
 
   // Toggle password visibility for a given field
   const togglePasswordVisibility = (field) => setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
+
+  // Handle address selection from map
+  const handleAddressSelect = (location) => {
+    setSelectedAddressLocation(location);
+    setFormData(prev => ({ 
+      ...prev, 
+      address: location.address,
+      // Try to extract city from address if not already set
+      city: prev.city || extractCityFromAddress(location.address)
+    }));
+  };
+
+  // Handle mill location selection from map
+  const handleMillLocationSelect = (location) => {
+    setSelectedMillLocation(location);
+    setFormData(prev => ({ ...prev, millLocation: location.address }));
+  };
+
+  // Helper function to extract city from address
+  const extractCityFromAddress = (address) => {
+    // Simple extraction - you might want to improve this logic
+    const parts = address.split(',');
+    if (parts.length >= 2) {
+      return parts[parts.length - 2].trim();
+    }
+    return '';
+  };
 
   // Upload profile photo to database
   const uploadPhotoToDatabase = async (photoData, filename, fileSize, mimeType) => {
@@ -612,10 +646,20 @@ const MillProfile = ({ userData }) => {
                       value={formData.address}
                       onChange={handleChange}
                       rows="3"
-                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none"
+                      className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none"
                       placeholder="Enter your complete address"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowAddressMap(true)}
+                      className="absolute right-3 top-3 p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Select address from map"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
 
@@ -712,15 +756,27 @@ const MillProfile = ({ userData }) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Mill Location *</label>
-                  <input
-                    type="text"
-                    name="millLocation"
-                    value={formData.millLocation}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                    placeholder="Enter mill location"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="millLocation"
+                      value={formData.millLocation}
+                      onChange={handleChange}
+                      className="w-full px-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                      placeholder="Enter mill location"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowMillLocationMap(true)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Select mill location from map"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -808,6 +864,23 @@ const MillProfile = ({ userData }) => {
             </div>
           </form>
         )}
+
+        {/* Google Maps Components */}
+        <GoogleMapPicker
+          isOpen={showAddressMap}
+          onClose={() => setShowAddressMap(false)}
+          onLocationSelect={handleAddressSelect}
+          initialLocation={selectedAddressLocation}
+          title="Select Address Location"
+        />
+        
+        <GoogleMapPicker
+          isOpen={showMillLocationMap}
+          onClose={() => setShowMillLocationMap(false)}
+          onLocationSelect={handleMillLocationSelect}
+          initialLocation={selectedMillLocation}
+          title="Select Mill Location"
+        />
       </div>
     </div>
   );
