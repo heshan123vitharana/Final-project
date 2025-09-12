@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Profile Photo Upload</title>
 </head>
 <body>
     <h2>Test Profile Photo Upload</h2>
-    <input type="file" id="photoInput" accept="image/*">
-    <button onclick="testUpload()">Test Upload</button>
+    <label for="photoInput">Select Photo:</label>
+    <input type="file" id="photoInput" accept="image/*" placeholder="Choose a photo file">
+    <button type="button" onclick="testUpload()">Test Upload</button>
     <div id="result"></div>
 
     <script>

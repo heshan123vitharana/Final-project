@@ -12,12 +12,6 @@ import {
   MapPinIcon,
   IdentificationIcon,
   CalendarIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ExclamationCircleIcon,
-  ArrowUpTrayIcon,
-  BellIcon,
-  CurrencyDollarIcon
 } from "@heroicons/react/24/outline";
 import { validateFormWithToast, showSuccessToast, showErrorToast } from '../utils/validation';
 

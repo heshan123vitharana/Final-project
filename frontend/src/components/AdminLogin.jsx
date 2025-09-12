@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 // Import your PNG images
 import slideshow1 from '../assets/admin-login-slide-1.png';
 import slideshow2 from '../assets/admin-login-slide-2.png';
