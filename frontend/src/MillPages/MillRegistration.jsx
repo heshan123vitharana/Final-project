@@ -39,9 +39,6 @@ const MillRegistration = () => {
     brDocument: null
   });
 
-  // Test user ID for development
-  const testUserId = 1;
-
   // Toggle section visibility
   const toggleApplySection = () => setShowApplySection(!showApplySection);
   const toggleStatusSection = () => setShowStatusSection(!showStatusSection);
@@ -92,18 +89,39 @@ const MillRegistration = () => {
     };
   }, []);
 
-  // Load profile data from sessionStorage and calculate completeness
+  // Load profile data from API and calculate completeness
   const loadProfileData = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Use same database API as MillProfile component
+      // Get user data from sessionStorage
       const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
       const testUserId = userData.user?.id || 1;
       
-      console.log('📊 Fetching profile completeness from database for user:', testUserId);
+      console.log('📊 Fetching real profile data from API for user:', testUserId);
       
-      // Use sessionStorage with database-style calculation (API endpoints not working)
+      // First try to fetch fresh data from API like MillProfile does
+      try {
+        const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${testUserId}`);
+        if (response.ok) {
+          const apiData = await response.json();
+          console.log('✅ API Profile data received:', apiData);
+          
+          setProfileData(apiData.profile || {});
+          setProfileCompleteness(apiData.completeness || 0);
+          setMissingFields(apiData.missingFields || []);
+          setCanApplyForLicense(apiData.completeness === 100);
+          
+          console.log(`📊 Real profile completeness from API: ${apiData.completeness}%`);
+          console.log(`🔍 Missing fields from API:`, apiData.missingFields);
+          console.log(`✅ Can apply for license:`, apiData.completeness === 100);
+          return; // Success, exit early
+        }
+      } catch (apiError) {
+        console.warn('API not available, falling back to sessionStorage:', apiError.message);
+      }
+      
+      // Fallback to sessionStorage with same calculation logic as database
       console.log('📊 Using sessionStorage with same calculation logic as database');
       
       const savedProfile = sessionStorage.getItem("profileData");
@@ -142,7 +160,7 @@ const MillRegistration = () => {
         setMissingFields(missingFields);
         setCanApplyForLicense(canApply);
         
-        console.log(`📊 Profile completeness (database-style): ${completeness}%`);
+        console.log(`📊 Profile completeness (sessionStorage): ${completeness}%`);
         console.log(`🔍 Missing fields:`, missingFields);
         console.log(`✅ Can apply for license:`, canApply);
         console.log(`📸 Has photo:`, hasPhoto);

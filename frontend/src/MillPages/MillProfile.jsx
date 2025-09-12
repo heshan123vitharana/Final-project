@@ -73,7 +73,7 @@ const MillProfile = ({ userData }) => {
   // Load profile photo from database (use working port 5001)
   const loadProfilePhoto = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/profile/photo/${userId}`);
+      const response = await fetch(`http://localhost:5000/api/profile/photo/${userId}`);
       if (response.ok) {
         const data = await response.json();
         return data.photoData;
@@ -200,7 +200,7 @@ const MillProfile = ({ userData }) => {
         photoDataLength: photoData ? photoData.length : 0
       });
 
-      const response = await fetch('http://localhost:5001/api/profile/upload-photo', {
+      const response = await fetch('http://localhost:5000/api/profile/upload-photo', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -286,7 +286,7 @@ const MillProfile = ({ userData }) => {
   // Delete profile photo from database
   const deletePhotoFromDatabase = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/api/profile/photo/${userData?.id}`, {
+      const response = await fetch(`http://localhost:5000/api/profile/photo/${userData?.id}`, {
         method: 'DELETE',
       });
 
