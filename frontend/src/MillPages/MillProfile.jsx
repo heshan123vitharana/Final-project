@@ -55,20 +55,34 @@ const MillProfile = ({ userData }) => {
   // State to control password visibility
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
 
-  // Calculate profile completeness percentage
-  const calculateProfileCompleteness = useCallback(() => {
-    const fields = Object.keys(emptyProfile).filter(key => key !== 'password');
-    const filledFields = fields.filter(key => formData[key] && formData[key].toString().trim() !== '');
-    const percentage = Math.round((filledFields.length / fields.length) * 100);
-    
-    setProfileStats(prev => ({
-      ...prev,
-      completeness: percentage
-    }));
-  }, [formData]);
+  // Get actual user ID from session data
+  const getCurrentUserId = () => {
+    try {
+      const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+      return userData.id || userData.user_id || 1; // fallback to 1 for development
+    } catch (error) {
+      console.error('Error getting user ID from session:', error);
+      return 1; // fallback to 1 for development
+    }
+  };
 
-  // Test user ID for development
-  const testUserId = 1;
+  // Use API to get real profile completeness percentage
+  const calculateProfileCompleteness = useCallback(async () => {
+    try {
+      const userId = getCurrentUserId();
+      const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setProfileStats(prev => ({
+          ...prev,
+          completeness: data.completeness
+        }));
+        console.log(`📊 Profile completeness for user ${userId}: ${data.completeness}%`);
+      }
+    } catch (error) {
+      console.error('Error fetching profile completeness:', error);
+    }
+  }, []);
 
   // Load profile photo from database (use working port 5001)
   const loadProfilePhoto = async (userId) => {
@@ -87,22 +101,6 @@ const MillProfile = ({ userData }) => {
     } catch (error) {
       console.error('Error loading profile photo:', error);
       return "";
-    }
-  };
-
-  // Update profile completeness from database
-  const updateCompletenessFromDatabase = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${testUserId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProfileStats(prev => ({
-          ...prev,
-          completeness: data.completeness
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching profile completeness:', error);
     }
   };
 
@@ -141,7 +139,8 @@ const MillProfile = ({ userData }) => {
 
       // ALWAYS load fresh profile photo from database (important after login)
       try {
-        const photoData = await loadProfilePhoto(testUserId);
+        const userId = getCurrentUserId();
+        const photoData = await loadProfilePhoto(userId);
         if (photoData) {
           initialData.profilePhoto = photoData;
           console.log('📸 Profile photo loaded fresh from database');
@@ -177,8 +176,8 @@ const MillProfile = ({ userData }) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
-    // Recalculate completeness on change
-    setTimeout(calculateProfileCompleteness, 100);
+    // Recalculate completeness on change after a short delay
+    setTimeout(() => calculateProfileCompleteness(), 100);
   };
 
   // Handle changes in password fields
@@ -190,10 +189,11 @@ const MillProfile = ({ userData }) => {
   // Upload profile photo to database
   const uploadPhotoToDatabase = async (photoData, filename, fileSize, mimeType) => {
     try {
-      // Use consistent test user ID
+      // Use actual user ID from session
+      const userId = getCurrentUserId();
       
       console.log('Uploading photo with data:', {
-        userId: testUserId,
+        userId: userId,
         filename,
         fileSize,
         mimeType,
@@ -206,7 +206,7 @@ const MillProfile = ({ userData }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: testUserId,
+          userId: userId,
           photoData: photoData,
           filename: filename,
           fileSize: fileSize,

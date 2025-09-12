@@ -94,15 +94,23 @@ const MillRegistration = () => {
     try {
       setLoading(true);
       
-      // Get user data from sessionStorage
-      const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-      const testUserId = userData.user?.id || 1;
+      // Get user data from sessionStorage - use same logic as MillProfile
+      const getCurrentUserId = () => {
+        try {
+          const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+          return userData.id || userData.user_id || 1; // fallback to 1 for development
+        } catch (error) {
+          console.error('Error getting user ID from session:', error);
+          return 1; // fallback to 1 for development
+        }
+      };
       
-      console.log('📊 Fetching real profile data from API for user:', testUserId);
+      const userId = getCurrentUserId();
+      console.log('📊 Fetching real profile data from API for user:', userId);
       
       // First try to fetch fresh data from API like MillProfile does
       try {
-        const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${testUserId}`);
+        const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${userId}`);
         if (response.ok) {
           const apiData = await response.json();
           console.log('✅ API Profile data received:', apiData);
@@ -398,7 +406,7 @@ const MillRegistration = () => {
         </button>
         {showApplySection && (
           <div className="mt-4 space-y-4">
-            {/* Profile completeness check */}
+            {/* Profile completeness check - Same as Profile Page */}
             <div className="bg-gray-50 p-4 rounded-lg border">
               <h3 className="font-semibold text-gray-800 mb-2">Profile Completeness</h3>
               <div className="flex items-center gap-4 mb-3">
@@ -424,6 +432,21 @@ const MillRegistration = () => {
                       <li key={index}>{field}</li>
                     ))}
                   </ul>
+                  <div className="mt-3">
+                    <button 
+                      onClick={handleCompleteProfile}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                    >
+                      Complete Profile
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {canApplyForLicense && (
+                <div className="bg-green-50 border border-green-200 p-3 rounded">
+                  <p className="text-green-800 font-medium">✅ Profile Complete!</p>
+                  <p className="text-green-700 text-sm">You can now apply for a mill license.</p>
                 </div>
               )}
             </div>
