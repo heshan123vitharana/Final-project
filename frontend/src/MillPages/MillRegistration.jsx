@@ -92,7 +92,7 @@ const MillRegistration = () => {
     };
   }, []);
 
-  // Load profile data from sessionStorage and calculate completeness
+  // Load profile data from database and calculate completeness (same as MillProfile component)
   const loadProfileData = useCallback(async () => {
     try {
       setLoading(true);
@@ -103,62 +103,67 @@ const MillRegistration = () => {
       
       console.log('📊 Fetching profile completeness from database for user:', testUserId);
       
-      // Use sessionStorage with database-style calculation (API endpoints not working)
-      console.log('📊 Using sessionStorage with same calculation logic as database');
+      // Use real database API call like MillProfile component
+      const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${testUserId}`);
       
-      const savedProfile = sessionStorage.getItem("profileData");
-      
-      if (savedProfile) {
-        const profile = JSON.parse(savedProfile);
+      if (response.ok) {
+        const data = await response.json();
         
-        // Use exact same calculation logic as the backend database
-        const profileFields = [
-          profile.firstName || profile.first_name,
-          profile.lastName || profile.last_name, 
-          profile.email,
-          profile.phoneNumber || profile.phone,
-          profile.businessName || profile.business_name,
-          profile.businessType || profile.business_type
-        ];
-        
-        const filledFields = profileFields.filter(field => field && field.toString().trim() !== '').length;
-        const hasPhoto = !!(profile.profilePhoto || profile.hasPhoto);
-        const completeness = Math.round(((filledFields + (hasPhoto ? 1 : 0)) / (profileFields.length + 1)) * 100);
-        
-        // Get missing fields using same logic as backend
-        const missingFields = [];
-        if (!profileFields[0]) missingFields.push('First Name');
-        if (!profileFields[1]) missingFields.push('Last Name');
-        if (!profileFields[2]) missingFields.push('Email');
-        if (!profileFields[3]) missingFields.push('Phone');
-        if (!profileFields[4]) missingFields.push('Business Name');
-        if (!profileFields[5]) missingFields.push('Business Type');
-        if (!hasPhoto) missingFields.push('Profile Photo');
-        
+        // Extract profile data and completeness from database response
+        const completeness = data.completeness || data.currentCompleteness || 0;
+        const missingFields = data.missingFields || [];
         const canApply = completeness === 100;
         
-        setProfileData(profile);
+        // Set the real database values
         setProfileCompleteness(completeness);
         setMissingFields(missingFields);
         setCanApplyForLicense(canApply);
         
-        console.log(`📊 Profile completeness (database-style): ${completeness}%`);
+        // If user data is available, set it as profile data
+        if (data.user) {
+          setProfileData({
+            firstName: data.user.firstName,
+            lastName: data.user.lastName,
+            email: data.user.email,
+            phoneNumber: data.user.phone,
+            businessName: data.user.businessName,
+            businessType: data.user.businessType,
+            profilePhoto: data.user.hasPhoto ? 'has-photo' : ''
+          });
+        }
+        
+        console.log(`📊 Profile completeness (from database): ${completeness}%`);
         console.log(`🔍 Missing fields:`, missingFields);
         console.log(`✅ Can apply for license:`, canApply);
-        console.log(`📸 Has photo:`, hasPhoto);
+        
       } else {
-        // No profile data available
-        setProfileCompleteness(0);
-        setCanApplyForLicense(false);
-        setMissingFields(['Complete your profile first']);
-        console.log('⚠️ No profile data found');
+        console.error('Failed to fetch profile completeness:', response.status);
+        
+        // Fallback to sessionStorage calculation only if API fails
+        console.log('📊 Falling back to sessionStorage calculation');
+        const savedProfile = sessionStorage.getItem("profileData");
+        
+        if (savedProfile) {
+          const profile = JSON.parse(savedProfile);
+          const { completeness, missingFields, canApply } = calculateCompletenessFromProfile(profile);
+          setProfileData(profile);
+          setProfileCompleteness(completeness);
+          setMissingFields(missingFields);
+          setCanApplyForLicense(canApply);
+          console.log(`📊 Profile completeness (fallback): ${completeness}%`);
+        } else {
+          setProfileCompleteness(0);
+          setCanApplyForLicense(false);
+          setMissingFields(['Complete your profile first']);
+        }
       }
     } catch (error) {
       console.error('Error loading profile data:', error);
-      setError('Failed to load profile data');
+      setError('Failed to load profile data from database');
       
       // Fallback to sessionStorage on error
       try {
+        console.log('📊 Using sessionStorage fallback due to database error');
         const savedProfile = sessionStorage.getItem("profileData");
         if (savedProfile) {
           const profile = JSON.parse(savedProfile);
@@ -167,9 +172,13 @@ const MillRegistration = () => {
           setProfileCompleteness(completeness);
           setMissingFields(missingFields);
           setCanApplyForLicense(canApply);
+          console.log(`📊 Profile completeness (error fallback): ${completeness}%`);
         }
       } catch (fallbackError) {
         console.error('Fallback also failed:', fallbackError);
+        setProfileCompleteness(0);
+        setCanApplyForLicense(false);
+        setMissingFields(['Unable to load profile data']);
       }
     } finally {
       setLoading(false);
