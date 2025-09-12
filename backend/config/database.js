@@ -48,9 +48,42 @@ const initializeTables = async () => {
         phone VARCHAR(20) NOT NULL,
         email VARCHAR(255) NOT NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
+        address TEXT,
+        city VARCHAR(255),
+        district VARCHAR(255),
+        postal_code VARCHAR(10),
+        mill_capacity VARCHAR(100),
+        mill_location VARCHAR(255),
+        license_number VARCHAR(100),
+        registration_date DATE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    
+    // Add new columns to existing users table if they don't exist
+    const columns = [
+      'address TEXT',
+      'city VARCHAR(255)',
+      'district VARCHAR(255)', 
+      'postal_code VARCHAR(10)',
+      'mill_capacity VARCHAR(100)',
+      'mill_location VARCHAR(255)',
+      'license_number VARCHAR(100)',
+      'registration_date DATE'
+    ];
+    
+    for (const column of columns) {
+      const columnName = column.split(' ')[0];
+      try {
+        await pool.execute(`ALTER TABLE users ADD COLUMN ${column}`);
+        console.log(`✅ Added column ${columnName} to users table`);
+      } catch (error) {
+        // Column might already exist, ignore error
+        if (!error.message.includes('Duplicate column name')) {
+          console.log(`ℹ️ Column ${columnName} might already exist`);
+        }
+      }
+    }
     console.log('✅ Users table ready');
 
     // Admin table

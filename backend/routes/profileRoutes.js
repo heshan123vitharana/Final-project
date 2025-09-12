@@ -163,7 +163,7 @@ router.delete('/photo/:userId', async (req, res) => {
   }
 });
 
-// Update user profile data
+// Update user profile data - Enhanced with all fields
 router.put('/update/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -172,31 +172,36 @@ router.put('/update/:userId', async (req, res) => {
             lastName,
             email,
             phone,
+            address,
+            city,
+            district,
+            postalCode,
             businessName,
-            businessType
+            businessType,
+            millCapacity,
+            millLocation,
+            licenseNumber,
+            registrationDate
         } = req.body;
 
-        console.log(`📝 Updating profile for user ${userId}`);
+        console.log(`📝 Updating complete profile for user ${userId}`);
+        console.log('📝 Received data:', { firstName, lastName, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation, licenseNumber, registrationDate });
 
-        if (!firstName || !lastName || !email || !phone || !businessName || !businessType) {
-            return res.status(400).json({
-                message: 'Missing required fields: firstName, lastName, email, phone, businessName, businessType'
-            });
-        }
-
-        // Update user profile
+        // Update user profile with all fields
         const [result] = await pool.execute(`
             UPDATE users 
             SET first_name = ?, last_name = ?, email = ?, phone = ?, 
-                business_name = ?, business_type = ?
+                address = ?, city = ?, district = ?, postal_code = ?,
+                business_name = ?, business_type = ?, mill_capacity = ?, mill_location = ?,
+                license_number = ?, registration_date = ?
             WHERE id = ?
-        `, [firstName, lastName, email, phone, businessName, businessType, userId]);
+        `, [firstName, lastName, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation, licenseNumber, registrationDate, userId]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        console.log(`✅ Profile updated successfully for user ${userId}`);
+        console.log(`✅ Complete profile updated successfully for user ${userId}`);
         
         res.status(200).json({
             message: 'Profile updated successfully',
@@ -206,8 +211,16 @@ router.put('/update/:userId', async (req, res) => {
                 lastName,
                 email,
                 phone,
+                address,
+                city,
+                district,
+                postalCode,
                 businessName,
-                businessType
+                businessType,
+                millCapacity,
+                millLocation,
+                licenseNumber,
+                registrationDate
             }
         });
 
@@ -283,23 +296,84 @@ router.get('/completeness/:userId', async (req, res) => {
 
         const user = userResult[0];
 
-        // Calculate profile completeness
-        const profileFields = [
-            user.first_name, user.last_name, user.email, user.phone,
-            user.business_name, user.business_type
+        console.log('📊 Raw user data for completeness calculation:', JSON.stringify({
+            id: user.id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            email: user.email,
+            phone: user.phone,
+            address: user.address,
+            city: user.city,
+            district: user.district,
+            postal_code: user.postal_code,
+            business_name: user.business_name,
+            business_type: user.business_type,
+            mill_capacity: user.mill_capacity,
+            mill_location: user.mill_location,
+            license_number: user.license_number,
+            registration_date: user.registration_date
+        }, null, 2));
+
+        // Calculate weighted profile completeness (Personal 50% + Business 50%)
+        // Personal Information Fields (50%)
+        const personalFields = [
+            { field: user.first_name, name: 'First Name' },
+            { field: user.last_name, name: 'Last Name' },
+            { field: user.email, name: 'Email' },
+            { field: user.phone, name: 'Phone' },
+            { field: user.address, name: 'Address' },
+            { field: user.city, name: 'City' },
+            { field: user.district, name: 'District' },
+            { field: user.postal_code, name: 'Postal Code' }
         ];
-        const filledFields = profileFields.filter(field => field && field.toString().trim() !== '').length;
-        const completeness = Math.round(((filledFields + (user.has_photo ? 1 : 0)) / (profileFields.length + 1)) * 100);
+        
+        // Business Information Fields (50%)
+        const businessFields = [
+            { field: user.business_name, name: 'Business Name' },
+            { field: user.business_type, name: 'Business Type' },
+            { field: user.mill_capacity, name: 'Mill Capacity' },
+            { field: user.mill_location, name: 'Mill Location' },
+            { field: user.license_number, name: 'License Number' },
+            { field: user.registration_date, name: 'Registration Date' }
+        ];
+        
+        // Calculate filled fields for each category
+        const filledPersonalFields = personalFields.filter(item => {
+            const isValid = item.field && item.field.toString().trim() !== '';
+            console.log(`📊 ${item.name}: ${item.field} -> ${isValid ? 'FILLED' : 'EMPTY'}`);
+            return isValid;
+        });
+        const filledBusinessFields = businessFields.filter(item => {
+            const isValid = item.field && item.field.toString().trim() !== '';
+            console.log(`📊 ${item.name}: ${item.field} -> ${isValid ? 'FILLED' : 'EMPTY'}`);
+            return isValid;
+        });
+        
+        // Calculate weighted completeness
+        const personalCompleteness = (filledPersonalFields.length / personalFields.length) * 50;
+        const businessCompleteness = (filledBusinessFields.length / businessFields.length) * 50;
+        const completeness = Math.round(personalCompleteness + businessCompleteness);
+
+        console.log(`📊 Personal fields: ${filledPersonalFields.length}/${personalFields.length} = ${personalCompleteness}%`);
+        console.log(`📊 Business fields: ${filledBusinessFields.length}/${businessFields.length} = ${businessCompleteness}%`);
+        console.log(`📊 Total completeness: ${completeness}%`);
+
+        console.log(`👤 Personal: ${filledPersonalFields.length}/${personalFields.length} = ${personalCompleteness}%`);
+        console.log(`🏢 Business: ${filledBusinessFields.length}/${businessFields.length} = ${businessCompleteness}%`);
+        console.log(`📊 Total: ${completeness}%`);
 
         // Get missing fields
         const missingFields = [];
-        if (!user.first_name) missingFields.push('First Name');
-        if (!user.last_name) missingFields.push('Last Name');
-        if (!user.email) missingFields.push('Email');
-        if (!user.phone) missingFields.push('Phone');
-        if (!user.business_name) missingFields.push('Business Name');
-        if (!user.business_type) missingFields.push('Business Type');
-        if (!user.has_photo) missingFields.push('Profile Photo');
+        personalFields.forEach(item => {
+            if (!item.field || item.field.toString().trim() === '') {
+                missingFields.push(item.name);
+            }
+        });
+        businessFields.forEach(item => {
+            if (!item.field || item.field.toString().trim() === '') {
+                missingFields.push(item.name);
+            }
+        });
 
         console.log(`📊 User ${userId} completeness: ${completeness}%`);
 
@@ -326,6 +400,163 @@ router.get('/completeness/:userId', async (req, res) => {
         res.status(500).json({
             message: 'Failed to check profile completeness',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// Simple test to clear old address fields for user 1
+router.get('/clear-test-user-fields', async (req, res) => {
+    try {
+        console.log('🧹 Clearing address fields for test user...');
+        
+        await pool.execute(`
+            UPDATE users 
+            SET address = NULL, city = NULL, district = NULL, postal_code = NULL,
+                mill_capacity = NULL, mill_location = NULL, license_number = NULL, registration_date = NULL
+            WHERE id = 1
+        `);
+
+        console.log('✅ Test user fields cleared');
+        res.json({ message: 'Test user address and business fields cleared', timestamp: new Date().toISOString() });
+        
+    } catch (error) {
+        console.error('❌ Error clearing test user fields:', error);
+        res.status(500).json({ message: 'Failed to clear fields', error: error.message });
+    }
+});
+
+// Debug endpoint to check raw database data
+router.get('/debug/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        console.log('🔍 Debug: Checking raw database data for user:', userId);
+
+        const [userResult] = await pool.execute(`
+            SELECT u.*, 
+                   CASE WHEN upp.photo_data IS NOT NULL THEN 1 ELSE 0 END as has_photo
+            FROM users u
+            LEFT JOIN user_profile_photos upp ON u.id = upp.user_id
+            WHERE u.id = ?
+        `, [userId]);
+
+        if (userResult.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const user = userResult[0];
+        console.log('🔍 Raw user data:', JSON.stringify({
+            id: user.id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            email: user.email,
+            phone: user.phone,
+            address: user.address,
+            city: user.city,
+            district: user.district,
+            postal_code: user.postal_code,
+            business_name: user.business_name,
+            business_type: user.business_type,
+            mill_capacity: user.mill_capacity,
+            mill_location: user.mill_location,
+            license_number: user.license_number,
+            registration_date: user.registration_date
+        }, null, 2));
+
+        // Personal Information Fields (50%)
+        const personalFields = [
+            { field: user.first_name, name: 'First Name' },
+            { field: user.last_name, name: 'Last Name' },
+            { field: user.email, name: 'Email' },
+            { field: user.phone, name: 'Phone' },
+            { field: user.address, name: 'Address' },
+            { field: user.city, name: 'City' },
+            { field: user.district, name: 'District' },
+            { field: user.postal_code, name: 'Postal Code' }
+        ];
+        
+        // Business Information Fields (50%)
+        const businessFields = [
+            { field: user.business_name, name: 'Business Name' },
+            { field: user.business_type, name: 'Business Type' },
+            { field: user.mill_capacity, name: 'Mill Capacity' },
+            { field: user.mill_location, name: 'Mill Location' },
+            { field: user.license_number, name: 'License Number' },
+            { field: user.registration_date, name: 'Registration Date' }
+        ];
+        
+        // Calculate filled fields for each category
+        const filledPersonalFields = personalFields.filter(item => {
+            const isValid = item.field && item.field.toString().trim() !== '';
+            console.log(`🔍 ${item.name}: "${item.field}" -> ${isValid ? 'FILLED' : 'EMPTY'}`);
+            return isValid;
+        });
+        const filledBusinessFields = businessFields.filter(item => {
+            const isValid = item.field && item.field.toString().trim() !== '';
+            console.log(`🔍 ${item.name}: "${item.field}" -> ${isValid ? 'FILLED' : 'EMPTY'}`);
+            return isValid;
+        });
+        
+        // Calculate weighted completeness
+        const personalCompleteness = (filledPersonalFields.length / personalFields.length) * 50;
+        const businessCompleteness = (filledBusinessFields.length / businessFields.length) * 50;
+        const completeness = Math.round(personalCompleteness + businessCompleteness);
+
+        console.log('🔍 Personal fields:', filledPersonalFields.length, '/', personalFields.length, '=', personalCompleteness, '%');
+        console.log('🔍 Business fields:', filledBusinessFields.length, '/', businessFields.length, '=', businessCompleteness, '%');
+        console.log('🔍 Total completeness:', completeness, '%');
+
+        // Get missing fields
+        const missingFields = [];
+        personalFields.forEach(item => {
+            if (!item.field || item.field.toString().trim() === '') {
+                missingFields.push(item.name);
+            }
+        });
+        businessFields.forEach(item => {
+            if (!item.field || item.field.toString().trim() === '') {
+                missingFields.push(item.name);
+            }
+        });
+
+        res.status(200).json({
+            message: 'Debug data retrieved',
+            user: {
+                id: user.id,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                email: user.email,
+                phone: user.phone,
+                address: user.address,
+                city: user.city,
+                district: user.district,
+                postal_code: user.postal_code,
+                business_name: user.business_name,
+                business_type: user.business_type,
+                mill_capacity: user.mill_capacity,
+                mill_location: user.mill_location,
+                license_number: user.license_number,
+                registration_date: user.registration_date,
+                has_photo: user.has_photo
+            },
+            personalFields: {
+                total: personalFields.length,
+                filled: filledPersonalFields.length,
+                completeness: personalCompleteness
+            },
+            businessFields: {
+                total: businessFields.length,
+                filled: filledBusinessFields.length,
+                completeness: businessCompleteness
+            },
+            overallCompleteness: completeness,
+            missingFields
+        });
+
+    } catch (error) {
+        console.error('🔍 Debug error:', error);
+        res.status(500).json({ 
+            message: 'Debug failed', 
+            error: error.message 
         });
     }
 });

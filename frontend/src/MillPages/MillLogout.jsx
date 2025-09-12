@@ -74,7 +74,7 @@ const MillLogout = ({ onBackToHome }) => {
   };
 
   const handleCancelLogout = () => {
-    navigate('/');  // Navigate back to mill home page
+    navigate('../home');  // Navigate back to mill home page
   };
 
   return (

@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ProfileCompletenessBar from '../components/ProfileCompletenessBar';
 
 const MillRegistration = () => {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ const MillRegistration = () => {
   const [canApplyForLicense, setCanApplyForLicense] = useState(false);
   const [profileCompleteness, setProfileCompleteness] = useState(0);
   const [missingFields, setMissingFields] = useState([]);
+  const [fieldStatus, setFieldStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -59,202 +61,138 @@ const MillRegistration = () => {
   };
 
   // Calculate profile completeness directly from profile data
-  const calculateCompletenessFromProfile = useCallback((profile) => {
-    if (!profile) return { completeness: 0, missingFields: ['Complete your profile first'], canApply: false };
-    
-    const requiredFields = [
-      { key: 'firstName', label: 'First Name' },
-      { key: 'lastName', label: 'Last Name' },
-      { key: 'email', label: 'Email' },
-      { key: 'phoneNumber', label: 'Phone' },
-      { key: 'businessName', label: 'Business Name' },
-      { key: 'businessType', label: 'Business Type' },
-      { key: 'profilePhoto', label: 'Profile Photo' }
-    ];
-
-    const filledFields = requiredFields.filter(field => 
-      profile[field.key] && profile[field.key].toString().trim() !== ''
-    );
-
-    const missingFields = requiredFields
-      .filter(field => !profile[field.key] || profile[field.key].toString().trim() === '')
-      .map(field => field.label);
-
-    const completeness = Math.round((filledFields.length / requiredFields.length) * 100);
-    
-    return {
-      completeness,
-      missingFields,
-      canApply: completeness === 100
-    };
-  }, []);
-
-  // Load profile data from API and calculate completeness
-  const loadProfileData = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      // Get user data from sessionStorage - use same logic as MillProfile
-      const getCurrentUserId = () => {
-        try {
-          const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-          return userData.id || userData.user_id || 1; // fallback to 1 for development
-        } catch (error) {
-          console.error('Error getting user ID from session:', error);
-          return 1; // fallback to 1 for development
-        }
-      };
-      
-      const userId = getCurrentUserId();
-      console.log('📊 Fetching real profile data from API for user:', userId);
-      
-      // First try to fetch fresh data from API like MillProfile does
-      try {
-        const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${userId}`);
-        if (response.ok) {
-          const apiData = await response.json();
-          console.log('✅ API Profile data received:', apiData);
-          
-          setProfileData(apiData.profile || {});
-          setProfileCompleteness(apiData.completeness || 0);
-          setMissingFields(apiData.missingFields || []);
-          setCanApplyForLicense(apiData.completeness === 100);
-          
-          console.log(`📊 Real profile completeness from API: ${apiData.completeness}%`);
-          console.log(`🔍 Missing fields from API:`, apiData.missingFields);
-          console.log(`✅ Can apply for license:`, apiData.completeness === 100);
-          return; // Success, exit early
-        }
-      } catch (apiError) {
-        console.warn('API not available, falling back to sessionStorage:', apiError.message);
-      }
-      
-      // Fallback to sessionStorage with same calculation logic as database
-      console.log('📊 Using sessionStorage with same calculation logic as database');
-      
-      const savedProfile = sessionStorage.getItem("profileData");
-      
-      if (savedProfile) {
-        const profile = JSON.parse(savedProfile);
-        
-        // Use exact same calculation logic as the backend database
-        const profileFields = [
-          profile.firstName || profile.first_name,
-          profile.lastName || profile.last_name, 
-          profile.email,
-          profile.phoneNumber || profile.phone,
-          profile.businessName || profile.business_name,
-          profile.businessType || profile.business_type
-        ];
-        
-        const filledFields = profileFields.filter(field => field && field.toString().trim() !== '').length;
-        const hasPhoto = !!(profile.profilePhoto || profile.hasPhoto);
-        const completeness = Math.round(((filledFields + (hasPhoto ? 1 : 0)) / (profileFields.length + 1)) * 100);
-        
-        // Get missing fields using same logic as backend
-        const missingFields = [];
-        if (!profileFields[0]) missingFields.push('First Name');
-        if (!profileFields[1]) missingFields.push('Last Name');
-        if (!profileFields[2]) missingFields.push('Email');
-        if (!profileFields[3]) missingFields.push('Phone');
-        if (!profileFields[4]) missingFields.push('Business Name');
-        if (!profileFields[5]) missingFields.push('Business Type');
-        if (!hasPhoto) missingFields.push('Profile Photo');
-        
-        const canApply = completeness === 100;
-        
-        setProfileData(profile);
-        setProfileCompleteness(completeness);
-        setMissingFields(missingFields);
-        setCanApplyForLicense(canApply);
-        
-        console.log(`📊 Profile completeness (sessionStorage): ${completeness}%`);
-        console.log(`🔍 Missing fields:`, missingFields);
-        console.log(`✅ Can apply for license:`, canApply);
-        console.log(`📸 Has photo:`, hasPhoto);
-      } else {
-        // No profile data available
-        setProfileCompleteness(0);
-        setCanApplyForLicense(false);
-        setMissingFields(['Complete your profile first']);
-        console.log('⚠️ No profile data found');
-      }
-    } catch (error) {
-      console.error('Error loading profile data:', error);
-      setError('Failed to load profile data');
-      
-      // Fallback to sessionStorage on error
-      try {
-        const savedProfile = sessionStorage.getItem("profileData");
-        if (savedProfile) {
-          const profile = JSON.parse(savedProfile);
-          const { completeness, missingFields, canApply } = calculateCompletenessFromProfile(profile);
-          setProfileData(profile);
-          setProfileCompleteness(completeness);
-          setMissingFields(missingFields);
-          setCanApplyForLicense(canApply);
-        }
-      } catch (fallbackError) {
-        console.error('Fallback also failed:', fallbackError);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [calculateCompletenessFromProfile]);
-
+  // Note: This is now handled by API, but kept for fallback
+  
   // Handle navigation to profile with refresh
   const handleCompleteProfile = () => {
-    navigate('profile');
+    console.log('🔄 Complete Profile button clicked!');
+    console.log('🔄 Current location:', window.location.href);
+    console.log('🔄 Navigating to Profile section...');
+    
+    // Use relative navigation like the sidebar does
+    navigate('../profile');
+    console.log('✅ Navigation to profile completed');
   };
 
-  // Use static license history data (since API is not working)
-  const loadLicenseHistory = useCallback(() => {
-    const dummyHistory = [
-      { 
-        id: 1, 
-        application_number: 'ML20251001', 
-        applied_date: '2025-05-01', 
-        status: 'approved',
-        created_at: '2025-05-01T10:00:00.000Z'
-      },
-      { 
-        id: 2, 
-        application_number: 'ML20251015', 
-        applied_date: '2025-06-15', 
-        status: 'pending',
-        created_at: '2025-06-15T14:30:00.000Z'
-      },
-      { 
-        id: 3, 
-        application_number: 'ML20251020', 
-        applied_date: '2025-07-10', 
-        status: 'rejected',
-        created_at: '2025-07-10T09:15:00.000Z'
-      }
-    ];
-    
-    setHistory(dummyHistory);
-    console.log('📜 License history loaded (demo data)');
-  }, []);
-
-  // Load data on component mount
+  // Load data on component mount - self-contained to avoid dependency issues
   useEffect(() => {
-    loadProfileData();
-    loadLicenseHistory();
-  }, [loadProfileData, loadLicenseHistory]);
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        // Get user data from sessionStorage - same logic as MillProfile
+        const getCurrentUserId = () => {
+          try {
+            const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+            return userData.id || userData.user_id || 1; // fallback to 1 for development
+          } catch (error) {
+            console.error('Error getting user ID from session:', error);
+            return 1; // fallback to 1 for development
+          }
+        };
+        
+        const userId = getCurrentUserId();
+        console.log('📊 Fetching real profile data from API for user:', userId);
+        
+        // Fetch profile data from API using new completeness endpoint
+        try {
+          const response = await fetch(`http://localhost:5000/api/completeness/check/${userId}`);
+          if (response.ok) {
+            const apiData = await response.json();
+            console.log('✅ NEW API Profile data received:', apiData);
+            
+            setProfileData(apiData.user || {});
+            setProfileCompleteness(apiData.completeness || 0);
+            setMissingFields(apiData.missingFields || []);
+            setFieldStatus(apiData.fieldStatus || null);
+            setCanApplyForLicense(apiData.canApplyForLicense || false);
+            
+            console.log(`📊 Real profile completeness from API: ${apiData.completeness}%`);
+            console.log(`🔍 Missing fields from API:`, apiData.missingFields);
+            console.log(`✅ Can apply for license:`, apiData.canApplyForLicense);
+            console.log(`📋 Field status:`, apiData.fieldStatus);
+          }
+        } catch (apiError) {
+          console.error('Error fetching from API:', apiError);
+        }
+        
+        // Load license history (static data)
+        const dummyHistory = [
+          { 
+            id: 1, 
+            application_number: 'ML20251001', 
+            applied_date: '2025-05-01', 
+            status: 'approved',
+            created_at: '2025-05-01T10:00:00.000Z'
+          },
+          { 
+            id: 2, 
+            application_number: 'ML20251015', 
+            applied_date: '2025-06-15', 
+            status: 'pending',
+            created_at: '2025-06-15T14:30:00.000Z'
+          },
+          { 
+            id: 3, 
+            application_number: 'ML20251020', 
+            applied_date: '2025-07-10', 
+            status: 'rejected',
+            created_at: '2025-07-10T09:15:00.000Z'
+          }
+        ];
+        
+        setHistory(dummyHistory);
+        console.log('📜 License history loaded (demo data)');
+        
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []); // Empty dependency array - self-contained logic
 
   // Add effect to refresh completeness when user returns from profile page
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // Page became visible, refresh profile completeness
-        loadProfileData();
+        // Page became visible, refresh profile completeness directly without function dependency
+        (async () => {
+          try {
+            setLoading(true);
+            const getCurrentUserId = () => {
+              try {
+                const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+                return userData.id || userData.user_id || 1;
+              } catch (error) {
+                console.error('Error getting user ID from session:', error);
+                return 1;
+              }
+            };
+            
+            const userId = getCurrentUserId();
+            const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${userId}`);
+            if (response.ok) {
+              const apiData = await response.json();
+              setProfileData(apiData.user || {});
+              setProfileCompleteness(apiData.completeness);
+              setMissingFields(apiData.missingFields || []);
+              setCanApplyForLicense(apiData.canApplyForLicense);
+            }
+          } catch (error) {
+            console.error('Error refreshing profile data:', error);
+          } finally {
+            setLoading(false);
+          }
+        })();
       }
     };
 
     const handleFocus = () => {
       // Window gained focus, refresh profile completeness
-      loadProfileData();
+      handleVisibilityChange();
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -264,7 +202,7 @@ const MillRegistration = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [loadProfileData]);
+  }, []); // No dependencies needed since logic is self-contained
 
   // Handle file selection
   const handleFileSelect = async (e, fieldName) => {
@@ -406,45 +344,20 @@ const MillRegistration = () => {
         </button>
         {showApplySection && (
           <div className="mt-4 space-y-4">
-            {/* Profile completeness check - Same as Profile Page */}
-            <div className="bg-gray-50 p-4 rounded-lg border">
-              <h3 className="font-semibold text-gray-800 mb-2">Profile Completeness</h3>
-              <div className="flex items-center gap-4 mb-3">
-                <div className="flex-1 bg-gray-200 rounded-full h-3">
-                  <div 
-                    className={`h-3 rounded-full transition-all duration-300 ${
-                      profileCompleteness === 100 ? 'bg-green-500' : 'bg-yellow-500'
-                    }`}
-                    style={{ width: `${profileCompleteness}%` }}
-                  ></div>
-                </div>
-                <span className={`font-bold ${
-                  profileCompleteness === 100 ? 'text-green-600' : 'text-yellow-600'
-                }`}>{profileCompleteness}%</span>
-              </div>
-              
-              {!canApplyForLicense && (
-                <div className="bg-yellow-50 border border-yellow-200 p-3 rounded">
-                  <p className="text-yellow-800 font-medium mb-2">Profile must be 100% complete to apply for license</p>
-                  <p className="text-yellow-700 text-sm mb-2">Missing fields:</p>
-                  <ul className="text-yellow-700 text-sm list-disc list-inside">
-                    {missingFields.map((field, index) => (
-                      <li key={index}>{field}</li>
-                    ))}
-                  </ul>
-                  <div className="mt-3">
-                    <button 
-                      onClick={handleCompleteProfile}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                    >
-                      Complete Profile
-                    </button>
-                  </div>
-                </div>
-              )}
+            {/* Profile completeness check - Enhanced with ProfileCompletenessBar */}
+            <div className="bg-white p-4 rounded-lg border shadow-sm">
+              <ProfileCompletenessBar
+                completeness={profileCompleteness}
+                fieldStatus={fieldStatus}
+                missingFields={missingFields}
+                showDetails={true}
+                size="medium"
+                showActions={!canApplyForLicense}
+                onCompleteProfile={handleCompleteProfile}
+              />
               
               {canApplyForLicense && (
-                <div className="bg-green-50 border border-green-200 p-3 rounded">
+                <div className="bg-green-50 border border-green-200 p-3 rounded mt-4">
                   <p className="text-green-800 font-medium">✅ Profile Complete!</p>
                   <p className="text-green-700 text-sm">You can now apply for a mill license.</p>
                 </div>
@@ -468,17 +381,6 @@ const MillRegistration = () => {
               </>
             )}
 
-            {!canApplyForLicense && (
-              <div className="text-center py-4">
-                <p className="text-red-600 font-medium">Please complete your profile to apply for a mill license</p>
-                <button 
-                  onClick={handleCompleteProfile}
-                  className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Complete Profile
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>
