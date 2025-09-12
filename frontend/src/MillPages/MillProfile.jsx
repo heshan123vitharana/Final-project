@@ -429,18 +429,39 @@ const MillProfile = ({ userData }) => {
             </div>
           </div>
           
-          {/* Minimized Profile Completeness Bar */}
-          <div className="mt-4">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs font-medium text-gray-600">Completeness</span>
-              <span className="text-xs text-gray-400">{profileStats.completeness}%</span>
+          {/* Profile Completeness Bar - Same as MillRegistration */}
+          <div className="bg-gray-50 p-4 rounded-lg border mt-4">
+            <h3 className="font-semibold text-gray-800 mb-2">Profile Completeness</h3>
+            <div className="flex items-center gap-4 mb-3">
+              <div className="flex-1 bg-gray-200 rounded-full h-3">
+                <div 
+                  className={`h-3 rounded-full transition-all duration-300 ${
+                    profileStats.completeness === 100 ? 'bg-green-500' : 'bg-yellow-500'
+                  }`}
+                  style={{ width: `${profileStats.completeness}%` }}
+                ></div>
+              </div>
+              <span className={`font-bold ${
+                profileStats.completeness === 100 ? 'text-green-600' : 'text-yellow-600'
+              }`}>{profileStats.completeness}%</span>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-1">
-              <div 
-                className="bg-green-400 h-1 rounded-full transition-all duration-300"
-                style={{ width: `${profileStats.completeness}%` }}
-              ></div>
-            </div>
+            
+            {profileStats.completeness < 100 && (
+              <div className="bg-yellow-50 border border-yellow-200 p-3 rounded">
+                <p className="text-yellow-800 font-medium mb-2">Complete your profile to unlock all features</p>
+                <p className="text-yellow-700 text-sm mb-2">Missing information may limit your access to certain services.</p>
+                <div className="mt-2">
+                  <span className="text-yellow-700 text-sm">Completion: {profileStats.completeness}% of required fields</span>
+                </div>
+              </div>
+            )}
+            
+            {profileStats.completeness === 100 && (
+              <div className="bg-green-50 border border-green-200 p-3 rounded">
+                <p className="text-green-800 font-medium">✅ Profile Complete!</p>
+                <p className="text-green-700 text-sm">You have access to all platform features.</p>
+              </div>
+            )}
           </div>
         </div>
 
