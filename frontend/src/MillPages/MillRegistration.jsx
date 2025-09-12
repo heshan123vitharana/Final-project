@@ -94,12 +94,12 @@ const MillRegistration = () => {
         const userId = getCurrentUserId();
         console.log('📊 Fetching real profile data from API for user:', userId);
         
-        // Fetch profile data from API using new completeness endpoint
+        // Fetch profile data from API using profile-check endpoint
         try {
-          const response = await fetch(`http://localhost:5000/api/completeness/check/${userId}`);
+          const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${userId}`);
           if (response.ok) {
             const apiData = await response.json();
-            console.log('✅ NEW API Profile data received:', apiData);
+            console.log('✅ Profile data received:', apiData);
             
             setProfileData(apiData.user || {});
             setProfileCompleteness(apiData.completeness || 0);

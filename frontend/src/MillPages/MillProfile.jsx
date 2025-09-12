@@ -27,7 +27,6 @@ const emptyProfile = {
   businessType: "private",
   millCapacity: "",
   millLocation: "",
-  licenseNumber: "",
   registrationDate: "",
   profilePhoto: "",
   password: "",
@@ -42,13 +41,6 @@ const MillProfile = ({ userData }) => {
   const [originalData, setOriginalData] = useState(emptyProfile);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [_profileStats, setProfileStats] = useState({
-    completeness: 0,
-    lastUpdated: null,
-    memberSince: null,
-    fieldStatus: null,
-    missingFields: []
-  });
 
   // State for password fields
   const [passwords, setPasswords] = useState({ current: "", new: "", confirm: "" });
@@ -66,38 +58,6 @@ const MillProfile = ({ userData }) => {
     }
   };
 
-  // Use API to get real profile completeness percentage (for onChange events)
-  const calculateProfileCompleteness = async () => {
-    try {
-      const userId = getCurrentUserId();
-      const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${userId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProfileStats(prev => ({
-          ...prev,
-          completeness: data.completeness,
-          fieldStatus: data.fieldStatus,
-          missingFields: data.missingFields || []
-        }));
-        console.log(`📊 Profile completeness updated for user ${userId}: ${data.completeness}%`);
-      }
-    } catch (error) {
-      console.error('Error fetching profile completeness:', error);
-    }
-  };
-
-  // Debounced version to prevent too many API calls
-  const debouncedCalculateCompleteness = useRef(null);
-
-  // Create debounced function
-  const debounceCompleteness = () => {
-    if (debouncedCalculateCompleteness.current) {
-      clearTimeout(debouncedCalculateCompleteness.current);
-    }
-    debouncedCalculateCompleteness.current = setTimeout(() => {
-      calculateProfileCompleteness();
-    }, 500); // Wait 500ms before making API call
-  };
 
   // Load profile photo from database (use working port 5001)
   const loadProfilePhoto = async (userId) => {
@@ -156,7 +116,6 @@ const MillProfile = ({ userData }) => {
           businessType: currentUserData.business_type || "private",
           millCapacity: "",
           millLocation: "",
-          licenseNumber: "",
           registrationDate: currentUserData.created_at ? new Date(currentUserData.created_at).toISOString().split('T')[0] : "",
           profilePhoto: "",
           password: "",
@@ -181,43 +140,15 @@ const MillProfile = ({ userData }) => {
       setFormData(initialData);
       setOriginalData(initialData);
       
-      // Calculate profile completeness after loading data (inline to avoid dependency issues)
-      try {
-        const userId = getCurrentUserId();
-        const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${userId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setProfileStats(prev => ({
-            ...prev,
-            completeness: data.completeness,
-            fieldStatus: data.fieldStatus,
-            missingFields: data.missingFields || []
-          }));
-          console.log(`📊 Profile completeness for user ${userId}: ${data.completeness}%`);
-        }
-      } catch (error) {
-        console.error('Error fetching profile completeness:', error);
-      }
-      
-      // Set member since date if userData is available
-      if (currentUserData?.created_at) {
-        setProfileStats(prev => ({
-          ...prev,
-          memberSince: new Date(currentUserData.created_at).toLocaleDateString()
-        }));
-      }
     };
 
     loadData();
   }, []); // Empty dependency array to run only once on mount
 
-  // Handle changes in profile form fields with validation feedback
+  // Handle changes in profile form fields
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Use debounced completeness calculation
-    debounceCompleteness();
   };
 
   // Handle changes in password fields
@@ -326,7 +257,6 @@ const MillProfile = ({ userData }) => {
     setFormData(originalData);
     setPasswords({ current: "", new: "", confirm: "" });
     setIsEditing(false);
-    // No need to recalculate completeness when just reverting data
   };
 
   // Enhanced save with comprehensive validation
@@ -335,8 +265,11 @@ const MillProfile = ({ userData }) => {
     setIsLoading(true);
     
     try {
-      // Validate required fields
-      const requiredFields = ['firstName', 'lastName', 'email', 'phoneNumber'];
+      // Validate required fields - Personal and Business Information
+      const requiredFields = [
+        'firstName', 'lastName', 'email', 'phoneNumber', 'address', 'city', 'district',
+        'businessName', 'businessType', 'millCapacity', 'millLocation'
+      ];
       const { isValid } = validateFormWithToast(formData, requiredFields);
       
       if (!isValid) {
@@ -373,7 +306,6 @@ const MillProfile = ({ userData }) => {
         businessType: formData.businessType,
         millCapacity: formData.millCapacity,
         millLocation: formData.millLocation,
-        licenseNumber: formData.licenseNumber,
         registrationDate: formData.registrationDate
       };
 
@@ -404,12 +336,6 @@ const MillProfile = ({ userData }) => {
       setPasswords({ current: "", new: "", confirm: "" });
       setIsEditing(false);
       
-      // Update last updated date
-      setProfileStats(prev => ({
-        ...prev,
-        lastUpdated: new Date().toLocaleDateString()
-      }));
-      
       showSuccessToast('Profile updated successfully!');
       
     } catch {
@@ -430,6 +356,7 @@ const MillProfile = ({ userData }) => {
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
         👤 Profile Management
       </h1>
+
 
       {/* Profile Overview Card */}
       <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
@@ -524,8 +451,8 @@ const MillProfile = ({ userData }) => {
           )}
         </div>
 
-        {/* Information Overview */}
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* Information Overview */}
+      <div className="grid md:grid-cols-2 gap-6 mt-8">
         {/* Personal Information Card */}
         <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
           <h3 className="text-lg font-semibold text-green-700 flex items-center gap-3 mb-4">
@@ -565,41 +492,41 @@ const MillProfile = ({ userData }) => {
 
         {/* Business Information Card */}
         <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
-            <h3 className="text-lg font-semibold text-green-700 flex items-center gap-3 mb-4">
-              <BuildingOfficeIcon className="h-5 w-5 text-green-600" />
-              Business Information
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                <div className="flex items-center gap-3">
-                  <BuildingOfficeIcon className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-600 text-sm">Business Type</span>
-                </div>
-                <span className="text-gray-900 font-medium text-sm capitalize">
-                  {formData.businessType || <span className="text-gray-400">Not set</span>}
-                </span>
+          <h3 className="text-lg font-semibold text-green-700 flex items-center gap-3 mb-4">
+            <BuildingOfficeIcon className="h-5 w-5 text-green-600" />
+            Business Information
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+              <div className="flex items-center gap-3">
+                <BuildingOfficeIcon className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-600 text-sm">Business Type</span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                <div className="flex items-center gap-3">
-                  <UserIcon className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-600 text-sm">Mill Capacity</span>
-                </div>
-                <span className="text-gray-900 font-medium text-sm">
-                  {formData.millCapacity ? `${formData.millCapacity} tons/day` : <span className="text-gray-400">Not set</span>}
-                </span>
+              <span className="text-gray-900 font-medium text-sm capitalize">
+                {formData.businessType || <span className="text-gray-400">Not set</span>}
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+              <div className="flex items-center gap-3">
+                <UserIcon className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-600 text-sm">Mill Capacity</span>
               </div>
-              <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                <div className="flex items-center gap-3">
-                  <MapPinIcon className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-600 text-sm">District</span>
-                </div>
-                <span className="text-gray-900 font-medium text-sm">
-                  {formData.district || <span className="text-gray-400">Not set</span>}
-                </span>
+              <span className="text-gray-900 font-medium text-sm">
+                {formData.millCapacity ? `${formData.millCapacity} tons/day` : <span className="text-gray-400">Not set</span>}
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+              <div className="flex items-center gap-3">
+                <MapPinIcon className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-600 text-sm">District</span>
               </div>
+              <span className="text-gray-900 font-medium text-sm">
+                {formData.district || <span className="text-gray-400">Not set</span>}
+              </span>
             </div>
           </div>
         </div>
+      </div>
 
         {/* Profile viewing mode (not editing) */}
         {!isEditing ? (
@@ -677,7 +604,7 @@ const MillProfile = ({ userData }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
                   <div className="relative">
                     <MapPinIcon className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                     <textarea
@@ -687,13 +614,14 @@ const MillProfile = ({ userData }) => {
                       rows="3"
                       className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none"
                       placeholder="Enter your complete address"
+                      required
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
                     <input
                       type="text"
                       name="city"
@@ -701,10 +629,11 @@ const MillProfile = ({ userData }) => {
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                       placeholder="Enter city"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">District</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">District *</label>
                     <input
                       type="text"
                       name="district"
@@ -712,6 +641,7 @@ const MillProfile = ({ userData }) => {
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                       placeholder="Enter district"
+                      required
                     />
                   </div>
                   <div>
@@ -738,7 +668,7 @@ const MillProfile = ({ userData }) => {
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Business Name *</label>
                   <input
                     type="text"
                     name="businessName"
@@ -746,17 +676,19 @@ const MillProfile = ({ userData }) => {
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                     placeholder="Enter your business name"
+                    required
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Business Type *</label>
                     <select
                       name="businessType"
                       value={formData.businessType}
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                      required
                     >
                       <option value="private">Private</option>
                       <option value="partnership">Partnership</option>
@@ -765,7 +697,7 @@ const MillProfile = ({ userData }) => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Mill Capacity</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Mill Capacity *</label>
                     <input
                       type="text"
                       name="millCapacity"
@@ -773,12 +705,13 @@ const MillProfile = ({ userData }) => {
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                       placeholder="e.g., 500 tons/day"
+                      required
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Mill Location</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Mill Location *</label>
                   <input
                     type="text"
                     name="millLocation"
@@ -786,31 +719,19 @@ const MillProfile = ({ userData }) => {
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
                     placeholder="Enter mill location"
+                    required
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
-                    <input
-                      type="text"
-                      name="licenseNumber"
-                      value={formData.licenseNumber}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                      placeholder="Enter license number"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Registration Date</label>
-                    <input
-                      type="date"
-                      name="registrationDate"
-                      value={formData.registrationDate}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Registration Date</label>
+                  <input
+                    type="date"
+                    name="registrationDate"
+                    value={formData.registrationDate}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  />
                 </div>
               </div>
             </div>
