@@ -343,7 +343,7 @@ const MillProfile = ({ userData }) => {
         registrationDate: formData.registrationDate
       };
 
-      const response = await fetch(`http://localhost:5000/api/profile/update/${userData?.id}`, {
+      const response = await fetch(`http://localhost:5000/api/profile/update/${getCurrentUserId()}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

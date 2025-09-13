@@ -179,23 +179,20 @@ router.put('/update/:userId', async (req, res) => {
             businessName,
             businessType,
             millCapacity,
-            millLocation,
-            licenseNumber,
-            registrationDate
+            millLocation
         } = req.body;
 
         console.log(`📝 Updating complete profile for user ${userId}`);
-        console.log('📝 Received data:', { firstName, lastName, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation, licenseNumber, registrationDate });
+        console.log('📝 Received data:', { firstName, lastName, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation });
 
-        // Update user profile with all fields
+        // Update user profile with all fields (only the fields that are sent from frontend)
         const [result] = await pool.execute(`
             UPDATE users 
             SET first_name = ?, last_name = ?, email = ?, phone = ?, 
                 address = ?, city = ?, district = ?, postal_code = ?,
-                business_name = ?, business_type = ?, mill_capacity = ?, mill_location = ?,
-                license_number = ?, registration_date = ?
+                business_name = ?, business_type = ?, mill_capacity = ?, mill_location = ?
             WHERE id = ?
-        `, [firstName, lastName, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation, licenseNumber, registrationDate, userId]);
+        `, [firstName, lastName, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation, userId]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'User not found' });
@@ -218,9 +215,7 @@ router.put('/update/:userId', async (req, res) => {
                 businessName,
                 businessType,
                 millCapacity,
-                millLocation,
-                licenseNumber,
-                registrationDate
+                millLocation
             }
         });
 
