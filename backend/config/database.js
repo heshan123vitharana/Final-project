@@ -146,13 +146,17 @@ const initializeTables = async () => {
         user_id INT NOT NULL,
         application_number VARCHAR(50) NOT NULL UNIQUE,
         license_type VARCHAR(100) DEFAULT 'Standard Mill License',
+        license_number VARCHAR(100) NULL,
         payment_receipt LONGTEXT NOT NULL,
         br_document LONGTEXT NOT NULL,
         comments TEXT,
         status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
         applied_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         approved_date TIMESTAMP NULL,
+        rejected_date TIMESTAMP NULL,
         expiry_date TIMESTAMP NULL,
+        approval_comments TEXT,
+        rejection_reason TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -160,6 +164,27 @@ const initializeTables = async () => {
         INDEX idx_application_number (application_number)
       )
     `);
+    
+    // Add new columns to existing mill_licenses table if they don't exist
+    const licenseColumns = [
+      'license_number VARCHAR(100)',
+      'rejected_date TIMESTAMP NULL',
+      'approval_comments TEXT',
+      'rejection_reason TEXT'
+    ];
+    
+    for (const column of licenseColumns) {
+      const columnName = column.split(' ')[0];
+      try {
+        await pool.execute(`ALTER TABLE mill_licenses ADD COLUMN ${column}`);
+        console.log(`✅ Added column ${columnName} to mill_licenses table`);
+      } catch (error) {
+        // Column might already exist, ignore error
+        if (!error.message.includes('Duplicate column name')) {
+          console.log(`ℹ️ Column ${columnName} might already exist`);
+        }
+      }
+    }
     console.log('✅ Mill licenses table ready');
 
     // Insert default admin (use INSERT IGNORE to avoid duplicates)

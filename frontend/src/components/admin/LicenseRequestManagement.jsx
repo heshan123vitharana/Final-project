@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { 
   Check, 
   X, 
@@ -8,56 +8,13 @@ import {
   Filter,
   Clock,
   AlertCircle,
-  FileCheck
+  FileCheck,
+  RefreshCw
 } from 'lucide-react'
 
-// Mock data for license requests
-const mockLicenseRequests = [
-  {
-    id: 'LR001',
-    millName: 'Green Valley Rice Mill',
-    ownerName: 'Kamal Perera',
-    location: 'Colombo',
-    submitDate: '2025-01-15',
-    status: 'pending',
-    paymentReceipt: 'receipt_001.pdf',
-    email: 'kamal@greenvalley.lk',
-    phone: '+94771234567',
-    capacity: '500 MT/month',
-    type: 'Private'
-  },
-  {
-    id: 'LR002',
-    millName: 'Sri Lanka Rice Processing',
-    ownerName: 'Nimali Fernando',
-    location: 'Kurunegala',
-    submitDate: '2025-01-16',
-    status: 'pending',
-    paymentReceipt: 'receipt_002.pdf',
-    email: 'nimali@slrp.lk',
-    phone: '+94777654321',
-    capacity: '750 MT/month',
-    type: 'Government'
-  },
-  {
-    id: 'LR003',
-    millName: 'Golden Grain Mills',
-    ownerName: 'Ravi Silva',
-    location: 'Anuradhapura',
-    submitDate: '2025-01-14',
-    status: 'approved',
-    paymentReceipt: 'receipt_003.pdf',
-    email: 'ravi@goldengrain.lk',
-    phone: '+94712345678',
-    capacity: '300 MT/month',
-    type: 'Private',
-    certificateNumber: 'PMB/ML/2025/LR003',
-    approvedDate: '2025-01-16'
-  }
-]
-
 const LicenseRequestManagement = () => {
-  const [requests, setRequests] = useState(mockLicenseRequests)
+  const [requests, setRequests] = useState([])
+  const [loading, setLoading] = useState(true)
   const [selectedRequest, setSelectedRequest] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -67,11 +24,77 @@ const LicenseRequestManagement = () => {
   const [requestToReject, setRequestToReject] = useState(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [certificateData, setCertificateData] = useState(null)
+  const [processingAction, setProcessingAction] = useState(null)
+
+  // Fetch license applications from backend
+  const fetchApplications = useCallback(async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (statusFilter && statusFilter !== 'all') {
+        params.append('status', statusFilter)
+      }
+      if (searchTerm.trim()) {
+        params.append('search', searchTerm.trim())
+      }
+
+      const response = await fetch(`http://localhost:5000/api/licenses/admin/applications?${params}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch applications')
+      }
+
+      const data = await response.json()
+      
+      // Transform backend data to match frontend expectations
+      const transformedApplications = data.applications.map(app => ({
+        id: app.id,
+        applicationNumber: app.application_number,
+        millName: app.business_name,
+        ownerName: `${app.first_name} ${app.last_name}`,
+        location: `${app.city || ''}, ${app.district || ''}`.replace(', ,', ',').trim().replace(/^,|,$/g, ''),
+        submitDate: new Date(app.created_at).toLocaleDateString('en-CA'),
+        status: app.status,
+        paymentReceipt: 'receipt.pdf', // Backend stores as LONGTEXT
+        email: app.email,
+        phone: app.phone,
+        capacity: app.mill_capacity || 'Not specified',
+        type: app.business_type === 'private' ? 'Private' : 'Government',
+        licenseType: app.license_type,
+        comments: app.comments,
+        licenseNumber: app.license_number,
+        approvedDate: app.approved_date ? new Date(app.approved_date).toLocaleDateString('en-CA') : null,
+        rejectedDate: app.rejected_date ? new Date(app.rejected_date).toLocaleDateString('en-CA') : null,
+        rejectionReason: app.rejection_reason,
+        approvalComments: app.approval_comments
+      }))
+
+      setRequests(transformedApplications)
+    } catch (error) {
+      console.error('Error fetching applications:', error)
+      alert('Failed to fetch license applications. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }, [statusFilter, searchTerm])
+
+  // Load applications on component mount and when filters change
+  useEffect(() => {
+    fetchApplications()
+  }, [statusFilter, fetchApplications])
+
+  // Search with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchApplications()
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm, fetchApplications])
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.millName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.id.toLowerCase().includes(searchTerm.toLowerCase())
+                         request.applicationNumber.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -82,7 +105,7 @@ const LicenseRequestManagement = () => {
     const issueDate = new Date().toLocaleDateString('en-GB')
     
     return {
-      licenseNumber: `PMB/ML/${new Date().getFullYear()}/${request.id}`,
+      licenseNumber: request.licenseNumber || `PMB/ML/${new Date().getFullYear()}/${request.applicationNumber}`,
       holderName: request.ownerName,
       holderAddress: request.location,
       businessName: request.millName,
@@ -92,6 +115,117 @@ const LicenseRequestManagement = () => {
       expiryDate,
       issueDate,
       issuingOfficer: 'Director General, Paddy Marketing Board'
+    }
+  }
+
+  const handleApprove = async (requestId) => {
+    try {
+      setProcessingAction(requestId)
+      const request = requests.find(req => req.id === requestId)
+      if (!request) return
+
+      const response = await fetch(`http://localhost:5000/api/licenses/admin/approve/${requestId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          approvedBy: 'admin', // You might want to get this from admin session
+          comments: 'License approved by admin'
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to approve application')
+      }
+
+      const data = await response.json()
+      
+      // Update local state
+      setRequests(prev => prev.map(req => 
+        req.id === requestId 
+          ? { 
+              ...req, 
+              status: 'approved', 
+              approvedDate: new Date().toLocaleDateString('en-CA'),
+              licenseNumber: data.licenseNumber
+            }
+          : req
+      ))
+
+      // Generate certificate for display
+      const certificate = generateCertificate({
+        ...request,
+        licenseNumber: data.licenseNumber
+      })
+      
+      setCertificateData({ certificate, request })
+      setShowCertificateModal(true)
+      
+      alert(`License approved successfully! License Number: ${data.licenseNumber}`)
+      
+    } catch (error) {
+      console.error('Error approving application:', error)
+      alert(`Failed to approve application: ${error.message}`)
+    } finally {
+      setProcessingAction(null)
+    }
+  }
+
+  const handleReject = (request) => {
+    setRequestToReject(request)
+    setShowRejectionModal(true)
+  }
+
+  const confirmReject = async () => {
+    if (!rejectionReason.trim()) {
+      alert('Please provide a reason for rejection')
+      return
+    }
+
+    try {
+      setProcessingAction(requestToReject.id)
+      
+      const response = await fetch(`http://localhost:5000/api/licenses/admin/reject/${requestToReject.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rejectedBy: 'admin', // You might want to get this from admin session
+          rejectionReason: rejectionReason.trim()
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to reject application')
+      }
+
+      // Update local state
+      setRequests(prev => prev.map(req => 
+        req.id === requestToReject.id 
+          ? { 
+              ...req, 
+              status: 'rejected', 
+              rejectionReason, 
+              rejectedDate: new Date().toLocaleDateString('en-CA')
+            }
+          : req
+      ))
+      
+      setShowRejectionModal(false)
+      setRejectionReason('')
+      setRequestToReject(null)
+      
+      alert('License application rejected successfully.')
+      
+    } catch (error) {
+      console.error('Error rejecting application:', error)
+      alert(`Failed to reject application: ${error.message}`)
+    } finally {
+      setProcessingAction(null)
     }
   }
 
@@ -107,7 +241,7 @@ License issued under Section 10 of the Paddy Marketing Board Act No. 14 of 1971
 License Number: ${certificate.licenseNumber}
 
 1. Name of the License Holder: ${certificate.holderName}
-2. Address of the License Holder: ${certificate.holderAddress}
+2. Address of the License Holder: ${certificate.holderAddress}  
 3. Name of the Business and Business Location: ${certificate.businessName}, ${certificate.businessLocation}
 4. Capacity of the Milling Machine/Mill: ${certificate.millCapacity}
 5. Validity Period of the License:
@@ -149,73 +283,26 @@ This is an official government document. Any unauthorized reproduction is strict
     window.URL.revokeObjectURL(url)
   }
 
-  const handleApprove = (requestId) => {
-    const request = requests.find(req => req.id === requestId)
-    if (!request) return
-
-    // Generate certificate
-    const certificate = generateCertificate(request)
-    
-    // Update request status
-    setRequests(prev => prev.map(req => 
-      req.id === requestId 
-        ? { 
-            ...req, 
-            status: 'approved', 
-            approvedDate: new Date().toISOString().split('T')[0],
-            certificateNumber: certificate.licenseNumber
-          }
-        : req
-    ))
-    
-    // Set certificate data for modal display
-    setCertificateData({ certificate, request })
-    setShowCertificateModal(true)
-    
-    // Simulate email sending
-    setTimeout(() => {
-      alert(`License approved! Certificate ${certificate.licenseNumber} generated and email sent to ${request.email}`)
-    }, 1000)
-  }
-
-  const handleReject = (request) => {
-    setRequestToReject(request)
-    setShowRejectionModal(true)
-  }
-
-  const confirmReject = () => {
-    if (rejectionReason.trim()) {
-      setRequests(prev => prev.map(req => 
-        req.id === requestToReject.id 
-          ? { ...req, status: 'rejected', rejectionReason, rejectedDate: new Date().toISOString().split('T')[0] }
-          : req
-      ))
-      
-      setShowRejectionModal(false)
-      setRejectionReason('')
-      setRequestToReject(null)
-      
-      // Simulate email notification
-      alert('License rejected and notification email sent to mill owner.')
-    }
-  }
-
-  const getStatusBadge = (status) => {
-    const badges = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      approved: 'bg-green-100 text-green-800',
-      rejected: 'bg-red-100 text-red-800'
-    }
-    return badges[status] || 'bg-gray-100 text-gray-800'
-  }
-
-  const getStatusIcon = (status) => {
+  const getStatusColor = (status) => {
     switch (status) {
-      case 'pending': return <Clock size={16} />
-      case 'approved': return <Check size={16} />
-      case 'rejected': return <X size={16} />
-      default: return <AlertCircle size={16} />
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'approved':
+        return 'bg-green-100 text-green-800'
+      case 'rejected':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="animate-spin h-8 w-8 text-green-600" />
+        <span className="ml-2 text-gray-600">Loading license applications...</span>
+      </div>
+    )
   }
 
   return (
@@ -298,9 +385,8 @@ This is an official government document. Any unauthorized reproduction is strict
                     {new Date(request.submitDate).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(request.status)}`}>
-                      {getStatusIcon(request.status)}
-                      <span className="capitalize">{request.status}</span>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                      {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -325,17 +411,19 @@ This is an official government document. Any unauthorized reproduction is strict
                       <>
                         <button
                           onClick={() => handleApprove(request.id)}
-                          className="text-green-600 hover:text-green-900 inline-flex items-center"
+                          disabled={processingAction === request.id}
+                          className="text-green-600 hover:text-green-900 inline-flex items-center disabled:opacity-50"
                         >
                           <Check size={16} className="mr-1" />
-                          Approve
+                          {processingAction === request.id ? 'Approving...' : 'Approve'}
                         </button>
                         <button
                           onClick={() => handleReject(request)}
-                          className="text-red-600 hover:text-red-900 inline-flex items-center"
+                          disabled={processingAction === request.id}
+                          className="text-red-600 hover:text-red-900 inline-flex items-center disabled:opacity-50"
                         >
                           <X size={16} className="mr-1" />
-                          Reject
+                          {processingAction === request.id ? 'Processing...' : 'Reject'}
                         </button>
                       </>
                     )}
@@ -382,9 +470,8 @@ This is an official government document. Any unauthorized reproduction is strict
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Status</label>
-                  <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(selectedRequest.status)}`}>
-                    {getStatusIcon(selectedRequest.status)}
-                    <span className="capitalize">{selectedRequest.status}</span>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedRequest.status)}`}>
+                    {selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}
                   </span>
                 </div>
               </div>

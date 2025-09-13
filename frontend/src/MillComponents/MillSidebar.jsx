@@ -87,14 +87,14 @@ const MillSidebar = ({ onBackToHome }) => {
 
         {/* Navigation - takes up remaining space */}
         <nav className="flex-1 mt-8 overflow-y-auto">
-          {navItems.map(({ to, icon, label }) => (
+          {navItems.map(({ to, icon, label, style }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) =>
                 `group relative w-full flex items-center px-4 py-3 text-left hover:bg-white hover:bg-opacity-15 transition-colors backdrop-blur-sm ${
                   isActive ? 'bg-white bg-opacity-20 border-r-4 border-yellow-400 shadow-lg' : ''
-                } ${isCollapsed ? 'justify-center' : ''}`
+                } ${isCollapsed ? 'justify-center' : ''} ${style || ''}`
               }
             >
               <div className="drop-shadow-lg">{icon}</div>

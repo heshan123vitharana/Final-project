@@ -23,9 +23,52 @@ router.post('/apply', async (req, res) => {
         });
 
         if (!userId || !paymentReceipt || !brDocument) {
-            return res.status(400).json({ 
-                message: 'Missing required fields: userId, paymentReceipt, brDocument' 
+            return res.status(400).json({
+                message: 'Missing required fields: userId, paymentReceipt, brDocument'
             });
+        }
+
+        // Extract base64 data from file objects
+        let paymentReceiptData, brDocumentData;
+
+        if (typeof paymentReceipt === 'object' && paymentReceipt.data) {
+            paymentReceiptData = paymentReceipt.data;
+            console.log('📎 Payment receipt file:', paymentReceipt.name, paymentReceipt.size, 'bytes');
+
+            // Validate file size (10MB limit)
+            if (paymentReceipt.size > 10 * 1024 * 1024) {
+                return res.status(400).json({ message: 'Payment receipt file size should be less than 10MB' });
+            }
+
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+            if (!allowedTypes.includes(paymentReceipt.type)) {
+                return res.status(400).json({ message: 'Payment receipt must be an image (JPG, PNG) or PDF file' });
+            }
+        } else if (typeof paymentReceipt === 'string') {
+            paymentReceiptData = paymentReceipt;
+        } else {
+            return res.status(400).json({ message: 'Invalid payment receipt format' });
+        }
+
+        if (typeof brDocument === 'object' && brDocument.data) {
+            brDocumentData = brDocument.data;
+            console.log('📎 BR document file:', brDocument.name, brDocument.size, 'bytes');
+
+            // Validate file size (10MB limit)
+            if (brDocument.size > 10 * 1024 * 1024) {
+                return res.status(400).json({ message: 'BR document file size should be less than 10MB' });
+            }
+
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+            if (!allowedTypes.includes(brDocument.type)) {
+                return res.status(400).json({ message: 'BR document must be an image (JPG, PNG) or PDF file' });
+            }
+        } else if (typeof brDocument === 'string') {
+            brDocumentData = brDocument;
+        } else {
+            return res.status(400).json({ message: 'Invalid BR document format' });
         }
 
         // Check if user exists and get profile completeness
@@ -101,11 +144,11 @@ router.post('/apply', async (req, res) => {
         // Insert license application
         const [result] = await pool.execute(`
             INSERT INTO mill_licenses (
-                user_id, application_number, license_type, 
-                payment_receipt, br_document, comments, 
+                user_id, application_number, license_type,
+                payment_receipt, br_document, comments,
                 status, created_at
             ) VALUES (?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)
-        `, [userId, applicationNumber, licenseType, paymentReceipt, brDocument, comments]);
+        `, [userId, applicationNumber, licenseType, paymentReceiptData, brDocumentData, comments]);
 
         console.log(`✅ License application submitted for user ${userId}, application: ${applicationNumber}`);
         
@@ -287,9 +330,284 @@ router.get('/profile-check/:userId', async (req, res) => {
     }
 });
 
+// Get license application document
+router.get('/document/:applicationId/:documentType', async (req, res) => {
+    try {
+        const { applicationId, documentType } = req.params;
+
+        // Validate document type
+        if (!['payment_receipt', 'br_document'].includes(documentType)) {
+            return res.status(400).json({ message: 'Invalid document type' });
+        }
+
+        console.log(`📄 Fetching ${documentType} for application ${applicationId}`);
+
+        const [result] = await pool.execute(`
+            SELECT ${documentType}, application_number
+            FROM mill_licenses
+            WHERE id = ?
+        `, [applicationId]);
+
+        if (result.length === 0) {
+            return res.status(404).json({ message: 'License application not found' });
+        }
+
+        const document = result[0];
+        const documentData = document[documentType];
+
+        if (!documentData) {
+            return res.status(404).json({ message: 'Document not found' });
+        }
+
+        res.status(200).json({
+            message: 'Document retrieved successfully',
+            documentData: documentData,
+            applicationNumber: document.application_number
+        });
+
+    } catch (error) {
+        console.error('Error retrieving document:', error);
+        res.status(500).json({
+            message: 'Failed to retrieve document',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
 // Test endpoint to verify code changes
 router.get('/test-update', (req, res) => {
     res.json({ message: 'Updated code is working', timestamp: new Date().toISOString() });
+});
+
+// ADMIN ENDPOINTS
+
+// Get all license applications for admin (with filtering)
+router.get('/admin/applications', async (req, res) => {
+    try {
+        console.log('📋 Admin fetching all license applications');
+        const { status, search, limit = 50, offset = 0 } = req.query;
+
+        let query = `
+            SELECT ml.*, 
+                   u.first_name, u.last_name, u.email, u.phone, 
+                   u.business_name, u.business_type, u.address, u.city, u.district,
+                   u.mill_capacity, u.mill_location
+            FROM mill_licenses ml
+            JOIN users u ON ml.user_id = u.id
+        `;
+        
+        let queryParams = [];
+        let conditions = [];
+
+        // Filter by status if provided
+        if (status && status !== 'all') {
+            conditions.push('ml.status = ?');
+            queryParams.push(status);
+        }
+
+        // Search functionality
+        if (search) {
+            conditions.push('(u.business_name LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ? OR ml.application_number LIKE ?)');
+            const searchParam = `%${search}%`;
+            queryParams.push(searchParam, searchParam, searchParam, searchParam);
+        }
+
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
+        }
+
+        query += ' ORDER BY ml.created_at DESC LIMIT ? OFFSET ?';
+        queryParams.push(parseInt(limit), parseInt(offset));
+
+        const [applications] = await pool.execute(query, queryParams);
+
+        // Get total count for pagination
+        let countQuery = 'SELECT COUNT(*) as total FROM mill_licenses ml JOIN users u ON ml.user_id = u.id';
+        let countParams = [];
+        
+        if (conditions.length > 0) {
+            countQuery += ' WHERE ' + conditions.join(' AND ');
+            countParams = queryParams.slice(0, -2); // Remove limit and offset
+        }
+
+        const [countResult] = await pool.execute(countQuery, countParams);
+        const total = countResult[0].total;
+
+        console.log(`✅ Retrieved ${applications.length} license applications for admin`);
+
+        res.status(200).json({
+            message: 'License applications retrieved successfully',
+            applications,
+            pagination: {
+                total,
+                limit: parseInt(limit),
+                offset: parseInt(offset),
+                hasMore: (parseInt(offset) + parseInt(limit)) < total
+            }
+        });
+
+    } catch (error) {
+        console.error('Error retrieving license applications for admin:', error);
+        res.status(500).json({ 
+            message: 'Failed to retrieve license applications',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// Approve a license application
+router.put('/admin/approve/:applicationId', async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+        const { approvedBy, comments } = req.body;
+
+        console.log(`📋 Admin approving license application: ${applicationId}`);
+
+        // Get the application details
+        const [applicationResult] = await pool.execute(`
+            SELECT ml.*, u.first_name, u.last_name, u.email, u.business_name
+            FROM mill_licenses ml
+            JOIN users u ON ml.user_id = u.id
+            WHERE ml.id = ?
+        `, [applicationId]);
+
+        if (applicationResult.length === 0) {
+            return res.status(404).json({ message: 'License application not found' });
+        }
+
+        const application = applicationResult[0];
+
+        if (application.status !== 'pending') {
+            return res.status(400).json({ message: 'Only pending applications can be approved' });
+        }
+
+        // Generate license number
+        const currentYear = new Date().getFullYear();
+        const licenseNumber = `PMB/ML/${currentYear}/${application.application_number}`;
+
+        // Update application status to approved
+        const [updateResult] = await pool.execute(`
+            UPDATE mill_licenses 
+            SET status = 'approved', 
+                approved_date = CURRENT_TIMESTAMP,
+                license_number = ?,
+                approval_comments = ?
+            WHERE id = ?
+        `, [licenseNumber, comments || '', applicationId]);
+
+        if (updateResult.affectedRows === 0) {
+            return res.status(500).json({ message: 'Failed to update application status' });
+        }
+
+        console.log(`✅ License application ${applicationId} approved with license number: ${licenseNumber}`);
+
+        res.status(200).json({
+            message: 'License application approved successfully',
+            licenseNumber,
+            application: {
+                ...application,
+                status: 'approved',
+                license_number: licenseNumber,
+                approved_date: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('Error approving license application:', error);
+        res.status(500).json({ 
+            message: 'Failed to approve license application',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// Reject a license application
+router.put('/admin/reject/:applicationId', async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+        const { rejectedBy, rejectionReason } = req.body;
+
+        console.log(`📋 Admin rejecting license application: ${applicationId}`);
+
+        if (!rejectionReason || rejectionReason.trim() === '') {
+            return res.status(400).json({ message: 'Rejection reason is required' });
+        }
+
+        // Get the application details
+        const [applicationResult] = await pool.execute(`
+            SELECT ml.*, u.first_name, u.last_name, u.email, u.business_name
+            FROM mill_licenses ml
+            JOIN users u ON ml.user_id = u.id
+            WHERE ml.id = ?
+        `, [applicationId]);
+
+        if (applicationResult.length === 0) {
+            return res.status(404).json({ message: 'License application not found' });
+        }
+
+        const application = applicationResult[0];
+
+        if (application.status !== 'pending') {
+            return res.status(400).json({ message: 'Only pending applications can be rejected' });
+        }
+
+        // Update application status to rejected
+        const [updateResult] = await pool.execute(`
+            UPDATE mill_licenses 
+            SET status = 'rejected', 
+                rejected_date = CURRENT_TIMESTAMP,
+                rejection_reason = ?
+            WHERE id = ?
+        `, [rejectionReason, applicationId]);
+
+        if (updateResult.affectedRows === 0) {
+            return res.status(500).json({ message: 'Failed to update application status' });
+        }
+
+        console.log(`✅ License application ${applicationId} rejected with reason: ${rejectionReason}`);
+
+        res.status(200).json({
+            message: 'License application rejected successfully',
+            application: {
+                ...application,
+                status: 'rejected',
+                rejection_reason: rejectionReason,
+                rejected_date: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('Error rejecting license application:', error);
+        res.status(500).json({ 
+            message: 'Failed to reject license application',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// Get pending applications count for admin notifications
+router.get('/admin/pending-count', async (req, res) => {
+    try {
+        const [result] = await pool.execute(`
+            SELECT COUNT(*) as pendingCount 
+            FROM mill_licenses 
+            WHERE status = 'pending'
+        `);
+
+        const pendingCount = result[0].pendingCount;
+
+        res.status(200).json({
+            message: 'Pending applications count retrieved successfully',
+            pendingCount
+        });
+
+    } catch (error) {
+        console.error('Error getting pending applications count:', error);
+        res.status(500).json({ 
+            message: 'Failed to get pending applications count',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
 });
 
 module.exports = router;

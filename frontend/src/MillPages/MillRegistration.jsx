@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileCompletenessBar from '../components/ProfileCompletenessBar';
 
@@ -41,6 +41,14 @@ const MillRegistration = () => {
     brDocument: null
   });
 
+  // Test upload state
+  const [testFile, setTestFile] = useState(null);
+
+  // File input refs
+  const paymentReceiptRef = useRef(null);
+  const brDocumentRef = useRef(null);
+  const testFileRef = useRef(null);
+
   // Toggle section visibility
   const toggleApplySection = () => setShowApplySection(!showApplySection);
   const toggleStatusSection = () => setShowStatusSection(!showStatusSection);
@@ -65,13 +73,144 @@ const MillRegistration = () => {
   
   // Handle navigation to profile with refresh
   const handleCompleteProfile = () => {
-    console.log('🔄 Complete Profile button clicked!');
-    console.log('🔄 Current location:', window.location.href);
-    console.log('🔄 Navigating to Profile section...');
-    
-    // Use relative navigation like the sidebar does
     navigate('../profile');
-    console.log('✅ Navigation to profile completed');
+  };
+
+  // Improved file upload handler with better error detection
+  const handleFileUpload = async (fileInputRef, fieldName) => {
+    return new Promise((resolve, reject) => {
+      console.log(`🚀 Starting ${fieldName} upload process`);
+
+      // Create a new input element
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*,application/pdf';
+      fileInput.style.position = 'absolute';
+      fileInput.style.left = '-9999px';
+      fileInput.style.opacity = '0';
+      fileInput.style.pointerEvents = 'none';
+
+      let dialogClosed = false;
+      let fileProcessed = false;
+
+      // Handle file selection
+      fileInput.onchange = (e) => {
+        console.log(`📂 File dialog change event for ${fieldName}`);
+        dialogClosed = true;
+
+        const files = e.target.files;
+        console.log(`📁 Files object:`, files);
+        console.log(`📁 Files length:`, files?.length);
+
+        if (!files || files.length === 0) {
+          console.log(`❌ No file selected for ${fieldName} (user cancelled or no files)`);
+          cleanup();
+          resolve(null);
+          return;
+        }
+
+        const file = files[0];
+        console.log(`✅ File selected for ${fieldName}:`, {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified
+        });
+
+        fileProcessed = true;
+
+        // Validate file
+        if (file.size > 10 * 1024 * 1024) {
+          console.error(`❌ File too large: ${file.size} bytes`);
+          cleanup();
+          reject(new Error(`File size must be less than 10MB`));
+          return;
+        }
+
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+        if (!validTypes.includes(file.type)) {
+          console.error(`❌ Invalid file type: ${file.type}`);
+          cleanup();
+          reject(new Error(`File must be JPG, PNG, or PDF`));
+          return;
+        }
+
+        console.log(`🔄 Reading file: ${file.name}`);
+
+        // Read file
+        const reader = new FileReader();
+        reader.onload = () => {
+          console.log(`✅ File read successfully: ${reader.result?.length} characters`);
+          const fileData = {
+            data: reader.result,
+            name: file.name,
+            size: file.size,
+            type: file.type
+          };
+
+          // Update form data
+          setFormData(prev => ({
+            ...prev,
+            [fieldName]: fileData
+          }));
+
+          console.log(`✅ ${fieldName} upload completed successfully`);
+          cleanup();
+          resolve(fileData);
+        };
+
+        reader.onerror = () => {
+          console.error(`❌ Error reading file:`, reader.error);
+          cleanup();
+          reject(new Error(`Error reading file: ${reader.error?.message || 'Unknown error'}`));
+        };
+
+        reader.readAsDataURL(file);
+      };
+
+      // Handle dialog cancellation (focus back to window)
+      const handleWindowFocus = () => {
+        setTimeout(() => {
+          if (!fileProcessed && dialogClosed) {
+            console.log(`⚠️ File dialog was cancelled for ${fieldName}`);
+            cleanup();
+            resolve(null);
+          }
+        }, 100);
+      };
+
+      const cleanup = () => {
+        try {
+          if (document.body.contains(fileInput)) {
+            document.body.removeChild(fileInput);
+          }
+          window.removeEventListener('focus', handleWindowFocus);
+        } catch (error) {
+          console.log('Cleanup error (non-critical):', error.message);
+        }
+      };
+
+      // Add focus listener to detect dialog cancellation
+      window.addEventListener('focus', handleWindowFocus);
+
+      // Add input to DOM and trigger
+      document.body.appendChild(fileInput);
+
+      // Small delay to ensure proper DOM attachment
+      setTimeout(() => {
+        console.log(`🔍 Triggering file dialog for ${fieldName}`);
+        fileInput.click();
+      }, 50);
+
+      // Timeout fallback
+      setTimeout(() => {
+        if (!dialogClosed) {
+          console.log(`⏰ File dialog timeout for ${fieldName}`);
+          cleanup();
+          reject(new Error('File dialog timeout'));
+        }
+      }, 30000); // 30 second timeout
+    });
   };
 
   // Load data on component mount - self-contained to avoid dependency issues
@@ -92,28 +231,20 @@ const MillRegistration = () => {
         };
         
         const userId = getCurrentUserId();
-        console.log('📊 Fetching real profile data from API for user:', userId);
         
         // Fetch profile data from API using profile-check endpoint
         try {
           const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${userId}`);
           if (response.ok) {
             const apiData = await response.json();
-            console.log('✅ Profile data received:', apiData);
-            
             setProfileData(apiData.user || {});
             setProfileCompleteness(apiData.completeness || 0);
             setMissingFields(apiData.missingFields || []);
             setFieldStatus(apiData.fieldStatus || null);
             setCanApplyForLicense(apiData.canApplyForLicense || false);
-            
-            console.log(`📊 Real profile completeness from API: ${apiData.completeness}%`);
-            console.log(`🔍 Missing fields from API:`, apiData.missingFields);
-            console.log(`✅ Can apply for license:`, apiData.canApplyForLicense);
-            console.log(`📋 Field status:`, apiData.fieldStatus);
           }
         } catch (apiError) {
-          console.error('Error fetching from API:', apiError);
+          // Silent error handling
         }
         
         // Load license history from API
@@ -122,18 +253,15 @@ const MillRegistration = () => {
           if (historyResponse.ok) {
             const historyData = await historyResponse.json();
             setHistory(historyData.applications || []);
-            console.log('📜 License history loaded from API:', historyData.applications?.length || 0, 'applications');
           } else {
-            console.log('📜 No license applications found or API error');
             setHistory([]);
           }
         } catch (historyError) {
-          console.error('Error loading license history:', historyError);
           setHistory([]);
         }
         
       } catch (error) {
-        console.error('Error loading data:', error);
+        // Silent error handling
       } finally {
         setLoading(false);
       }
@@ -155,7 +283,6 @@ const MillRegistration = () => {
                 const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
                 return userData.id || userData.user_id || 1;
               } catch (error) {
-                console.error('Error getting user ID from session:', error);
                 return 1;
               }
             };
@@ -170,7 +297,7 @@ const MillRegistration = () => {
               setCanApplyForLicense(apiData.canApplyForLicense);
             }
           } catch (error) {
-            console.error('Error refreshing profile data:', error);
+            // Silent error handling
           } finally {
             setLoading(false);
           }
@@ -192,45 +319,11 @@ const MillRegistration = () => {
     };
   }, []); // No dependencies needed since logic is self-contained
 
-  // Handle file selection
-  const handleFileSelect = async (e, fieldName) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Validate file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
-      setError(`${fieldName} file size should be less than 10MB`);
-      return;
-    }
-
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) {
-      setError(`${fieldName} must be an image (JPG, PNG) or PDF file`);
-      return;
-    }
-
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData(prev => ({
-        ...prev,
-        [fieldName]: {
-          data: reader.result,
-          name: file.name,
-          size: file.size,
-          type: file.type
-        }
-      }));
-    };
-    reader.readAsDataURL(file);
-    setError('');
-  };
 
   // Submit license application to backend API
   const handleSubmitApplication = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.paymentReceipt || !formData.brDocument) {
       setError('Please upload both Payment Receipt and BR Document');
       return;
@@ -244,10 +337,9 @@ const MillRegistration = () => {
       const getCurrentUserId = () => {
         try {
           const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-          return userData.id || userData.user_id || 1; // fallback to 1 for development
+          return userData.id || userData.user_id || 1;
         } catch (error) {
-          console.error('Error getting user ID from session:', error);
-          return 1; // fallback to 1 for development
+          return 1;
         }
       };
 
@@ -262,15 +354,25 @@ const MillRegistration = () => {
         comments: formData.comments
       };
 
-      console.log('📋 Submitting license application:', {
-        userId,
-        licenseType: formData.licenseType,
-        hasPaymentReceipt: !!formData.paymentReceipt,
-        hasBrDocument: !!formData.brDocument,
-        comments: formData.comments?.substring(0, 50) + '...'
+      console.log('🚀 Submitting License Application');
+      console.log('👤 User ID:', userId);
+      console.log('📋 License Type:', formData.licenseType);
+      console.log('💳 Payment Receipt:', {
+        hasData: !!formData.paymentReceipt?.data,
+        name: formData.paymentReceipt?.name,
+        size: formData.paymentReceipt?.size,
+        type: formData.paymentReceipt?.type
       });
+      console.log('📄 BR Document:', {
+        hasData: !!formData.brDocument?.data,
+        name: formData.brDocument?.name,
+        size: formData.brDocument?.size,
+        type: formData.brDocument?.type
+      });
+      console.log('💬 Comments:', formData.comments);
 
       // Make API call to submit license application
+      console.log('📡 Making API call to http://localhost:5000/api/licenses/apply');
       const response = await fetch('http://localhost:5000/api/licenses/apply', {
         method: 'POST',
         headers: {
@@ -279,13 +381,16 @@ const MillRegistration = () => {
         body: JSON.stringify(applicationData),
       });
 
+      console.log('📡 Response status:', response.status, response.statusText);
+
       if (!response.ok) {
         const error = await response.json();
+        console.error('❌ API Error:', error);
         throw new Error(error.message || 'Failed to submit license application');
       }
 
       const result = await response.json();
-      console.log('✅ License application submitted successfully:', result);
+      console.log('✅ API Success:', result);
       
       // Add to history
       const newApplication = {
@@ -300,10 +405,19 @@ const MillRegistration = () => {
       
       alert(`License application submitted successfully! Application Number: ${result.applicationNumber}`);
       handleCloseForm();
-      console.log('📝 Demo license application submitted');
     } catch (error) {
-      console.error('Error submitting application:', error);
-      setError(error.message || 'Error while submitting application. Please try again.');
+
+      // More user-friendly error messages
+      let errorMessage = 'Error while submitting application. Please try again.';
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'Unable to connect to server. Please check your internet connection and try again.';
+      } else if (error.message.includes('already have a pending')) {
+        errorMessage = 'You already have a pending license application. Please wait for it to be processed.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      setError(errorMessage);
     } finally {
       setSubmitLoading(false);
     }
@@ -346,6 +460,128 @@ const MillRegistration = () => {
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
         🏭 Mill Registration
       </h1>
+
+      {/* DIRECT DOM FILE UPLOAD TEST */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <h2 className="text-lg font-semibold text-blue-800 mb-3">🔧 Direct DOM File Upload Test</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-medium mb-2">Method 3: Pure DOM Approach</p>
+              <button
+                onClick={() => {
+                  console.log('🚀 Starting pure DOM file upload test...');
+
+                  // Create input completely outside React
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*,application/pdf';
+                  input.style.display = 'none';
+
+                  // Add to body immediately
+                  document.body.appendChild(input);
+
+                  // Set up event listener using addEventListener
+                  input.addEventListener('change', function(event) {
+                    console.log('📂 DOM change event fired');
+                    console.log('Event:', event);
+                    console.log('Target:', event.target);
+                    console.log('Files:', event.target.files);
+
+                    const files = event.target.files;
+                    if (files && files.length > 0) {
+                      const file = files[0];
+                      console.log('✅ DOM file captured:', file.name, file.size);
+
+                      // Update React state
+                      setTestFile({
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        source: 'DOM'
+                      });
+
+                      alert(`File captured: ${file.name}`);
+                    } else {
+                      console.log('❌ No files in DOM event');
+                      alert('No files captured');
+                    }
+
+                    // Clean up
+                    document.body.removeChild(input);
+                  });
+
+                  // Trigger file dialog
+                  console.log('🔍 Triggering DOM file dialog...');
+                  input.click();
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
+              >
+                📁 Test DOM Upload
+              </button>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-2">Method 4: Visible Input + Manual Check</p>
+              <input
+                id="manualFileInput"
+                type="file"
+                accept="image/*,application/pdf"
+                className="w-full p-2 border rounded text-sm"
+              />
+              <button
+                onClick={() => {
+                  console.log('🔍 Manual check button clicked');
+                  const input = document.getElementById('manualFileInput');
+                  console.log('Input element:', input);
+                  console.log('Input files:', input.files);
+
+                  if (input.files && input.files.length > 0) {
+                    const file = input.files[0];
+                    console.log('✅ Manual file found:', file.name);
+                    setTestFile({
+                      name: file.name,
+                      size: file.size,
+                      type: file.type,
+                      source: 'manual'
+                    });
+                    alert(`Manual file found: ${file.name}`);
+                  } else {
+                    console.log('❌ No manual files found');
+                    alert('No files found in input');
+                  }
+                }}
+                className="mt-2 px-3 py-1 bg-gray-600 text-white rounded text-sm w-full"
+              >
+                Check for Files
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white p-3 rounded border">
+            <p className="text-sm font-medium">Status:</p>
+            {testFile ? (
+              <div className="text-xs mt-1 text-green-700">
+                <p>✅ File captured successfully!</p>
+                <p><strong>Name:</strong> {testFile.name}</p>
+                <p><strong>Size:</strong> {Math.round(testFile.size / 1024)}KB</p>
+                <p><strong>Type:</strong> {testFile.type}</p>
+                <p><strong>Method:</strong> {testFile.source}</p>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 mt-1">No file captured yet</p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+          <p className="text-sm text-yellow-800">
+            <strong>Instructions:</strong> Try Method 3 first (DOM approach). If that fails, try Method 4:
+            select a file in the visible input, then click "Check for Files".
+          </p>
+        </div>
+      </div>
 
       {/* Status of Licence Section */}
       <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
@@ -485,144 +721,285 @@ const MillRegistration = () => {
         )}
       </div>
 
-      {/* Apply / Renew Licence Form Section */}
+      {/* Modern License Application Form */}
       {showForm && (
-        <div className="bg-white rounded-lg shadow-md border border-green-200 p-6 max-w-2xl">
-          <h2 className="text-xl font-semibold mb-4 text-green-700">{formType} Licence Form</h2>
-          
-          {error && (
-            <div className="bg-red-50 border border-red-200 p-3 rounded mb-4">
-              <p className="text-red-700">{error}</p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 rounded-t-xl">
+              <h2 className="text-2xl font-bold flex items-center">
+                <svg className="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                {formType} Mill License Application
+              </h2>
+              <p className="text-green-100 mt-2">Please fill out all required information and upload necessary documents</p>
             </div>
-          )}
-          
-          <form onSubmit={handleSubmitApplication} className="space-y-4">
-            {/* Auto-populated profile data */}
-            {profileData && (
-              <div className="bg-gray-50 p-4 rounded border mb-4">
-                <h3 className="font-semibold text-gray-800 mb-3">Mill Information (Auto-populated)</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Mill Name</label>
-                    <input 
-                      type="text" 
-                      value={profileData.businessName || ''} 
-                      className="w-full p-2 border rounded bg-gray-100" 
-                      readOnly 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Owner Name</label>
-                    <input 
-                      type="text" 
-                      value={`${profileData.firstName || ''} ${profileData.lastName || ''}`.trim()} 
-                      className="w-full p-2 border rounded bg-gray-100" 
-                      readOnly 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Email</label>
-                    <input 
-                      type="email" 
-                      value={profileData.email || ''} 
-                      className="w-full p-2 border rounded bg-gray-100" 
-                      readOnly 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Phone</label>
-                    <input 
-                      type="text" 
-                      value={profileData.phone || ''} 
-                      className="w-full p-2 border rounded bg-gray-100" 
-                      readOnly 
-                    />
-                  </div>
+
+            {error && (
+              <div className="m-6 bg-red-50 border border-red-200 p-4 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-red-700 font-medium">{error}</p>
                 </div>
               </div>
             )}
 
-            {/* License type selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">License Type</label>
-              <select 
-                value={formData.licenseType}
-                onChange={(e) => setFormData(prev => ({ ...prev, licenseType: e.target.value }))}
-                className="w-full p-2 border rounded"
-                required
-              >
-                <option value="Standard Mill License">Standard Mill License</option>
-                <option value="Premium Mill License">Premium Mill License</option>
-                <option value="Industrial Mill License">Industrial Mill License</option>
-              </select>
-            </div>
+            <form onSubmit={handleSubmitApplication} className="p-6 space-y-8">
+              {/* Mill Information Section */}
+              {profileData && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    Mill Information (Auto-populated)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Mill Name</label>
+                      <input
+                        type="text"
+                        value={profileData.businessName || ''}
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Owner Name</label>
+                      <input
+                        type="text"
+                        value={`${profileData.firstName || ''} ${profileData.lastName || ''}`.trim()}
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={profileData.email || ''}
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <input
+                        type="text"
+                        value={profileData.phone || ''}
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            {/* Document uploads */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Payment Receipt *
-                </label>
-                <input 
-                  type="file"
-                  accept="image/*,application/pdf"
-                  onChange={(e) => handleFileSelect(e, 'paymentReceipt')}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-                {formData.paymentReceipt && (
-                  <p className="text-sm text-green-600 mt-1">✓ {formData.paymentReceipt.name}</p>
-                )}
+              {/* License Type Section */}
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  License Type Selection
+                </h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Choose License Type</label>
+                  <select
+                    value={formData.licenseType}
+                    onChange={(e) => setFormData(prev => ({ ...prev, licenseType: e.target.value }))}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="Standard Mill License">Standard Mill License - Basic Operations</option>
+                    <option value="Premium Mill License">Premium Mill License - Advanced Features</option>
+                    <option value="Industrial Mill License">Industrial Mill License - Large Scale Operations</option>
+                  </select>
+                </div>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Business Registration (BR) Document *
-                </label>
-                <input 
-                  type="file"
-                  accept="image/*,application/pdf"
-                  onChange={(e) => handleFileSelect(e, 'brDocument')}
-                  className="w-full p-2 border rounded"
-                  required
-                />
-                {formData.brDocument && (
-                  <p className="text-sm text-green-600 mt-1">✓ {formData.brDocument.name}</p>
-                )}
+
+              {/* Document Upload Section */}
+              <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  Required Documents
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">Please upload clear, readable copies of the following documents (JPG, PNG, or PDF format, max 10MB each):</p>
+
+                {/* WORKING FILE UPLOADS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Payment Receipt Upload - WORKING */}
+                  <div className="bg-white p-4 border border-blue-200 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Payment Receipt * (Required)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          console.log('🚀 Starting Payment Receipt upload...');
+                          await handleFileUpload(paymentReceiptRef, 'paymentReceipt');
+                          console.log('✅ Payment Receipt uploaded successfully!');
+                        } catch (error) {
+                          console.error('❌ Payment Receipt upload failed:', error);
+                          setError(`Payment receipt upload failed: ${error.message}`);
+                        }
+                      }}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      📁 Select Payment Receipt
+                    </button>
+                    <input ref={paymentReceiptRef} type="file" style={{ display: 'none' }} />
+
+                    {formData.paymentReceipt && (
+                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+                        <p className="text-sm text-green-700 font-medium">
+                          ✅ {formData.paymentReceipt.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Size: {Math.round(formData.paymentReceipt.size / 1024)}KB | Type: {formData.paymentReceipt.type}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* BR Document Upload - WORKING */}
+                  <div className="bg-white p-4 border border-blue-200 rounded-lg">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Business Registration (BR) Document * (Required)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          console.log('🚀 Starting BR Document upload...');
+                          await handleFileUpload(brDocumentRef, 'brDocument');
+                          console.log('✅ BR Document uploaded successfully!');
+                        } catch (error) {
+                          console.error('❌ BR Document upload failed:', error);
+                          setError(`BR document upload failed: ${error.message}`);
+                        }
+                      }}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      📄 Select BR Document
+                    </button>
+                    <input ref={brDocumentRef} type="file" style={{ display: 'none' }} />
+
+                    {formData.brDocument && (
+                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+                        <p className="text-sm text-green-700 font-medium">
+                          ✅ {formData.brDocument.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Size: {Math.round(formData.brDocument.size / 1024)}KB | Type: {formData.brDocument.type}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Comments */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Comments (Optional)</label>
-              <textarea 
-                value={formData.comments}
-                onChange={(e) => setFormData(prev => ({ ...prev, comments: e.target.value }))}
-                placeholder="Any additional information or special requests..."
-                className="w-full p-2 border rounded" 
-                rows="4" 
-              />
-            </div>
+              {/* Comments Section */}
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                  </svg>
+                  Additional Comments (Optional)
+                </h3>
+                <textarea
+                  value={formData.comments}
+                  onChange={(e) => setFormData(prev => ({ ...prev, comments: e.target.value }))}
+                  placeholder="Please provide any additional information, special requests, or comments regarding your license application..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                  rows="4"
+                />
+              </div>
 
-            {/* Submit and Cancel buttons */}
-            <div className="flex space-x-4">
-              <button 
-                type="submit" 
-                disabled={submitLoading}
-                className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {submitLoading ? 'Submitting...' : 'Submit Application'}
-              </button>
-              <button 
-                type="button" 
-                className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700" 
-                onClick={handleCloseForm}
-                disabled={submitLoading}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+              {/* Debug Section - TEMPORARY */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6">
+                <h4 className="text-sm font-semibold text-blue-800 mb-2">🔧 Debug Information</h4>
+                <div className="text-xs text-blue-700 space-y-1">
+                  <p>Payment Receipt: {formData.paymentReceipt ? '✅ Loaded' : '❌ Not loaded'}</p>
+                  <p>BR Document: {formData.brDocument ? '✅ Loaded' : '❌ Not loaded'}</p>
+                  <p>Form Valid: {(formData.paymentReceipt && formData.brDocument) ? '✅ Ready to submit' : '❌ Missing files'}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    console.log('🐛 DEBUG - Current Form State:', {
+                      hasPaymentReceipt: !!formData.paymentReceipt,
+                      hasbrDocument: !!formData.brDocument,
+                      paymentReceiptDetails: formData.paymentReceipt ? {
+                        name: formData.paymentReceipt.name,
+                        size: formData.paymentReceipt.size,
+                        type: formData.paymentReceipt.type,
+                        hasData: !!formData.paymentReceipt.data,
+                        dataLength: formData.paymentReceipt.data?.length || 0
+                      } : null,
+                      brDocumentDetails: formData.brDocument ? {
+                        name: formData.brDocument.name,
+                        size: formData.brDocument.size,
+                        type: formData.brDocument.type,
+                        hasData: !!formData.brDocument.data,
+                        dataLength: formData.brDocument.data?.length || 0
+                      } : null,
+                      licenseType: formData.licenseType,
+                      comments: formData.comments
+                    });
+                  }}
+                  className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                >
+                  Print Debug Info
+                </button>
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-6 border-t border-gray-200">
+                <div className="text-sm text-gray-500">
+                  <p>* Required fields must be completed before submission</p>
+                </div>
+                <div className="flex space-x-4">
+                  <button
+                    type="button"
+                    onClick={handleCloseForm}
+                    disabled={submitLoading}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitLoading || !formData.paymentReceipt || !formData.brDocument}
+                    className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-lg"
+                  >
+                    {submitLoading ? (
+                      <div className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Submitting Application...
+                      </div>
+                    ) : (
+                      <div className="flex items-center">
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                        Submit Application
+                      </div>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
