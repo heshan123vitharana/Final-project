@@ -54,10 +54,10 @@ router.post('/apply', async (req, res) => {
         const filledPersonalFields = personalFields.filter(field => field && field.toString().trim() !== '').length;
         const personalCompleteness = (filledPersonalFields / personalFields.length) * 50;
         
-        // Business Information (50%): business_name, business_type, mill_capacity, mill_location, license_number, registration_date
+        // Business Information (50%): business_name, business_type, mill_capacity, mill_location, registration_date
         const businessFields = [
-            user.business_name, user.business_type, user.mill_capacity, 
-            user.mill_location, user.license_number, user.registration_date
+            user.business_name, user.business_type, user.mill_capacity,
+            user.mill_location, user.registration_date
         ];
         const filledBusinessFields = businessFields.filter(field => field && field.toString().trim() !== '').length;
         const businessCompleteness = (filledBusinessFields / businessFields.length) * 50;
@@ -194,7 +194,6 @@ router.get('/profile-check/:userId', async (req, res) => {
             { field: user.business_type, name: 'Business Type' },
             { field: user.mill_capacity, name: 'Mill Capacity' },
             { field: user.mill_location, name: 'Mill Location' },
-            { field: user.license_number, name: 'License Number' },
             { field: user.registration_date, name: 'Registration Date' }
         ];
         
@@ -245,7 +244,6 @@ router.get('/profile-check/:userId', async (req, res) => {
                 businessType: !!user.business_type,
                 millCapacity: !!user.mill_capacity,
                 millLocation: !!user.mill_location,
-                licenseNumber: !!user.license_number,
                 registrationDate: !!user.registration_date
             },
             completedCount: filledPersonalFields.length + filledBusinessFields.length,
@@ -270,7 +268,6 @@ router.get('/profile-check/:userId', async (req, res) => {
                 businessType: user.business_type,
                 millCapacity: user.mill_capacity,
                 millLocation: user.mill_location,
-                licenseNumber: user.license_number,
                 registrationDate: user.registration_date,
                 hasPhoto: !!user.has_photo,
                 createdAt: user.created_at

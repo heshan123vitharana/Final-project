@@ -307,7 +307,6 @@ router.get('/completeness/:userId', async (req, res) => {
             business_type: user.business_type,
             mill_capacity: user.mill_capacity,
             mill_location: user.mill_location,
-            license_number: user.license_number,
             registration_date: user.registration_date
         }, null, 2));
 
@@ -335,13 +334,27 @@ router.get('/completeness/:userId', async (req, res) => {
         
         // Calculate filled fields for each category
         const filledPersonalFields = personalFields.filter(item => {
-            const isValid = item.field && item.field.toString().trim() !== '';
-            console.log(`📊 ${item.name}: ${item.field} -> ${isValid ? 'FILLED' : 'EMPTY'}`);
+            let isValid = false;
+            if (item.field !== null && item.field !== undefined) {
+                if (item.field instanceof Date) {
+                    isValid = true; // Valid date object
+                } else {
+                    isValid = item.field.toString().trim() !== '';
+                }
+            }
+            console.log(`📊 ${item.name}: ${item.field} (type: ${typeof item.field}) -> ${isValid ? 'FILLED' : 'EMPTY'}`);
             return isValid;
         });
         const filledBusinessFields = businessFields.filter(item => {
-            const isValid = item.field && item.field.toString().trim() !== '';
-            console.log(`📊 ${item.name}: ${item.field} -> ${isValid ? 'FILLED' : 'EMPTY'}`);
+            let isValid = false;
+            if (item.field !== null && item.field !== undefined) {
+                if (item.field instanceof Date) {
+                    isValid = true; // Valid date object
+                } else {
+                    isValid = item.field.toString().trim() !== '';
+                }
+            }
+            console.log(`📊 ${item.name}: ${item.field} (type: ${typeof item.field}) -> ${isValid ? 'FILLED' : 'EMPTY'}`);
             return isValid;
         });
         
@@ -373,6 +386,47 @@ router.get('/completeness/:userId', async (req, res) => {
 
         console.log(`📊 User ${userId} completeness: ${completeness}%`);
 
+        // Create field status for frontend display
+        const fieldStatus = {
+            totalCount: 13, // Fixed: 8 personal + 5 business = 13 fields (License Number removed)
+            completedCount: filledPersonalFields.length + filledBusinessFields.length,
+            personalCompleteness,
+            businessCompleteness,
+            personalInfo: {
+                firstName: !!(user.first_name && user.first_name.toString().trim() !== ''),
+                lastName: !!(user.last_name && user.last_name.toString().trim() !== ''),
+                email: !!(user.email && user.email.toString().trim() !== ''),
+                phone: !!(user.phone && user.phone.toString().trim() !== ''),
+                address: !!(user.address && user.address.toString().trim() !== ''),
+                city: !!(user.city && user.city.toString().trim() !== ''),
+                district: !!(user.district && user.district.toString().trim() !== ''),
+                postalCode: !!(user.postal_code && user.postal_code.toString().trim() !== '')
+            },
+            businessInfo: {
+                businessName: !!(user.business_name && user.business_name.toString().trim() !== ''),
+                businessType: !!(user.business_type && user.business_type.toString().trim() !== ''),
+                millCapacity: !!(user.mill_capacity && user.mill_capacity.toString().trim() !== ''),
+                millLocation: !!(user.mill_location && user.mill_location.toString().trim() !== ''),
+                registrationDate: !!(user.registration_date && user.registration_date.toString().trim() !== '')
+            }
+        };
+
+        console.log(`📊 Field Status Debug:`, {
+            personalFieldsLength: personalFields.length,
+            businessFieldsLength: businessFields.length,
+            totalCount: fieldStatus.totalCount,
+            filledPersonalLength: filledPersonalFields.length,
+            filledBusinessLength: filledBusinessFields.length,
+            completedCount: fieldStatus.completedCount
+        });
+
+        console.log(`🔍 CRITICAL DEBUG - Field counts:`, {
+            personalFieldsActualCount: personalFields.length,
+            businessFieldsActualCount: businessFields.length,
+            calculatedTotalCount: personalFields.length + businessFields.length,
+            fieldStatusTotalCount: fieldStatus.totalCount
+        });
+
         res.status(200).json({
             message: 'Profile completeness retrieved successfully',
             user: {
@@ -387,6 +441,7 @@ router.get('/completeness/:userId', async (req, res) => {
                 createdAt: user.created_at
             },
             completeness,
+            fieldStatus,
             canApplyForLicense: completeness === 100,
             missingFields
         });
@@ -454,7 +509,6 @@ router.get('/debug/:userId', async (req, res) => {
             business_type: user.business_type,
             mill_capacity: user.mill_capacity,
             mill_location: user.mill_location,
-            license_number: user.license_number,
             registration_date: user.registration_date
         }, null, 2));
 
@@ -529,7 +583,6 @@ router.get('/debug/:userId', async (req, res) => {
                 business_type: user.business_type,
                 mill_capacity: user.mill_capacity,
                 mill_location: user.mill_location,
-                license_number: user.license_number,
                 registration_date: user.registration_date,
                 has_photo: user.has_photo
             },
