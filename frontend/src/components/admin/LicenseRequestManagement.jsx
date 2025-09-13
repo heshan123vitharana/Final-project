@@ -1,16 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
-import { 
-  Check, 
-  X, 
-  Eye, 
-  Download, 
-  Search, 
+import {
+  Check,
+  X,
+  Eye,
+  Download,
+  Search,
   Filter,
   Clock,
   AlertCircle,
   FileCheck,
   RefreshCw
 } from 'lucide-react'
+import { toast } from 'react-toastify'
 
 const LicenseRequestManagement = () => {
   const [requests, setRequests] = useState([])
@@ -25,6 +26,9 @@ const LicenseRequestManagement = () => {
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [certificateData, setCertificateData] = useState(null)
   const [processingAction, setProcessingAction] = useState(null)
+  const [showDocumentModal, setShowDocumentModal] = useState(false)
+  const [documentData, setDocumentData] = useState(null)
+  const [documentType, setDocumentType] = useState('')
 
   // Fetch license applications from backend
   const fetchApplications = useCallback(async () => {
@@ -178,11 +182,11 @@ const LicenseRequestManagement = () => {
       setCertificateData({ certificate, request })
       setShowCertificateModal(true)
       
-      alert(`License approved successfully! License Number: ${data.licenseNumber}`)
+      toast.success(`License approved successfully! License Number: ${data.licenseNumber}`, { position: 'top-right', autoClose: 5000 })
       
     } catch (error) {
       console.error('Error approving application:', error)
-      alert(`Failed to approve application: ${error.message}`)
+      toast.error(`Failed to approve application: ${error.message}`, { position: 'top-right' })
     } finally {
       setProcessingAction(null)
     }
@@ -195,7 +199,7 @@ const LicenseRequestManagement = () => {
 
   const confirmReject = async () => {
     if (!rejectionReason.trim()) {
-      alert('Please provide a reason for rejection')
+      toast.warning('Please provide a reason for rejection', { position: 'top-right' })
       return
     }
 
@@ -234,11 +238,11 @@ const LicenseRequestManagement = () => {
       setRejectionReason('')
       setRequestToReject(null)
       
-      alert('License application rejected successfully.')
+      toast.success('License application rejected successfully.', { position: 'top-right' })
       
     } catch (error) {
       console.error('Error rejecting application:', error)
-      alert(`Failed to reject application: ${error.message}`)
+      toast.error(`Failed to reject application: ${error.message}`, { position: 'top-right' })
     } finally {
       setProcessingAction(null)
     }
@@ -296,6 +300,29 @@ This is an official government document. Any unauthorized reproduction is strict
     link.download = `PMB_License_Certificate_${request.id}_${certificate.holderName.replace(/\s+/g, '_')}.txt`
     link.click()
     window.URL.revokeObjectURL(url)
+  }
+
+  const handleViewDocument = async (applicationId, docType) => {
+    try {
+      console.log(`Fetching ${docType} for application ${applicationId}`)
+
+      const response = await fetch(`http://localhost:5000/api/licenses/document/${applicationId}/${docType}`)
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch document')
+      }
+
+      const data = await response.json()
+      console.log('Document data received:', data)
+
+      setDocumentData(data.documentData)
+      setDocumentType(docType)
+      setShowDocumentModal(true)
+
+    } catch (error) {
+      console.error('Error fetching document:', error)
+      toast.error('Failed to load document. Please try again.', { position: 'top-right' })
+    }
   }
 
   const getStatusColor = (status) => {
@@ -531,9 +558,23 @@ This is an official government document. Any unauthorized reproduction is strict
               
               <div>
                 <label className="block text-sm font-medium text-gray-700">Payment Receipt</label>
-                <button className="inline-flex items-center text-blue-600 hover:text-blue-800">
+                <button
+                  onClick={() => handleViewDocument(selectedRequest.id, 'payment_receipt')}
+                  className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                >
                   <Download size={16} className="mr-1" />
-                  {selectedRequest.paymentReceipt}
+                  View Payment Receipt
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">BR Document</label>
+                <button
+                  onClick={() => handleViewDocument(selectedRequest.id, 'br_document')}
+                  className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                >
+                  <Download size={16} className="mr-1" />
+                  View BR Document
                 </button>
               </div>
               
@@ -771,7 +812,7 @@ This is an official government document. Any unauthorized reproduction is strict
               <button
                 onClick={() => {
                   // Simulate sending email
-                  alert(`Certificate sent to ${certificateData.request.email}`)
+                  toast.success(`Certificate sent to ${certificateData.request.email}`, { position: 'top-right' })
                 }}
                 className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
               >
@@ -787,6 +828,80 @@ This is an official government document. Any unauthorized reproduction is strict
             
             <div className="mt-4 text-xs text-gray-500 text-center">
               This is an official government document. Any unauthorized reproduction is strictly prohibited.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Viewing Modal */}
+      {showDocumentModal && documentData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">
+                {documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowDocumentModal(false)
+                  setDocumentData(null)
+                  setDocumentType('')
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              {documentData ? (
+                <div className="text-center">
+                  <img
+                    src={`data:image/jpeg;base64,${documentData}`}
+                    alt={documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
+                    className="max-w-full h-auto mx-auto rounded-lg shadow-lg"
+                    onError={(e) => {
+                      // If image fails to load, try as PDF
+                      e.target.style.display = 'none'
+                      const pdfViewer = document.createElement('iframe')
+                      pdfViewer.src = `data:application/pdf;base64,${documentData}`
+                      pdfViewer.width = '100%'
+                      pdfViewer.height = '600px'
+                      pdfViewer.style.border = 'none'
+                      e.target.parentNode.appendChild(pdfViewer)
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  Document not available
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  const link = document.createElement('a')
+                  link.href = `data:application/octet-stream;base64,${documentData}`
+                  link.download = `${documentType}_${Date.now()}.pdf`
+                  link.click()
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+              >
+                <Download className="mr-2" size={16} />
+                Download
+              </button>
+              <button
+                onClick={() => {
+                  setShowDocumentModal(false)
+                  setDocumentData(null)
+                  setDocumentType('')
+                }}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

@@ -387,12 +387,74 @@ router.get('/test', (req, res) => {
     res.json({ message: 'License routes are working' });
 });
 
-// Get all license applications for admin (with filtering) - simplified version
+// Simple statistics test route
+router.get('/admin/stats-test', (req, res) => {
+    console.log('📊 Simple stats test route hit');
+    res.json({ message: 'Statistics test route working' });
+});
+
+// Get all license applications for admin (with filtering) - enhanced version
 router.get('/admin/applications', async (req, res) => {
-    console.log('📋 Admin fetching all license applications - SIMPLE VERSION');
+    console.log('📋 Admin fetching all license applications - ENHANCED VERSION');
     try {
-        const query = 'SELECT * FROM mill_licenses LIMIT 10';
-        const [applications] = await pool.execute(query);
+        const { status, search } = req.query;
+
+        let query = `
+            SELECT
+                ml.id,
+                ml.application_number,
+                ml.license_type,
+                ml.status,
+                ml.created_at,
+                ml.approved_date,
+                ml.rejected_date,
+                ml.rejection_reason,
+                ml.license_number,
+                ml.approval_comments,
+                u.first_name,
+                u.last_name,
+                u.email,
+                u.phone,
+                u.business_name,
+                u.business_type,
+                u.address,
+                u.city,
+                u.district,
+                u.mill_capacity,
+                u.mill_location
+            FROM mill_licenses ml
+            JOIN users u ON ml.user_id = u.id
+        `;
+
+        const queryParams = [];
+        const conditions = [];
+
+        if (status && status !== 'all') {
+            conditions.push('ml.status = ?');
+            queryParams.push(status);
+        }
+
+        if (search && search.trim()) {
+            conditions.push(`(
+                u.business_name LIKE ? OR
+                u.first_name LIKE ? OR
+                u.last_name LIKE ? OR
+                ml.application_number LIKE ?
+            )`);
+            const searchTerm = `%${search.trim()}%`;
+            queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+        }
+
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
+        }
+
+        query += ' ORDER BY ml.created_at DESC';
+
+        console.log('Executing query:', query);
+        console.log('With params:', queryParams);
+
+        const [applications] = await pool.execute(query, queryParams);
 
         console.log(`✅ Retrieved ${applications.length} applications`);
 
@@ -544,8 +606,8 @@ router.put('/admin/reject/:applicationId', async (req, res) => {
 router.get('/admin/pending-count', async (req, res) => {
     try {
         const [result] = await pool.execute(`
-            SELECT COUNT(*) as pendingCount 
-            FROM mill_licenses 
+            SELECT COUNT(*) as pendingCount
+            FROM mill_licenses
             WHERE status = 'pending'
         `);
 
@@ -558,11 +620,29 @@ router.get('/admin/pending-count', async (req, res) => {
 
     } catch (error) {
         console.error('Error getting pending applications count:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Failed to get pending applications count',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
         });
     }
+});
+
+// Get license statistics for reports - test version
+router.get('/admin/statistics', (req, res) => {
+    console.log('📊 Admin requesting license statistics');
+    res.status(200).json({
+        message: 'Statistics endpoint is working!',
+        data: {
+            overall: {
+                totalApplications: 1,
+                approved: 1,
+                pending: 0,
+                rejected: 0
+            },
+            regional: [],
+            millTypes: []
+        }
+    });
 });
 
 module.exports = router;

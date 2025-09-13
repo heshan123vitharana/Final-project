@@ -1,13 +1,14 @@
-import { useState } from 'react'
-import { 
-  Download, 
-  FileText, 
-  Calendar, 
-  Filter, 
+import { useState, useEffect } from 'react'
+import {
+  Download,
+  FileText,
+  Calendar,
+  Filter,
   BarChart3,
   TrendingUp,
   Users,
-  Package
+  Package,
+  RefreshCw
 } from 'lucide-react'
 
 const Reports = () => {
@@ -17,8 +18,10 @@ const Reports = () => {
   })
   const [selectedRegion, setSelectedRegion] = useState('all')
   const [selectedMillType, setSelectedMillType] = useState('all')
-  const [reportType, setReportType] = useState('stock')
+  const [reportType, setReportType] = useState('licenses')
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [reportData, setReportData] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   const regions = [
     'All Regions',
@@ -34,15 +37,88 @@ const Reports = () => {
   ]
 
   const reportTypes = [
+    { id: 'licenses', name: 'License Status Report', icon: FileText },
     { id: 'stock', name: 'Stock Levels Report', icon: Package },
     { id: 'production', name: 'Production Report', icon: BarChart3 },
     { id: 'financial', name: 'Financial Report', icon: TrendingUp },
-    { id: 'mills', name: 'Mill Performance Report', icon: Users },
-    { id: 'licenses', name: 'License Status Report', icon: FileText }
+    { id: 'mills', name: 'Mill Performance Report', icon: Users }
   ]
 
-  // Mock report data
-  const reportData = {
+  // Fetch real license data
+  const fetchLicenseStatistics = async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (dateRange.from) params.append('from', dateRange.from)
+      if (dateRange.to) params.append('to', dateRange.to)
+      if (selectedRegion !== 'all') params.append('region', selectedRegion)
+
+      const response = await fetch(`http://localhost:5000/api/licenses/admin/statistics?${params}`)
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch statistics')
+      }
+
+      const data = await response.json()
+      console.log('License statistics:', data)
+
+      const { overall, regional, millTypes } = data.data
+
+      const processedData = {
+        licenses: {
+          summary: {
+            totalApplications: overall.totalApplications || 0,
+            approved: overall.approved || 0,
+            pending: overall.pending || 0,
+            rejected: overall.rejected || 0,
+            approvalRate: overall.totalApplications > 0 ? Math.round((overall.approved / overall.totalApplications) * 100) : 0
+          },
+          breakdown: [
+            { category: 'Approved', value: overall.approved || 0, percentage: overall.totalApplications > 0 ? Math.round((overall.approved / overall.totalApplications) * 100) : 0 },
+            { category: 'Pending', value: overall.pending || 0, percentage: overall.totalApplications > 0 ? Math.round((overall.pending / overall.totalApplications) * 100) : 0 },
+            { category: 'Rejected', value: overall.rejected || 0, percentage: overall.totalApplications > 0 ? Math.round((overall.rejected / overall.totalApplications) * 100) : 0 }
+          ]
+        }
+      }
+
+      setReportData(processedData)
+
+    } catch (error) {
+      console.error('Error fetching license statistics:', error)
+      // Fallback to empty data
+      setReportData({
+        licenses: {
+          summary: {
+            totalApplications: 0,
+            approved: 0,
+            pending: 0,
+            rejected: 0,
+            approvalRate: 0
+          },
+          breakdown: [
+            { category: 'Approved', value: 0, percentage: 0 },
+            { category: 'Pending', value: 0, percentage: 0 },
+            { category: 'Rejected', value: 0, percentage: 0 }
+          ]
+        }
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Load data when component mounts or filters change
+  useEffect(() => {
+    if (reportType === 'licenses') {
+      fetchLicenseStatistics()
+    } else {
+      // For other report types, use mock data for now
+      setReportData(mockReportData)
+    }
+  }, [reportType, dateRange, selectedRegion])
+
+  // Mock report data for other report types
+  const mockReportData = {
     stock: {
       summary: {
         totalStock: 20700,
@@ -383,7 +459,16 @@ const Reports = () => {
     return csv
   }
 
-  const currentReportData = reportData[reportType]
+  const currentReportData = reportData?.[reportType]
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="animate-spin h-8 w-8 text-green-600" />
+        <span className="ml-2 text-gray-600">Loading report data...</span>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -542,49 +627,69 @@ const Reports = () => {
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {Object.entries(currentReportData.summary).map(([key, value]) => (
-            <div key={key} className="bg-gray-50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-600 capitalize">
-                {key.replace(/([A-Z])/g, ' $1').trim()}
-              </h4>
-              <p className="text-2xl font-bold text-gray-800 mt-1">
-                {typeof value === 'number' && key.toLowerCase().includes('rate') ? `${value}%` :
-                 typeof value === 'number' && key.toLowerCase().includes('revenue') ? `$${value.toLocaleString()}` :
-                 typeof value === 'number' ? value.toLocaleString() : value}
-              </p>
-            </div>
-          ))}
+        {/* Refresh Button */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => {
+              if (reportType === 'licenses') {
+                fetchLicenseStatistics()
+              }
+            }}
+            disabled={loading}
+            className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh Data
+          </button>
         </div>
 
-        {/* Breakdown Chart */}
-        <div className="space-y-4">
-          <h4 className="text-md font-semibold text-gray-800">Breakdown Analysis</h4>
-          <div className="space-y-3">
-            {currentReportData.breakdown.map((item, index) => (
-              <div key={index} className="flex items-center space-x-4">
-                <div className="w-32 text-sm text-gray-600">{item.category}</div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div
-                        className="h-2 rounded-full bg-green-500"
-                        style={{ width: `${item.percentage}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-sm text-gray-600 w-12">{item.percentage}%</div>
-                    <div className="text-sm font-medium text-gray-800 w-20 text-right">
-                      {typeof item.value === 'number' && reportType === 'financial' ? 
-                        `$${item.value.toLocaleString()}` : 
-                        item.value.toLocaleString()}
-                    </div>
-                  </div>
-                </div>
+        {/* Summary Cards */}
+        {currentReportData && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {Object.entries(currentReportData.summary).map(([key, value]) => (
+              <div key={key} className="bg-gray-50 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-600 capitalize">
+                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                </h4>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  {typeof value === 'number' && key.toLowerCase().includes('rate') ? `${value}%` :
+                   typeof value === 'number' && key.toLowerCase().includes('revenue') ? `$${value.toLocaleString()}` :
+                   typeof value === 'number' ? value.toLocaleString() : value}
+                </p>
               </div>
             ))}
           </div>
-        </div>
+        )}
+
+        {/* Breakdown Chart */}
+        {currentReportData && (
+          <div className="space-y-4">
+            <h4 className="text-md font-semibold text-gray-800">Breakdown Analysis</h4>
+            <div className="space-y-3">
+              {currentReportData.breakdown.map((item, index) => (
+                <div key={index} className="flex items-center space-x-4">
+                  <div className="w-32 text-sm text-gray-600">{item.category}</div>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div
+                          className="h-2 rounded-full bg-green-500"
+                          style={{ width: `${Math.max(item.percentage, 5)}%` }}
+                        ></div>
+                      </div>
+                      <div className="text-sm text-gray-600 w-12">{item.percentage}%</div>
+                      <div className="text-sm font-medium text-gray-800 w-20 text-right">
+                        {typeof item.value === 'number' && reportType === 'financial' ?
+                          `$${item.value.toLocaleString()}` :
+                          item.value.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Report Notes */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import ProfileCompletenessBar from '../components/ProfileCompletenessBar';
 
 const MillRegistration = () => {
@@ -41,6 +42,36 @@ const MillRegistration = () => {
     brDocument: null
   });
 
+  // License type options with payment amounts
+  const licenseTypes = [
+    {
+      id: 'standard',
+      name: 'Standard Mill License',
+      description: 'Basic Operations - Small to medium scale milling',
+      price: 15000,
+      features: ['Basic milling operations', 'Up to 50 MT/day capacity', 'Standard support', '1-year validity']
+    },
+    {
+      id: 'premium',
+      name: 'Premium Mill License',
+      description: 'Advanced Features - Medium to large scale operations',
+      price: 35000,
+      features: ['Advanced milling features', 'Up to 200 MT/day capacity', 'Priority support', '2-year validity', 'Quality certifications']
+    },
+    {
+      id: 'industrial',
+      name: 'Industrial Mill License',
+      description: 'Large Scale Operations - Industrial level milling',
+      price: 75000,
+      features: ['Industrial scale operations', 'Unlimited capacity', '24/7 premium support', '3-year validity', 'Export certifications', 'Advanced monitoring']
+    }
+  ];
+
+  // Get current license type data
+  const getCurrentLicenseType = () => {
+    return licenseTypes.find(type => type.name === formData.licenseType) || licenseTypes[0];
+  };
+
 
   // File input refs
   const paymentReceiptRef = useRef(null);
@@ -53,8 +84,8 @@ const MillRegistration = () => {
 
   // Open and close form handlers
   const handleOpenForm = (type) => { setFormType(type); setShowForm(true); };
-  const handleCloseForm = () => { 
-    setFormType(''); 
+  const handleCloseForm = () => {
+    setFormType('');
     setShowForm(false);
     setFormData({
       licenseType: 'Standard Mill License',
@@ -354,7 +385,10 @@ const MillRegistration = () => {
       
       setHistory(prev => [newApplication, ...prev]);
       
-      alert(`License application submitted successfully! Application Number: ${result.applicationNumber}`);
+      toast.success(`License application submitted successfully! Application Number: ${result.applicationNumber}`, {
+        position: 'top-right',
+        autoClose: 5000
+      });
       handleCloseForm();
     } catch (error) {
 
@@ -585,14 +619,24 @@ const MillRegistration = () => {
                     <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    Mill Information (Auto-populated)
+                    Mill Information (Auto-populated from your profile)
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Basic Information */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Mill Name</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Mill/Business Name</label>
                       <input
                         type="text"
-                        value={profileData.businessName || ''}
+                        value={profileData.businessName || profileData.business_name || ''}
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
+                      <input
+                        type="text"
+                        value={profileData.businessType || profileData.business_type || ''}
                         className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
                         readOnly
                       />
@@ -601,13 +645,13 @@ const MillRegistration = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Owner Name</label>
                       <input
                         type="text"
-                        value={`${profileData.firstName || ''} ${profileData.lastName || ''}`.trim()}
+                        value={`${profileData.firstName || profileData.first_name || ''} ${profileData.lastName || profileData.last_name || ''}`.trim()}
                         className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
                         readOnly
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                       <input
                         type="email"
                         value={profileData.email || ''}
@@ -616,7 +660,7 @@ const MillRegistration = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                       <input
                         type="text"
                         value={profileData.phone || ''}
@@ -624,11 +668,127 @@ const MillRegistration = () => {
                         readOnly
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">NIC Number</label>
+                      <input
+                        type="text"
+                        value={profileData.nic || profileData.nicNumber || ''}
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                        readOnly
+                      />
+                    </div>
+                  </div>
+
+                  {/* Address Information */}
+                  <h4 className="text-md font-semibold text-gray-800 mt-6 mb-4 flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Address Details
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                      <input
+                        type="text"
+                        value={profileData.address || ''}
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                      <input
+                        type="text"
+                        value={profileData.city || ''}
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
+                      <input
+                        type="text"
+                        value={profileData.district || ''}
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                        readOnly
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mill Specific Information */}
+                  <h4 className="text-md font-semibold text-gray-800 mt-6 mb-4 flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                    Mill Specifications
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Mill Capacity</label>
+                      <input
+                        type="text"
+                        value={profileData.millCapacity || profileData.mill_capacity || ''}
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Mill Location</label>
+                      <input
+                        type="text"
+                        value={profileData.millLocation || profileData.mill_location || ''}
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                        readOnly
+                      />
+                    </div>
+                  </div>
+
+                  {/* Registration Information */}
+                  {(profileData.registrationDate || profileData.registration_date) && (
+                    <>
+                      <h4 className="text-md font-semibold text-gray-800 mt-6 mb-4 flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-1 1m7-1l1 1m-6 6l-1-1m2 2h4m-6 0a2 2 0 002 2v1a2 2 0 002 2h2a2 2 0 002-2v-1a2 2 0 002-2m-6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2z" />
+                        </svg>
+                        Registration Details
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Registration Date</label>
+                          <input
+                            type="text"
+                            value={profileData.registrationDate || new Date(profileData.registration_date).toLocaleDateString('en-GB') || ''}
+                            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                            readOnly
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Profile Status</label>
+                          <input
+                            type="text"
+                            value={canApplyForLicense ? 'Profile Complete - Ready for License Application' : 'Profile Incomplete'}
+                            className={`w-full p-3 border border-gray-300 rounded-lg ${canApplyForLicense ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}
+                            readOnly
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="mt-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
+                    <p className="text-blue-800 text-sm flex items-center">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      All information above is automatically populated from your profile. If any details need to be updated, please update your profile first.
+                    </p>
                   </div>
                 </div>
               )}
 
-              {/* License Type Section */}
+              {/* License Type Selection Section */}
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                   <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -636,18 +796,100 @@ const MillRegistration = () => {
                   </svg>
                   License Type Selection
                 </h3>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Choose License Type</label>
-                  <select
-                    value={formData.licenseType}
-                    onChange={(e) => setFormData(prev => ({ ...prev, licenseType: e.target.value }))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="Standard Mill License">Standard Mill License - Basic Operations</option>
-                    <option value="Premium Mill License">Premium Mill License - Advanced Features</option>
-                    <option value="Industrial Mill License">Industrial Mill License - Large Scale Operations</option>
-                  </select>
+
+                {/* License Type Selection Cards */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                  {licenseTypes.map((type) => (
+                    <div
+                      key={type.id}
+                      className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all duration-200 ${
+                        formData.licenseType === type.name
+                          ? 'border-green-600 bg-green-50 shadow-md'
+                          : 'border-gray-300 bg-white hover:border-green-400 hover:shadow-sm'
+                      }`}
+                      onClick={() => setFormData(prev => ({ ...prev, licenseType: type.name }))}
+                    >
+                      {/* Selection Indicator */}
+                      {formData.licenseType === type.name && (
+                        <div className="absolute -top-2 -right-2 bg-green-600 text-white rounded-full p-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+
+                      <div className="text-center">
+                        <h4 className={`font-semibold text-lg mb-2 ${
+                          formData.licenseType === type.name ? 'text-green-800' : 'text-gray-800'
+                        }`}>
+                          {type.name}
+                        </h4>
+
+                        <p className={`text-sm mb-3 ${
+                          formData.licenseType === type.name ? 'text-green-700' : 'text-gray-600'
+                        }`}>
+                          {type.description}
+                        </p>
+
+                        <div className={`text-2xl font-bold mb-3 ${
+                          formData.licenseType === type.name ? 'text-green-800' : 'text-gray-900'
+                        }`}>
+                          Rs. {type.price.toLocaleString()}
+                        </div>
+
+                        <div className="space-y-1">
+                          {type.features.slice(0, 3).map((feature, index) => (
+                            <div key={index} className={`text-xs flex items-center justify-center ${
+                              formData.licenseType === type.name ? 'text-green-700' : 'text-gray-600'
+                            }`}>
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              {feature}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Selected License Details */}
+                <div className="bg-white p-4 rounded-lg border border-green-200">
+                  <h4 className="font-semibold text-gray-800 mb-3">Selected License Details</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="font-medium text-gray-700">License Type:</span>
+                      <p className="text-green-700 font-semibold">{getCurrentLicenseType().name}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Payment Amount:</span>
+                      <p className="text-green-700 font-bold text-lg">Rs. {getCurrentLicenseType().price.toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <span className="font-medium text-gray-700">Features Included:</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                      {getCurrentLicenseType().features.map((feature, index) => (
+                        <div key={index} className="flex items-center text-sm text-gray-700">
+                          <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          {feature}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-yellow-800 text-sm flex items-center">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Please ensure you upload the payment receipt for <strong>Rs. {getCurrentLicenseType().price.toLocaleString()}</strong> when submitting your application.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -666,7 +908,7 @@ const MillRegistration = () => {
                   {/* Payment Receipt Upload - WORKING */}
                   <div className="bg-white p-4 border border-blue-200 rounded-lg">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Payment Receipt * (Required)
+                      Payment Receipt * (Required - Rs. {getCurrentLicenseType().price.toLocaleString()})
                     </label>
                     <button
                       type="button"
