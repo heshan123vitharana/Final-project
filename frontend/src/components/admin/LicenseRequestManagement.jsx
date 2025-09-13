@@ -38,40 +38,55 @@ const LicenseRequestManagement = () => {
         params.append('search', searchTerm.trim())
       }
 
+      console.log('Fetching applications from:', `http://localhost:5000/api/licenses/admin/applications?${params}`)
+
       const response = await fetch(`http://localhost:5000/api/licenses/admin/applications?${params}`)
+      console.log('Response status:', response.status, response.statusText)
+
       if (!response.ok) {
-        throw new Error('Failed to fetch applications')
+        const errorData = await response.json()
+        console.error('API Error:', errorData)
+        throw new Error(errorData.message || 'Failed to fetch applications')
       }
 
       const data = await response.json()
-      
+      console.log('API Response:', data)
+
+      // Handle both old and new API response formats
+      let applications = []
+      if (data.applications && Array.isArray(data.applications)) {
+        applications = data.applications
+      }
+
       // Transform backend data to match frontend expectations
-      const transformedApplications = data.applications.map(app => ({
+      const transformedApplications = applications.map(app => ({
         id: app.id,
-        applicationNumber: app.application_number,
-        millName: app.business_name,
-        ownerName: `${app.first_name} ${app.last_name}`,
-        location: `${app.city || ''}, ${app.district || ''}`.replace(', ,', ',').trim().replace(/^,|,$/g, ''),
-        submitDate: new Date(app.created_at).toLocaleDateString('en-CA'),
-        status: app.status,
+        applicationNumber: app.application_number || 'N/A',
+        millName: app.business_name || 'Unknown Mill',
+        ownerName: `${app.first_name || ''} ${app.last_name || ''}`.trim() || 'Unknown Owner',
+        location: `${app.city || ''}, ${app.district || ''}`.replace(', ,', ',').trim().replace(/^,|,$/g, '') || 'Unknown Location',
+        submitDate: app.created_at ? new Date(app.created_at).toLocaleDateString('en-CA') : 'Unknown',
+        status: app.status || 'unknown',
         paymentReceipt: 'receipt.pdf', // Backend stores as LONGTEXT
-        email: app.email,
-        phone: app.phone,
+        email: app.email || 'No email',
+        phone: app.phone || 'No phone',
         capacity: app.mill_capacity || 'Not specified',
         type: app.business_type === 'private' ? 'Private' : 'Government',
-        licenseType: app.license_type,
-        comments: app.comments,
-        licenseNumber: app.license_number,
+        licenseType: app.license_type || 'Standard',
+        comments: app.comments || '',
+        licenseNumber: app.license_number || null,
         approvedDate: app.approved_date ? new Date(app.approved_date).toLocaleDateString('en-CA') : null,
         rejectedDate: app.rejected_date ? new Date(app.rejected_date).toLocaleDateString('en-CA') : null,
-        rejectionReason: app.rejection_reason,
-        approvalComments: app.approval_comments
+        rejectionReason: app.rejection_reason || null,
+        approvalComments: app.approval_comments || null
       }))
 
+      console.log('Transformed applications:', transformedApplications)
       setRequests(transformedApplications)
     } catch (error) {
       console.error('Error fetching applications:', error)
-      alert('Failed to fetch license applications. Please try again.')
+      // Instead of showing alert, set empty array and show message in UI
+      setRequests([])
     } finally {
       setLoading(false)
     }

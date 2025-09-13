@@ -41,13 +41,10 @@ const MillRegistration = () => {
     brDocument: null
   });
 
-  // Test upload state
-  const [testFile, setTestFile] = useState(null);
 
   // File input refs
   const paymentReceiptRef = useRef(null);
   const brDocumentRef = useRef(null);
-  const testFileRef = useRef(null);
 
   // Toggle section visibility
   const toggleApplySection = () => setShowApplySection(!showApplySection);
@@ -76,11 +73,9 @@ const MillRegistration = () => {
     navigate('../profile');
   };
 
-  // Improved file upload handler with better error detection
+  // File upload handler using direct DOM manipulation
   const handleFileUpload = async (fileInputRef, fieldName) => {
     return new Promise((resolve, reject) => {
-      console.log(`🚀 Starting ${fieldName} upload process`);
-
       // Create a new input element
       const fileInput = document.createElement('input');
       fileInput.type = 'file';
@@ -95,33 +90,20 @@ const MillRegistration = () => {
 
       // Handle file selection
       fileInput.onchange = (e) => {
-        console.log(`📂 File dialog change event for ${fieldName}`);
         dialogClosed = true;
-
         const files = e.target.files;
-        console.log(`📁 Files object:`, files);
-        console.log(`📁 Files length:`, files?.length);
 
         if (!files || files.length === 0) {
-          console.log(`❌ No file selected for ${fieldName} (user cancelled or no files)`);
           cleanup();
           resolve(null);
           return;
         }
 
         const file = files[0];
-        console.log(`✅ File selected for ${fieldName}:`, {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          lastModified: file.lastModified
-        });
-
         fileProcessed = true;
 
         // Validate file
         if (file.size > 10 * 1024 * 1024) {
-          console.error(`❌ File too large: ${file.size} bytes`);
           cleanup();
           reject(new Error(`File size must be less than 10MB`));
           return;
@@ -129,18 +111,14 @@ const MillRegistration = () => {
 
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
         if (!validTypes.includes(file.type)) {
-          console.error(`❌ Invalid file type: ${file.type}`);
           cleanup();
           reject(new Error(`File must be JPG, PNG, or PDF`));
           return;
         }
 
-        console.log(`🔄 Reading file: ${file.name}`);
-
         // Read file
         const reader = new FileReader();
         reader.onload = () => {
-          console.log(`✅ File read successfully: ${reader.result?.length} characters`);
           const fileData = {
             data: reader.result,
             name: file.name,
@@ -154,13 +132,11 @@ const MillRegistration = () => {
             [fieldName]: fileData
           }));
 
-          console.log(`✅ ${fieldName} upload completed successfully`);
           cleanup();
           resolve(fileData);
         };
 
         reader.onerror = () => {
-          console.error(`❌ Error reading file:`, reader.error);
           cleanup();
           reject(new Error(`Error reading file: ${reader.error?.message || 'Unknown error'}`));
         };
@@ -172,7 +148,6 @@ const MillRegistration = () => {
       const handleWindowFocus = () => {
         setTimeout(() => {
           if (!fileProcessed && dialogClosed) {
-            console.log(`⚠️ File dialog was cancelled for ${fieldName}`);
             cleanup();
             resolve(null);
           }
@@ -186,7 +161,7 @@ const MillRegistration = () => {
           }
           window.removeEventListener('focus', handleWindowFocus);
         } catch (error) {
-          console.log('Cleanup error (non-critical):', error.message);
+          // Silent cleanup error handling
         }
       };
 
@@ -198,14 +173,12 @@ const MillRegistration = () => {
 
       // Small delay to ensure proper DOM attachment
       setTimeout(() => {
-        console.log(`🔍 Triggering file dialog for ${fieldName}`);
         fileInput.click();
       }, 50);
 
       // Timeout fallback
       setTimeout(() => {
         if (!dialogClosed) {
-          console.log(`⏰ File dialog timeout for ${fieldName}`);
           cleanup();
           reject(new Error('File dialog timeout'));
         }
@@ -354,25 +327,7 @@ const MillRegistration = () => {
         comments: formData.comments
       };
 
-      console.log('🚀 Submitting License Application');
-      console.log('👤 User ID:', userId);
-      console.log('📋 License Type:', formData.licenseType);
-      console.log('💳 Payment Receipt:', {
-        hasData: !!formData.paymentReceipt?.data,
-        name: formData.paymentReceipt?.name,
-        size: formData.paymentReceipt?.size,
-        type: formData.paymentReceipt?.type
-      });
-      console.log('📄 BR Document:', {
-        hasData: !!formData.brDocument?.data,
-        name: formData.brDocument?.name,
-        size: formData.brDocument?.size,
-        type: formData.brDocument?.type
-      });
-      console.log('💬 Comments:', formData.comments);
-
       // Make API call to submit license application
-      console.log('📡 Making API call to http://localhost:5000/api/licenses/apply');
       const response = await fetch('http://localhost:5000/api/licenses/apply', {
         method: 'POST',
         headers: {
@@ -381,16 +336,12 @@ const MillRegistration = () => {
         body: JSON.stringify(applicationData),
       });
 
-      console.log('📡 Response status:', response.status, response.statusText);
-
       if (!response.ok) {
         const error = await response.json();
-        console.error('❌ API Error:', error);
         throw new Error(error.message || 'Failed to submit license application');
       }
 
       const result = await response.json();
-      console.log('✅ API Success:', result);
       
       // Add to history
       const newApplication = {
@@ -461,127 +412,6 @@ const MillRegistration = () => {
         🏭 Mill Registration
       </h1>
 
-      {/* DIRECT DOM FILE UPLOAD TEST */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <h2 className="text-lg font-semibold text-blue-800 mb-3">🔧 Direct DOM File Upload Test</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm font-medium mb-2">Method 3: Pure DOM Approach</p>
-              <button
-                onClick={() => {
-                  console.log('🚀 Starting pure DOM file upload test...');
-
-                  // Create input completely outside React
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'image/*,application/pdf';
-                  input.style.display = 'none';
-
-                  // Add to body immediately
-                  document.body.appendChild(input);
-
-                  // Set up event listener using addEventListener
-                  input.addEventListener('change', function(event) {
-                    console.log('📂 DOM change event fired');
-                    console.log('Event:', event);
-                    console.log('Target:', event.target);
-                    console.log('Files:', event.target.files);
-
-                    const files = event.target.files;
-                    if (files && files.length > 0) {
-                      const file = files[0];
-                      console.log('✅ DOM file captured:', file.name, file.size);
-
-                      // Update React state
-                      setTestFile({
-                        name: file.name,
-                        size: file.size,
-                        type: file.type,
-                        source: 'DOM'
-                      });
-
-                      alert(`File captured: ${file.name}`);
-                    } else {
-                      console.log('❌ No files in DOM event');
-                      alert('No files captured');
-                    }
-
-                    // Clean up
-                    document.body.removeChild(input);
-                  });
-
-                  // Trigger file dialog
-                  console.log('🔍 Triggering DOM file dialog...');
-                  input.click();
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
-              >
-                📁 Test DOM Upload
-              </button>
-            </div>
-
-            <div>
-              <p className="text-sm font-medium mb-2">Method 4: Visible Input + Manual Check</p>
-              <input
-                id="manualFileInput"
-                type="file"
-                accept="image/*,application/pdf"
-                className="w-full p-2 border rounded text-sm"
-              />
-              <button
-                onClick={() => {
-                  console.log('🔍 Manual check button clicked');
-                  const input = document.getElementById('manualFileInput');
-                  console.log('Input element:', input);
-                  console.log('Input files:', input.files);
-
-                  if (input.files && input.files.length > 0) {
-                    const file = input.files[0];
-                    console.log('✅ Manual file found:', file.name);
-                    setTestFile({
-                      name: file.name,
-                      size: file.size,
-                      type: file.type,
-                      source: 'manual'
-                    });
-                    alert(`Manual file found: ${file.name}`);
-                  } else {
-                    console.log('❌ No manual files found');
-                    alert('No files found in input');
-                  }
-                }}
-                className="mt-2 px-3 py-1 bg-gray-600 text-white rounded text-sm w-full"
-              >
-                Check for Files
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white p-3 rounded border">
-            <p className="text-sm font-medium">Status:</p>
-            {testFile ? (
-              <div className="text-xs mt-1 text-green-700">
-                <p>✅ File captured successfully!</p>
-                <p><strong>Name:</strong> {testFile.name}</p>
-                <p><strong>Size:</strong> {Math.round(testFile.size / 1024)}KB</p>
-                <p><strong>Type:</strong> {testFile.type}</p>
-                <p><strong>Method:</strong> {testFile.source}</p>
-              </div>
-            ) : (
-              <p className="text-xs text-gray-500 mt-1">No file captured yet</p>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-          <p className="text-sm text-yellow-800">
-            <strong>Instructions:</strong> Try Method 3 first (DOM approach). If that fails, try Method 4:
-            select a file in the visible input, then click "Check for Files".
-          </p>
-        </div>
-      </div>
 
       {/* Status of Licence Section */}
       <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
@@ -842,11 +672,8 @@ const MillRegistration = () => {
                       type="button"
                       onClick={async () => {
                         try {
-                          console.log('🚀 Starting Payment Receipt upload...');
                           await handleFileUpload(paymentReceiptRef, 'paymentReceipt');
-                          console.log('✅ Payment Receipt uploaded successfully!');
                         } catch (error) {
-                          console.error('❌ Payment Receipt upload failed:', error);
                           setError(`Payment receipt upload failed: ${error.message}`);
                         }
                       }}
@@ -877,11 +704,8 @@ const MillRegistration = () => {
                       type="button"
                       onClick={async () => {
                         try {
-                          console.log('🚀 Starting BR Document upload...');
                           await handleFileUpload(brDocumentRef, 'brDocument');
-                          console.log('✅ BR Document uploaded successfully!');
                         } catch (error) {
-                          console.error('❌ BR Document upload failed:', error);
                           setError(`BR document upload failed: ${error.message}`);
                         }
                       }}
@@ -922,43 +746,6 @@ const MillRegistration = () => {
                 />
               </div>
 
-              {/* Debug Section - TEMPORARY */}
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6">
-                <h4 className="text-sm font-semibold text-blue-800 mb-2">🔧 Debug Information</h4>
-                <div className="text-xs text-blue-700 space-y-1">
-                  <p>Payment Receipt: {formData.paymentReceipt ? '✅ Loaded' : '❌ Not loaded'}</p>
-                  <p>BR Document: {formData.brDocument ? '✅ Loaded' : '❌ Not loaded'}</p>
-                  <p>Form Valid: {(formData.paymentReceipt && formData.brDocument) ? '✅ Ready to submit' : '❌ Missing files'}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    console.log('🐛 DEBUG - Current Form State:', {
-                      hasPaymentReceipt: !!formData.paymentReceipt,
-                      hasbrDocument: !!formData.brDocument,
-                      paymentReceiptDetails: formData.paymentReceipt ? {
-                        name: formData.paymentReceipt.name,
-                        size: formData.paymentReceipt.size,
-                        type: formData.paymentReceipt.type,
-                        hasData: !!formData.paymentReceipt.data,
-                        dataLength: formData.paymentReceipt.data?.length || 0
-                      } : null,
-                      brDocumentDetails: formData.brDocument ? {
-                        name: formData.brDocument.name,
-                        size: formData.brDocument.size,
-                        type: formData.brDocument.type,
-                        hasData: !!formData.brDocument.data,
-                        dataLength: formData.brDocument.data?.length || 0
-                      } : null,
-                      licenseType: formData.licenseType,
-                      comments: formData.comments
-                    });
-                  }}
-                  className="mt-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                >
-                  Print Debug Info
-                </button>
-              </div>
 
               {/* Form Actions */}
               <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4 pt-6 border-t border-gray-200">
