@@ -40,6 +40,10 @@ const MillHome = ({ userData }) => {
   const [loadingLicense, setLoadingLicense] = useState(false);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
 
+  // Profile photo state
+  const [profilePhoto, setProfilePhoto] = useState('');
+  const [loadingPhoto, setLoadingPhoto] = useState(false);
+
   // Sample data for dry paddy stock
   const dryPaddyData = [
     { variety: 'Nadu', stock: 1200 },
@@ -56,6 +60,60 @@ const MillHome = ({ userData }) => {
 
   // Select chart data based on selected paddy type
   const chartData = selectedType === 'dry' ? dryPaddyData : wetPaddyData;
+
+  // Get actual user ID from session data
+  const getCurrentUserId = () => {
+    try {
+      const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+      return userData.id || userData.user_id || 1; // fallback to 1 for development
+    } catch (error) {
+      console.error('Error getting user ID from session:', error);
+      return 1; // fallback to 1 for development
+    }
+  };
+
+  // Load profile photo from database
+  const loadProfilePhoto = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/profile/photo/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.photoData;
+      } else if (response.status === 404) {
+        // No profile photo found, that's okay
+        return "";
+      } else {
+        console.error('Failed to load profile photo:', response.status);
+        return "";
+      }
+    } catch (error) {
+      console.error('Error loading profile photo:', error);
+      return "";
+    }
+  };
+
+  // Load profile photo when component mounts
+  useEffect(() => {
+    const fetchProfilePhoto = async () => {
+      setLoadingPhoto(true);
+      try {
+        const userId = getCurrentUserId();
+        const photoData = await loadProfilePhoto(userId);
+        if (photoData) {
+          setProfilePhoto(photoData);
+          console.log('📸 Profile photo loaded for home dashboard');
+        } else {
+          console.log('📸 No profile photo found for user');
+        }
+      } catch (error) {
+        console.log('⚠️ Profile photo load failed:', error);
+      } finally {
+        setLoadingPhoto(false);
+      }
+    };
+
+    fetchProfilePhoto();
+  }, [userData?.id]);
 
   // Fetch user's license data
   const fetchLicenseData = async () => {
@@ -190,35 +248,27 @@ This is an official government document. Any unauthorized reproduction is strict
 
   return (
     <div className="p-6">
-      {/* Dashboard heading */}
+      {/* Dashboard heading with real profile */}
       <div className="flex items-center mb-6">
-        <div className="mr-4">
-          {(() => {
-            // Get current user data for the most up-to-date profile photo
-            const getCurrentUserData = () => {
-              try {
-                return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-              } catch (error) {
-                return userData || {};
-              }
-            };
-            const currentUser = getCurrentUserData();
-            const profilePhoto = currentUser?.profile_photo || userData?.profile_photo;
-
-            return profilePhoto ? (
-              <img
-                src={profilePhoto}
-                alt="Profile"
-                className="w-16 h-16 rounded-full object-cover border-4 border-green-300 shadow-lg"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-green-100 border-4 border-green-300 shadow-lg flex items-center justify-center">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-            );
-          })()}
+        <div className="mr-4 relative">
+          {loadingPhoto && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center z-20">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+            </div>
+          )}
+          {profilePhoto ? (
+            <img
+              src={profilePhoto}
+              alt="Profile"
+              className="w-16 h-16 rounded-full object-cover border-4 border-green-300 shadow-lg bg-white"
+            />
+          ) : (
+            <img
+              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+              alt="Profile"
+              className="w-16 h-16 rounded-full object-cover border-4 border-green-300 shadow-lg bg-white"
+            />
+          )}
         </div>
         <div>
           <h1 className="text-5xl font-bold text-green-700">
