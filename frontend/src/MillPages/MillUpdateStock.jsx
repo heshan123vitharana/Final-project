@@ -15,6 +15,7 @@ const MillUpdateStock = ({ userData }) => {
     entry_date: new Date().toISOString().split("T")[0],
     notes: "",
     price_per_kg: "", // Add price field to form data
+    manual_price: "", // Manual price input when no prices available
   });
 
   // State for calculated unit price
@@ -105,6 +106,22 @@ const MillUpdateStock = ({ userData }) => {
       const selectedPrice = availablePrices.find(price => price.id === parseInt(value));
       if (selectedPrice) {
         setUnitPrice(selectedPrice.pricePerKg);
+        // Clear manual price when dropdown price is selected
+        setFormData(prev => ({ ...prev, [name]: value, manual_price: "" }));
+        return;
+      } else {
+        setUnitPrice(0);
+      }
+    }
+
+    // When manual price is entered, update unit price
+    if (name === 'manual_price') {
+      const price = parseFloat(value);
+      if (!isNaN(price) && price > 0) {
+        setUnitPrice(price);
+        // Clear dropdown selection when manual price is entered
+        setFormData(prev => ({ ...prev, [name]: value, price_per_kg: "" }));
+        return;
       } else {
         setUnitPrice(0);
       }
@@ -186,6 +203,7 @@ const MillUpdateStock = ({ userData }) => {
           entry_date: new Date().toISOString().split("T")[0],
           notes: "",
           price_per_kg: "",
+          manual_price: "",
         });
         setUnitPrice(0);
         setAvailablePrices([]);
@@ -348,41 +366,55 @@ const MillUpdateStock = ({ userData }) => {
               Loading available prices...
             </div>
           ) : availablePrices.length > 0 ? (
-            <select
-              name="price_per_kg"
-              value={formData.price_per_kg}
-              onChange={handleChange}
-              required
-              className="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-500"
-            >
-              <option value="">Select Price Option</option>
-              {availablePrices.map((price) => (
-                <option key={price.id} value={price.id}>
-                  {price.variety} ({price.type}) - LKR {price.pricePerKg}/kg
-                  {price.market && ` - ${price.market}`}
-                  {price.trend === 'rising' && ' ⬆️'}
-                  {price.trend === 'falling' && ' ⬇️'}
-                  {price.trend === 'stable' && ' ➡️'}
-                </option>
-              ))}
-            </select>
+            <>
+              <select
+                name="price_per_kg"
+                value={formData.price_per_kg}
+                onChange={handleChange}
+                required={!formData.manual_price}
+                className="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-500"
+              >
+                <option value="">Select Price Option</option>
+                {availablePrices.map((price) => (
+                  <option key={price.id} value={price.id}>
+                    {price.variety} ({price.type}) - LKR {price.pricePerKg}/kg
+                    {price.market && ` - ${price.market}`}
+                    {price.trend === 'rising' && ' ⬆️'}
+                    {price.trend === 'falling' && ' ⬇️'}
+                    {price.trend === 'stable' && ' ➡️'}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-600 mt-1">
+                {availablePrices.length} price option{availablePrices.length !== 1 ? 's' : ''} available based on your selection
+              </p>
+            </>
+          ) : formData.paddy_type && formData.paddy_condition ? (
+            <>
+              <div className="mb-3 p-3 border border-orange-300 rounded-lg bg-orange-50 text-orange-800 text-center">
+                ⚠️ No prices available for {formData.paddy_type} ({formData.paddy_condition}) in {currentUser?.district || 'your district'}
+                <br />
+                <span className="text-sm">Please enter the unit price manually below</span>
+              </div>
+              <input
+                type="number"
+                name="manual_price"
+                value={formData.manual_price}
+                onChange={handleChange}
+                placeholder="Enter unit price (LKR/kg)"
+                required
+                min="0"
+                step="0.01"
+                className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-500 bg-blue-50"
+              />
+              <p className="text-xs text-blue-600 mt-1">
+                💡 Manual price entry - this price will be saved for this transaction
+              </p>
+            </>
           ) : (
-            <div className="w-full p-3 border border-orange-300 rounded-lg bg-orange-50 text-orange-800 text-center">
-              {formData.paddy_type && formData.paddy_condition ? (
-                <>
-                  ⚠️ No prices available for {formData.paddy_type} ({formData.paddy_condition}) in {currentUser?.district || 'your district'}
-                  <br />
-                  <span className="text-sm">Please select different paddy type/condition or contact admin to add prices</span>
-                </>
-              ) : (
-                'Please select paddy type and condition to see available prices'
-              )}
+            <div className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 text-center">
+              Please select paddy type and condition to see available prices or enter manual price
             </div>
-          )}
-          {availablePrices.length > 0 && (
-            <p className="text-xs text-gray-600 mt-1">
-              {availablePrices.length} price option{availablePrices.length !== 1 ? 's' : ''} available based on your selection
-            </p>
           )}
         </div>
 
@@ -407,7 +439,11 @@ const MillUpdateStock = ({ userData }) => {
               <p className="text-xl font-bold text-green-900">
                 LKR {unitPrice.toFixed(2)}/kg
               </p>
-              {formData.price_per_kg && availablePrices.length > 0 && (() => {
+              {formData.manual_price ? (
+                <p className="text-xs text-blue-700 mt-1">
+                  💡 Manual Entry
+                </p>
+              ) : formData.price_per_kg && availablePrices.length > 0 && (() => {
                 const selectedPrice = availablePrices.find(p => p.id === parseInt(formData.price_per_kg));
                 return selectedPrice ? (
                   <p className="text-xs text-green-700 mt-1">
@@ -464,6 +500,11 @@ const MillUpdateStock = ({ userData }) => {
               <p><strong>District:</strong> {currentUser?.district || 'Unknown'}</p>
               <p><strong>Quantity:</strong> {formData.quantity} kg</p>
               {(() => {
+                if (formData.manual_price) {
+                  return (
+                    <p><strong>Price Source:</strong> <span className="text-blue-600">💡 Manual Entry</span></p>
+                  );
+                }
                 const selectedPrice = availablePrices.find(p => p.id === parseInt(formData.price_per_kg));
                 return selectedPrice ? (
                   <>
