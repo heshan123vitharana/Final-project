@@ -1,4 +1,8 @@
+import React, { useState, useEffect } from 'react'
+import { BrowserRouter as Router } from 'react-router-dom'
+import AdminDashboard from './components/admin/AdminDashboard'
 
+<<<<<<< HEAD
 import { Suspense, lazy, memo, Component } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
@@ -74,4 +78,29 @@ const App = memo(() => {
 App.displayName = 'App'
 LoadingSpinner.displayName = 'LoadingSpinner'
 
+=======
+function App() {
+  const [adminData] = useState({
+    id: 1,
+    username: 'admin',
+    email: 'admin@pmb.gov.lk',
+    status: 'active'
+  })
+
+  // Set page title
+  useEffect(() => {
+    document.title = 'Admin Dashboard | PMB Sri Lanka';
+  }, []);
+
+  return (
+    <Router>
+      <div className="min-h-screen bg-white relative">
+        {/* Admin Dashboard - Always visible */}
+        <AdminDashboard adminData={adminData} onLogout={() => console.log('Logout clicked')} />
+      </div>
+    </Router>
+  )
+}
+
+>>>>>>> 04f545bdf77060208b211e0c0e429f712234081c
 export default App

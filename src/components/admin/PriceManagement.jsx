@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState, memo } from 'react'
 import { DollarSign, TrendingUp, TrendingDown, Save } from 'lucide-react'
 
@@ -182,3 +183,15 @@ const PriceManagement = () => {
 PriceCard.displayName = 'PriceCard'
 
 export default memo(PriceManagement)
+=======
+import React from "react";
+
+export default function PriceManagement() {
+  return (
+    <div className="p-8">
+      <h2 className="text-2xl font-bold mb-4">Price Management</h2>
+      <p>Manage rice and paddy prices here.</p>
+    </div>
+  );
+}
+>>>>>>> 04f545bdf77060208b211e0c0e429f712234081c
