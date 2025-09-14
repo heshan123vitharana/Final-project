@@ -1,29 +1,6 @@
 import { useState, useEffect } from "react";
 
-// Simulated Paddy Price Database (can be replaced with API call)
-const paddyPrices = {
-  North: {
-    "Nadu - White": { Wet: 82, Dry: 87 },
-    "Nadu - Red": { Wet: 88, Dry: 92 },
-    Samba: { Wet: 97, Dry: 102 },
-    "Kiri Samba": { Wet: 118, Dry: 123 },
-  },
-  South: {
-    "Nadu - White": { Wet: 80, Dry: 85 },
-    "Nadu - Red": { Wet: 85, Dry: 90 },
-    Samba: { Wet: 95, Dry: 100 },
-    "Kiri Samba": { Wet: 115, Dry: 120 },
-  },
-  Central: {
-    "Nadu - White": { Wet: 83, Dry: 88 },
-    "Nadu - Red": { Wet: 86, Dry: 91 },
-    Samba: { Wet: 96, Dry: 101 },
-    "Kiri Samba": { Wet: 116, Dry: 121 },
-  },
-};
-
-// Dropdown options for regions, paddy types, and states
-const regions = ["North", "South", "Central"];
+// Dropdown options for paddy types and states
 const paddyTypes = ["Nadu - White", "Nadu - Red", "Samba", "Kiri Samba"];
 const paddyStates = ["Wet", "Dry"];
 
@@ -33,15 +10,21 @@ const MillUpdateStock = ({ userData }) => {
     farmer_id: "",
     farmer_name: "",
     quantity: "",
-    region: "",
     paddy_type: "",
     paddy_condition: "",
     entry_date: new Date().toISOString().split("T")[0],
     notes: "",
+    price_per_kg: "", // Add price field to form data
   });
 
   // State for calculated unit price
   const [unitPrice, setUnitPrice] = useState(0);
+  // State for available prices based on user's district
+  const [availablePrices, setAvailablePrices] = useState([]);
+  // State for loading prices
+  const [loadingPrices, setLoadingPrices] = useState(false);
+  // State for current user data
+  const [currentUser, setCurrentUser] = useState(null);
   // State for showing confirmation popup
   const [showPopup, setShowPopup] = useState(false);
   // State for notification message
@@ -49,26 +32,100 @@ const MillUpdateStock = ({ userData }) => {
   // State for loading
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Set page title on mount
+  // Get current user data from session
+  const getCurrentUserData = () => {
+    try {
+      return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+    } catch (error) {
+      console.error('Error getting current user data:', error);
+      return userData || {};
+    }
+  };
+
+  // Fetch prices from API based on filters
+  const fetchPrices = async (district, variety = null, type = null) => {
+    try {
+      setLoadingPrices(true);
+
+      let url = `http://localhost:5000/api/prices?status=Active&sortBy=updated_at&sortOrder=DESC`;
+
+      if (district && district !== 'All Districts') {
+        url += `&district=${encodeURIComponent(district)}`;
+      }
+      if (variety && variety !== 'All Varieties') {
+        url += `&variety=${encodeURIComponent(variety)}`;
+      }
+      if (type && type !== 'All Types') {
+        url += `&type=${encodeURIComponent(type)}`;
+      }
+
+      console.log('🔍 Fetching prices from:', url);
+
+      const response = await fetch(url);
+      const result = await response.json();
+
+      if (result.success) {
+        setAvailablePrices(result.data);
+        console.log(`✅ Found ${result.data.length} price entries for district: ${district}`);
+      } else {
+        console.error('Price fetch failed:', result.message);
+        setAvailablePrices([]);
+      }
+    } catch (error) {
+      console.error('Error fetching prices:', error);
+      setAvailablePrices([]);
+    } finally {
+      setLoadingPrices(false);
+    }
+  };
+
+  // Set page title and load user data on mount
   useEffect(() => {
     document.title = "Dashboard | Update Stock";
-  }, []);
+
+    // Get current user data
+    const user = getCurrentUserData();
+    setCurrentUser(user);
+
+    // No need to auto-populate region since it's removed from form
+
+    // Fetch initial prices for user's district
+    if (user.district) {
+      fetchPrices(user.district);
+    }
+  }, [userData]);
 
   // Handle form field changes
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    // When price is selected, update unit price
+    if (name === 'price_per_kg') {
+      const selectedPrice = availablePrices.find(price => price.id === parseInt(value));
+      if (selectedPrice) {
+        setUnitPrice(selectedPrice.pricePerKg);
+      } else {
+        setUnitPrice(0);
+      }
+    }
   };
 
-  // Calculate unit price based on region, paddy type, and state
+  // Re-fetch prices when paddy type or condition changes
   useEffect(() => {
-    if (formData.region && formData.paddy_type && formData.paddy_condition) {
-      const price =
-        paddyPrices[formData.region]?.[formData.paddy_type]?.[formData.paddy_condition] || 0;
-      setUnitPrice(price);
-    } else {
-      setUnitPrice(0);
+    if (currentUser?.district && (formData.paddy_type || formData.paddy_condition)) {
+      // Create mapping for variety names
+      const varietyMapping = {
+        'Nadu - White': 'Nadu',
+        'Nadu - Red': 'Red Nadu',
+        'Samba': 'Samba',
+        'Kiri Samba': 'Keeri Samba'
+      };
+
+      const mappedVariety = varietyMapping[formData.paddy_type] || formData.paddy_type;
+      fetchPrices(currentUser.district, mappedVariety, formData.paddy_condition);
     }
-  }, [formData.region, formData.paddy_type, formData.paddy_condition]);
+  }, [formData.paddy_type, formData.paddy_condition, currentUser?.district]);
 
   // Calculate total amount
   const totalAmount =
@@ -98,7 +155,7 @@ const MillUpdateStock = ({ userData }) => {
         paddy_type: formData.paddy_type,
         paddy_condition: formData.paddy_condition,
         quantity: parseFloat(formData.quantity),
-        region: formData.region,
+        region: currentUser?.district || 'Central', // Use user's district
         entry_date: formData.entry_date,
         price_per_kg: unitPrice,
         notes: formData.notes
@@ -124,13 +181,14 @@ const MillUpdateStock = ({ userData }) => {
           farmer_id: "",
           farmer_name: "",
           quantity: "",
-          region: "",
           paddy_type: "",
           paddy_condition: "",
           entry_date: new Date().toISOString().split("T")[0],
           notes: "",
+          price_per_kg: "",
         });
         setUnitPrice(0);
+        setAvailablePrices([]);
       } else {
         setNotification(`❌ ${result.message || 'Failed to add stock data'}`);
         console.error('Stock addition error:', result);
@@ -230,23 +288,13 @@ const MillUpdateStock = ({ userData }) => {
           />
         </div>
 
-        {/* Region dropdown */}
+        {/* User's District (Display Only) */}
         <div>
-          <label className="block text-sm font-semibold mb-1 text-green-800">Region</label>
-          <select
-            name="region"
-            value={formData.region}
-            onChange={handleChange}
-            required
-            className="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-500"
-          >
-            <option value="">Select Region</option>
-            {regions.map((region) => (
-              <option key={region} value={region}>
-                {region}
-              </option>
-            ))}
-          </select>
+          <label className="block text-sm font-semibold mb-1 text-green-800">Your District</label>
+          <div className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
+            <span className="font-medium">{currentUser?.district || 'Loading...'}</span>
+            <span className="text-sm text-gray-500 ml-2">(Auto-selected from your profile)</span>
+          </div>
         </div>
 
         {/* Paddy Type dropdown */}
@@ -289,6 +337,55 @@ const MillUpdateStock = ({ userData }) => {
           </select>
         </div>
 
+        {/* Unit Price Selection */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold mb-1 text-green-800">
+            Unit Price (LKR/kg) - Based on your district: {currentUser?.district || 'Unknown'}
+          </label>
+          {loadingPrices ? (
+            <div className="w-full p-3 border border-green-300 rounded-lg bg-gray-50 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600 mr-2"></div>
+              Loading available prices...
+            </div>
+          ) : availablePrices.length > 0 ? (
+            <select
+              name="price_per_kg"
+              value={formData.price_per_kg}
+              onChange={handleChange}
+              required
+              className="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-500"
+            >
+              <option value="">Select Price Option</option>
+              {availablePrices.map((price) => (
+                <option key={price.id} value={price.id}>
+                  {price.variety} ({price.type}) - LKR {price.pricePerKg}/kg
+                  {price.market && ` - ${price.market}`}
+                  {price.trend === 'rising' && ' ⬆️'}
+                  {price.trend === 'falling' && ' ⬇️'}
+                  {price.trend === 'stable' && ' ➡️'}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="w-full p-3 border border-orange-300 rounded-lg bg-orange-50 text-orange-800 text-center">
+              {formData.paddy_type && formData.paddy_condition ? (
+                <>
+                  ⚠️ No prices available for {formData.paddy_type} ({formData.paddy_condition}) in {currentUser?.district || 'your district'}
+                  <br />
+                  <span className="text-sm">Please select different paddy type/condition or contact admin to add prices</span>
+                </>
+              ) : (
+                'Please select paddy type and condition to see available prices'
+              )}
+            </div>
+          )}
+          {availablePrices.length > 0 && (
+            <p className="text-xs text-gray-600 mt-1">
+              {availablePrices.length} price option{availablePrices.length !== 1 ? 's' : ''} available based on your selection
+            </p>
+          )}
+        </div>
+
         {/* Notes input */}
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold mb-1 text-green-800">Notes (Optional)</label>
@@ -306,10 +403,21 @@ const MillUpdateStock = ({ userData }) => {
         <div className="md:col-span-2 bg-green-100 p-4 rounded-lg">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-sm font-semibold text-green-800">Unit Price</p>
+              <p className="text-sm font-semibold text-green-800">Selected Unit Price</p>
               <p className="text-xl font-bold text-green-900">
                 LKR {unitPrice.toFixed(2)}/kg
               </p>
+              {formData.price_per_kg && availablePrices.length > 0 && (() => {
+                const selectedPrice = availablePrices.find(p => p.id === parseInt(formData.price_per_kg));
+                return selectedPrice ? (
+                  <p className="text-xs text-green-700 mt-1">
+                    {selectedPrice.market}
+                    {selectedPrice.trend === 'rising' && ' (📈 Rising)'}
+                    {selectedPrice.trend === 'falling' && ' (📉 Falling)'}
+                    {selectedPrice.trend === 'stable' && ' (➡️ Stable)'}
+                  </p>
+                ) : null;
+              })()}
             </div>
             <div>
               <p className="text-sm font-semibold text-green-800">Quantity</p>
@@ -322,6 +430,11 @@ const MillUpdateStock = ({ userData }) => {
               <p className="text-xl font-bold text-green-900">
                 LKR {totalAmount.toFixed(2)}
               </p>
+              {formData.quantity && unitPrice > 0 && (
+                <p className="text-xs text-green-700 mt-1">
+                  {formData.quantity} kg × LKR {unitPrice.toFixed(2)}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -348,10 +461,19 @@ const MillUpdateStock = ({ userData }) => {
               <p><strong>Farmer Name:</strong> {formData.farmer_name}</p>
               <p><strong>Paddy Type:</strong> {formData.paddy_type}</p>
               <p><strong>Condition:</strong> {formData.paddy_condition}</p>
-              <p><strong>Region:</strong> {formData.region}</p>
+              <p><strong>District:</strong> {currentUser?.district || 'Unknown'}</p>
               <p><strong>Quantity:</strong> {formData.quantity} kg</p>
+              {(() => {
+                const selectedPrice = availablePrices.find(p => p.id === parseInt(formData.price_per_kg));
+                return selectedPrice ? (
+                  <>
+                    <p><strong>Market Source:</strong> {selectedPrice.market}</p>
+                    <p><strong>Price Trend:</strong> {selectedPrice.trend === 'rising' ? '📈 Rising' : selectedPrice.trend === 'falling' ? '📉 Falling' : '➡️ Stable'}</p>
+                  </>
+                ) : null;
+              })()}
               <p><strong>Unit Price:</strong> LKR {unitPrice.toFixed(2)}/kg</p>
-              <p><strong>Total Amount:</strong> LKR {totalAmount.toFixed(2)}</p>
+              <p><strong>Total Amount:</strong> <span className="text-green-600 font-bold">LKR {totalAmount.toFixed(2)}</span></p>
               <p><strong>Date:</strong> {formData.entry_date}</p>
             </div>
             <div className="flex space-x-4">
