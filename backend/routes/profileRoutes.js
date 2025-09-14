@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../config/database');
 
 // Test route
-router.get('/test', (req, res) => {
+router.get('/test', (_req, res) => {
   console.log('📸 Profile test route hit!');
   res.json({ message: 'Profile routes are working!' });
 });
@@ -460,7 +460,7 @@ router.get('/completeness/:userId', async (req, res) => {
 });
 
 // Simple test to clear old address fields for user 1
-router.get('/clear-test-user-fields', async (req, res) => {
+router.get('/clear-test-user-fields', async (_req, res) => {
     try {
         console.log('🧹 Clearing address fields for test user...');
         

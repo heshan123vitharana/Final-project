@@ -26,7 +26,6 @@ const MillRegistration = () => {
 
   // State for current license status
   const [currentLicense, setCurrentLicense] = useState(null);
-  const [hasActiveLicense, setHasActiveLicense] = useState(false);
 
   // State for profile completeness and user data
   const [profileData, setProfileData] = useState(null);
@@ -109,7 +108,7 @@ const MillRegistration = () => {
   };
 
   // File upload handler using direct DOM manipulation
-  const handleFileUpload = async (fileInputRef, fieldName) => {
+  const handleFileUpload = async (_fileInputRef, fieldName) => {
     return new Promise((resolve, reject) => {
       // Create a new input element
       const fileInput = document.createElement('input');
@@ -195,7 +194,7 @@ const MillRegistration = () => {
             document.body.removeChild(fileInput);
           }
           window.removeEventListener('focus', handleWindowFocus);
-        } catch (error) {
+        } catch {
           // Silent cleanup error handling
         }
       };
@@ -232,7 +231,7 @@ const MillRegistration = () => {
           try {
             const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
             return userData.id || userData.user_id || 1; // fallback to 1 for development
-          } catch (error) {
+          } catch {
             console.error('Error getting user ID from session:', error);
             return 1; // fallback to 1 for development
           }
@@ -251,7 +250,7 @@ const MillRegistration = () => {
             setFieldStatus(apiData.fieldStatus || null);
             setCanApplyForLicense(apiData.canApplyForLicense || false);
           }
-        } catch (apiError) {
+        } catch {
           // Silent error handling
         }
         
@@ -269,26 +268,21 @@ const MillRegistration = () => {
 
             if (activeLicense) {
               setCurrentLicense(activeLicense);
-              setHasActiveLicense(true);
             } else if (mostRecentLicense) {
               setCurrentLicense(mostRecentLicense);
-              setHasActiveLicense(false);
             } else {
               setCurrentLicense(null);
-              setHasActiveLicense(false);
             }
           } else {
             setHistory([]);
             setCurrentLicense(null);
-            setHasActiveLicense(false);
           }
-        } catch (historyError) {
+        } catch {
           setHistory([]);
           setCurrentLicense(null);
-          setHasActiveLicense(false);
         }
         
-      } catch (error) {
+      } catch {
         // Silent error handling
       } finally {
         setLoading(false);
@@ -296,7 +290,7 @@ const MillRegistration = () => {
     };
     
     loadData();
-  }, []); // Empty dependency array - self-contained logic
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Add effect to refresh completeness when user returns from profile page
   useEffect(() => {
@@ -310,7 +304,7 @@ const MillRegistration = () => {
               try {
                 const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
                 return userData.id || userData.user_id || 1;
-              } catch (error) {
+              } catch {
                 return 1;
               }
             };
@@ -337,16 +331,13 @@ const MillRegistration = () => {
 
               if (activeLicense) {
                 setCurrentLicense(activeLicense);
-                setHasActiveLicense(true);
-              } else if (mostRecentLicense) {
+                } else if (mostRecentLicense) {
                 setCurrentLicense(mostRecentLicense);
-                setHasActiveLicense(false);
-              } else {
+                } else {
                 setCurrentLicense(null);
-                setHasActiveLicense(false);
-              }
+                }
             }
-          } catch (error) {
+          } catch {
             // Silent error handling
           } finally {
             setLoading(false);
@@ -388,7 +379,7 @@ const MillRegistration = () => {
         try {
           const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
           return userData.id || userData.user_id || 1;
-        } catch (error) {
+        } catch {
           return 1;
         }
       };
@@ -433,7 +424,6 @@ const MillRegistration = () => {
 
       // Update current license status
       setCurrentLicense(newApplication);
-      setHasActiveLicense(newApplication.status === 'approved');
       
       toast.success(`License application submitted successfully! Application Number: ${result.applicationNumber}`, {
         position: 'top-right',
@@ -1047,7 +1037,7 @@ const MillRegistration = () => {
                       onClick={async () => {
                         try {
                           await handleFileUpload(paymentReceiptRef, 'paymentReceipt');
-                        } catch (error) {
+                        } catch {
                           setError(`Payment receipt upload failed: ${error.message}`);
                         }
                       }}
@@ -1079,7 +1069,7 @@ const MillRegistration = () => {
                       onClick={async () => {
                         try {
                           await handleFileUpload(brDocumentRef, 'brDocument');
-                        } catch (error) {
+                        } catch {
                           setError(`BR document upload failed: ${error.message}`);
                         }
                       }}

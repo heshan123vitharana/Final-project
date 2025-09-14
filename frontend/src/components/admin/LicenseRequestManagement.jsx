@@ -6,7 +6,6 @@ import {
   Download,
   Search,
   Filter,
-  Clock,
   AlertCircle,
   FileCheck,
   RefreshCw
@@ -15,7 +14,6 @@ import { toast } from 'react-toastify'
 
 // Document Viewer Component
 const DocumentViewer = ({ documentData, documentType }) => {
-  const [displayMode, setDisplayMode] = useState('auto')
   const [showPdfViewer, setShowPdfViewer] = useState(false)
 
   // Helper function to determine if data includes data URL prefix

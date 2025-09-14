@@ -378,20 +378,20 @@ router.get('/document/:applicationId/:documentType', async (req, res) => {
 });
 
 // Test endpoint to verify code changes
-router.get('/test-update', (req, res) => {
+router.get('/test-update', (_req, res) => {
     res.json({ message: 'Updated code is working', timestamp: new Date().toISOString() });
 });
 
 // ADMIN ENDPOINTS
 
 // Test route
-router.get('/test', (req, res) => {
+router.get('/test', (_req, res) => {
     console.log('🧪 License test route hit');
     res.json({ message: 'License routes are working' });
 });
 
 // Simple statistics test route
-router.get('/admin/stats-test', (req, res) => {
+router.get('/admin/stats-test', (_req, res) => {
     console.log('📊 Simple stats test route hit');
     res.json({ message: 'Statistics test route working' });
 });
@@ -479,7 +479,7 @@ router.get('/admin/applications', async (req, res) => {
 router.put('/admin/approve/:applicationId', async (req, res) => {
     try {
         const { applicationId } = req.params;
-        const { approvedBy, comments } = req.body;
+        const { approvedBy: _approvedBy, comments } = req.body;
 
         console.log(`📋 Admin approving license application: ${applicationId}`);
 
@@ -545,7 +545,7 @@ router.put('/admin/approve/:applicationId', async (req, res) => {
 router.put('/admin/reject/:applicationId', async (req, res) => {
     try {
         const { applicationId } = req.params;
-        const { rejectedBy, rejectionReason } = req.body;
+        const { rejectedBy: _rejectedBy, rejectionReason } = req.body;
 
         console.log(`📋 Admin rejecting license application: ${applicationId}`);
 
@@ -606,7 +606,7 @@ router.put('/admin/reject/:applicationId', async (req, res) => {
 });
 
 // Get pending applications count for admin notifications
-router.get('/admin/pending-count', async (req, res) => {
+router.get('/admin/pending-count', async (_req, res) => {
     try {
         const [result] = await pool.execute(`
             SELECT COUNT(*) as pendingCount
@@ -631,7 +631,7 @@ router.get('/admin/pending-count', async (req, res) => {
 });
 
 // Get license statistics for reports - test version
-router.get('/admin/statistics', (req, res) => {
+router.get('/admin/statistics', (_req, res) => {
     console.log('📊 Admin requesting license statistics');
     res.status(200).json({
         message: 'Statistics endpoint is working!',
