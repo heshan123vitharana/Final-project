@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   BarChart,
   Bar,
@@ -10,86 +10,114 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell,
-  LineChart,
-  Line
+  Cell
 } from 'recharts'
 import { RefreshCw, TrendingUp, TrendingDown, Activity } from 'lucide-react'
 
-// Mock data for stock monitoring
-const generateMockData = () => ({
-  privateVsGovernmentStock: [
-    { name: 'Private Mills', current: 12500, capacity: 15000, percentage: 83 },
-    { name: 'Government Mills', current: 8200, capacity: 10000, percentage: 82 }
-  ],
-  stockByDistrict: [
-    { district: 'Colombo', private: 3200, government: 2100, total: 5300 },
-    { district: 'Kurunegala', private: 2800, government: 1900, total: 4700 },
-    { district: 'Anuradhapura', private: 2200, government: 1800, total: 4000 },
-    { district: 'Polonnaruwa', private: 1900, government: 1400, total: 3300 },
-    { district: 'Gampaha', private: 1500, government: 1000, total: 2500 },
-    { district: 'Kalutara', private: 900, government: 0, total: 900 }
-  ],
-  stockByMill: [
-    { mill: 'Green Valley', stock: 1200, capacity: 1500, utilization: 80, type: 'Private' },
-    { mill: 'Sri Lanka Rice', stock: 950, capacity: 1200, utilization: 79, type: 'Government' },
-    { mill: 'Golden Grain', stock: 800, capacity: 1000, utilization: 80, type: 'Private' },
-    { mill: 'National Mill', stock: 750, capacity: 900, utilization: 83, type: 'Government' },
-    { mill: 'Paddy Processing', stock: 650, capacity: 800, utilization: 81, type: 'Private' }
-  ]
-})
+// Mock data for stock monitoring - simplified version
+const generateMockData = () => {
+  const baseData = {
+    privateVsGovernmentStock: [
+      { name: 'Private Mills', current: 12500, capacity: 15000, percentage: 83 },
+      { name: 'Government Mills', current: 8200, capacity: 10000, percentage: 82 }
+    ],
+    stockByDistrict: [
+      { district: 'Colombo', private: 3200, government: 2100, total: 5300 },
+      { district: 'Kurunegala', private: 2800, government: 1900, total: 4700 },
+      { district: 'Anuradhapura', private: 2200, government: 1800, total: 4000 },
+      { district: 'Polonnaruwa', private: 1900, government: 1400, total: 3300 },
+      { district: 'Gampaha', private: 1500, government: 1000, total: 2500 }
+    ],
+    stockByMill: [
+      { mill: 'Green Valley', stock: 1200, capacity: 1500, utilization: 80, type: 'Private' },
+      { mill: 'Sri Lanka Rice', stock: 950, capacity: 1200, utilization: 79, type: 'Government' },
+      { mill: 'Golden Grain', stock: 800, capacity: 1000, utilization: 80, type: 'Private' }
+    ]
+  }
+  
+  return baseData
+}
 
 const StockDashboard = () => {
-  const [data, setData] = useState(generateMockData())
-  const [lastUpdated, setLastUpdated] = useState(new Date())
+  const [data, setData] = useState(() => generateMockData())
+  const [lastUpdated, setLastUpdated] = useState(() => new Date())
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [hasError, setHasError] = useState(false)
 
-  // Auto-refresh data every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      updateData()
-    }, 30000)
-
-    return () => clearInterval(interval)
+  const updateData = useCallback(() => {
+    try {
+      setIsRefreshing(true)
+      setHasError(false)
+      
+      // Simulate data update with slight variations
+      const timeout = setTimeout(() => {
+        const newData = generateMockData()
+        setData(newData)
+        setLastUpdated(new Date())
+        setIsRefreshing(false)
+      }, 500)
+      
+      return () => clearTimeout(timeout)
+    } catch (error) {
+      console.error('Error updating data:', error)
+      setHasError(true)
+      setIsRefreshing(false)
+    }
   }, [])
 
-  const updateData = () => {
-    setIsRefreshing(true)
-    
-    // Simulate data update with slight variations
-    setTimeout(() => {
-      const newData = generateMockData()
-      
-      // Add some random variation to simulate real-time changes
-      newData.privateVsGovernmentStock = newData.privateVsGovernmentStock.map(item => ({
-        ...item,
-        current: item.current + Math.floor(Math.random() * 200 - 100)
-      }))
-      
-      newData.stockByDistrict = newData.stockByDistrict.map(item => ({
-        ...item,
-        private: item.private + Math.floor(Math.random() * 100 - 50),
-        government: item.government + Math.floor(Math.random() * 100 - 50)
-      }))
-      
-      setData(newData)
-      setLastUpdated(new Date())
-      setIsRefreshing(false)
-    }, 1000)
-  }
+  // Auto-refresh data every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(updateData, 60000)
+    return () => clearInterval(interval)
+  }, [updateData])
 
   const COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4']
 
-  const getTotalStock = () => {
-    return data.privateVsGovernmentStock.reduce((sum, item) => sum + item.current, 0)
+  const getTotalStock = useMemo(() => {
+    if (!data?.privateVsGovernmentStock) return 0
+    return data.privateVsGovernmentStock.reduce((sum, item) => sum + (item.current || 0), 0)
+  }, [data.privateVsGovernmentStock])
+
+  const getTotalCapacity = useMemo(() => {
+    if (!data?.privateVsGovernmentStock) return 0
+    return data.privateVsGovernmentStock.reduce((sum, item) => sum + (item.capacity || 0), 0)
+  }, [data.privateVsGovernmentStock])
+
+  const getUtilizationRate = useMemo(() => {
+    const totalStock = getTotalStock
+    const totalCapacity = getTotalCapacity
+    return totalCapacity > 0 ? Math.round((totalStock / totalCapacity) * 100) : 0
+  }, [getTotalStock, getTotalCapacity])
+
+  // Add data validation
+  if (!data || !data.stockByDistrict || !data.privateVsGovernmentStock || !data.stockByMill) {
+    return (
+      <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+        <div className="text-center text-gray-500">
+          <Activity className="w-12 h-12 mx-auto mb-4" />
+          <p>Loading stock data...</p>
+        </div>
+      </div>
+    )
   }
 
-  const getTotalCapacity = () => {
-    return data.privateVsGovernmentStock.reduce((sum, item) => sum + item.capacity, 0)
-  }
-
-  const getUtilizationRate = () => {
-    return Math.round((getTotalStock() / getTotalCapacity()) * 100)
+  if (hasError) {
+    return (
+      <div className="flex items-center justify-center h-64 bg-red-50 rounded-lg">
+        <div className="text-center text-red-500">
+          <p>Error loading stock dashboard</p>
+          <button 
+            onClick={() => {
+              setHasError(false)
+              updateData()
+            }}
+            className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -125,7 +153,7 @@ const StockDashboard = () => {
             <div>
               <p className="text-sm text-gray-600">Total Stock</p>
               <p className="text-2xl font-bold text-gray-800">
-                {getTotalStock().toLocaleString()} MT
+                {getTotalStock.toLocaleString()} MT
               </p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
@@ -139,7 +167,7 @@ const StockDashboard = () => {
             <div>
               <p className="text-sm text-gray-600">Total Capacity</p>
               <p className="text-2xl font-bold text-gray-800">
-                {getTotalCapacity().toLocaleString()} MT
+                {getTotalCapacity.toLocaleString()} MT
               </p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
@@ -152,7 +180,7 @@ const StockDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Utilization Rate</p>
-              <p className="text-2xl font-bold text-gray-800">{getUtilizationRate()}%</p>
+              <p className="text-2xl font-bold text-gray-800">{getUtilizationRate}%</p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-full">
               <TrendingDown className="w-6 h-6 text-yellow-600" />
@@ -164,7 +192,7 @@ const StockDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Active Mills</p>
-              <p className="text-2xl font-bold text-gray-800">{data.stockByMill.length}</p>
+              <p className="text-2xl font-bold text-gray-800">{data.stockByMill?.length || 0}</p>
             </div>
             <div className="p-3 bg-purple-100 rounded-full">
               <Activity className="w-6 h-6 text-purple-600" />
@@ -175,88 +203,56 @@ const StockDashboard = () => {
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Private vs Government Stock */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        {/* Stock by District - Simplified */}
+        <div className="bg-white rounded-lg shadow-sm p-6 lg:col-span-2">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Private vs Government Stock Levels
+            Stock Distribution by District (Top 5)
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.privateVsGovernmentStock} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis 
-                dataKey="name" 
-                tick={{ fontSize: 12 }}
-                angle={-15}
-                textAnchor="end"
-                height={60}
-              />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: '#f8f9fa',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '8px'
-                }}
-                formatter={(value) => [`${value.toLocaleString()} MT`]}
-              />
-              <Legend />
-              <Bar 
-                dataKey="current" 
-                fill="#22C55E" 
-                name="Current Stock (MT)"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar 
-                dataKey="capacity" 
-                fill="#E5E7EB" 
-                name="Total Capacity (MT)"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Stock by District */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Stock Distribution by District
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.stockByDistrict} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis 
-                dataKey="district" 
-                tick={{ fontSize: 12 }}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: '#f8f9fa',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '8px'
-                }}
-                formatter={(value, name) => [`${value.toLocaleString()} MT`, name]}
-              />
-              <Legend />
-              <Bar 
-                dataKey="private" 
-                stackId="a" 
-                fill="#22C55E" 
-                name="Private (MT)"
-                radius={[0, 0, 0, 0]}
-              />
-              <Bar 
-                dataKey="government" 
-                stackId="a" 
-                fill="#3B82F6" 
-                name="Government (MT)"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          {data.stockByDistrict && data.stockByDistrict.length > 0 ? (
+            <div style={{ width: '100%', height: '400px' }}>
+              <ResponsiveContainer>
+                <BarChart 
+                  data={data.stockByDistrict} 
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="district" 
+                    tick={{ fontSize: 12 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: '#f8f9fa',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value, name) => [`${value.toLocaleString()} MT`, name]}
+                  />
+                  <Legend />
+                  <Bar 
+                    dataKey="private" 
+                    stackId="a" 
+                    fill="#22C55E" 
+                    name="Private (MT)"
+                  />
+                  <Bar 
+                    dataKey="government" 
+                    stackId="a" 
+                    fill="#3B82F6" 
+                    name="Government (MT)"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-96 text-gray-500">
+              <p>No district data available</p>
+            </div>
+          )}
         </div>
 
         {/* Stock Distribution Pie Chart */}
@@ -264,134 +260,91 @@ const StockDashboard = () => {
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             Stock Distribution Overview
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={[
-                  { 
-                    name: 'Private Mills', 
-                    value: data.privateVsGovernmentStock[0].current,
-                    color: '#22C55E'
-                  },
-                  { 
-                    name: 'Government Mills', 
-                    value: data.privateVsGovernmentStock[1].current,
-                    color: '#3B82F6'
-                  }
-                ]}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {[
-                  { name: 'Private Mills', value: data.privateVsGovernmentStock[0].current },
-                  { name: 'Government Mills', value: data.privateVsGovernmentStock[1].current }
-                ].map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={index === 0 ? '#22C55E' : '#3B82F6'} />
-                ))}
-              </Pie>
-              <Tooltip 
-                formatter={(value) => [`${value.toLocaleString()} MT`, 'Stock']}
-                contentStyle={{
-                  backgroundColor: '#f8f9fa',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '8px'
-                }}
-              />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Mill Utilization Chart */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Mill Utilization Rates
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart 
-              data={data.stockByMill}
-              layout="horizontal"
-              margin={{ top: 20, right: 30, left: 80, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis 
-                type="number" 
-                tick={{ fontSize: 12 }} 
-                domain={[0, 100]}
-                tickFormatter={(value) => `${value}%`}
-              />
-              <YAxis 
-                type="category" 
-                dataKey="mill" 
-                tick={{ fontSize: 12 }}
-                width={75}
-              />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: '#f8f9fa',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '8px'
-                }}
-                formatter={(value) => [`${value}%`, 'Utilization']}
-                labelFormatter={(label) => `Mill: ${label}`}
-              />
-              <Bar 
-                dataKey="utilization" 
-                fill={(entry) => entry.type === 'Private' ? '#22C55E' : '#3B82F6'}
-                radius={[0, 4, 4, 0]}
-              >
-                {data.stockByMill.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.type === 'Private' ? '#22C55E' : '#3B82F6'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          {data.privateVsGovernmentStock && data.privateVsGovernmentStock.length >= 2 ? (
+            <div style={{ width: '100%', height: '300px' }}>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={data.privateVsGovernmentStock.map(item => ({
+                      name: item.name,
+                      value: item.current
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {data.privateVsGovernmentStock.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value) => [`${value.toLocaleString()} MT`, 'Stock']}
+                    contentStyle={{
+                      backgroundColor: '#f8f9fa',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-64 text-gray-500">
+              <p>No stock distribution data available</p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Live Status Indicators */}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Live Mill Status</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {data.stockByMill.map((mill) => (
-            <div key={mill.mill} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium text-gray-800">{mill.mill}</h4>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  mill.type === 'Private' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {mill.type}
-                </span>
-              </div>
-              <div className="space-y-1 text-sm text-gray-600">
-                <div className="flex justify-between">
-                  <span>Current Stock:</span>
-                  <span className="font-medium">{mill.stock} MT</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Capacity:</span>
-                  <span className="font-medium">{mill.capacity} MT</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Utilization:</span>
-                  <span className={`font-medium ${
-                    mill.utilization > 85 ? 'text-red-600' : 
-                    mill.utilization > 70 ? 'text-yellow-600' : 'text-green-600'
+        {data.stockByMill && data.stockByMill.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data.stockByMill.map((mill) => (
+              <div key={mill.mill} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-gray-800">{mill.mill}</h4>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    mill.type === 'Private' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-blue-100 text-blue-800'
                   }`}>
-                    {mill.utilization}%
+                    {mill.type}
                   </span>
                 </div>
+                <div className="space-y-1 text-sm text-gray-600">
+                  <div className="flex justify-between">
+                    <span>Current Stock:</span>
+                    <span className="font-medium">{mill.stock} MT</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Capacity:</span>
+                    <span className="font-medium">{mill.capacity} MT</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Utilization:</span>
+                    <span className={`font-medium ${
+                      mill.utilization > 85 ? 'text-red-600' : 
+                      mill.utilization > 70 ? 'text-yellow-600' : 'text-green-600'
+                    }`}>
+                      {mill.utilization}%
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-32 text-gray-500">
+            <p>No mill status data available</p>
+          </div>
+        )}
       </div>
     </div>
   )
