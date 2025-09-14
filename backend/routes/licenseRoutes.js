@@ -73,8 +73,8 @@ router.post('/apply', async (req, res) => {
 
         // Check if user exists and get profile completeness
         const [userResult] = await pool.execute(`
-            SELECT u.id, u.first_name, u.last_name, u.email, u.phone, u.business_name, u.business_type, 
-                   u.address, u.city, u.district, u.postal_code, u.mill_capacity, u.mill_location, 
+            SELECT u.id, u.first_name, u.last_name, u.nic, u.email, u.phone, u.business_name, u.business_type,
+                   u.address, u.city, u.district, u.postal_code, u.mill_capacity, u.mill_location,
                    u.license_number, u.registration_date, u.created_at,
                    CASE WHEN upp.photo_data IS NOT NULL THEN 1 ELSE 0 END as has_photo
             FROM users u
@@ -89,9 +89,9 @@ router.post('/apply', async (req, res) => {
         const user = userResult[0];
 
         // Calculate profile completeness with weighted categories
-        // Personal Information (50%): first_name, last_name, email, phone, address, city, district, postal_code
+        // Personal Information (50%): first_name, last_name, nic, email, phone, address, city, district, postal_code
         const personalFields = [
-            user.first_name, user.last_name, user.email, user.phone,
+            user.first_name, user.last_name, user.nic, user.email, user.phone,
             user.address, user.city, user.district, user.postal_code
         ];
         const filledPersonalFields = personalFields.filter(field => field && field.toString().trim() !== '').length;
@@ -202,8 +202,8 @@ router.get('/profile-check/:userId', async (req, res) => {
         console.log(`🔍 Profile check requested for user ID: ${userId}`);
 
         const [userResult] = await pool.execute(`
-            SELECT u.id, u.first_name, u.last_name, u.email, u.phone, u.business_name, u.business_type, 
-                   u.address, u.city, u.district, u.postal_code, u.mill_capacity, u.mill_location, 
+            SELECT u.id, u.first_name, u.last_name, u.nic, u.email, u.phone, u.business_name, u.business_type,
+                   u.address, u.city, u.district, u.postal_code, u.mill_capacity, u.mill_location,
                    u.license_number, u.registration_date, u.created_at,
                    CASE WHEN upp.photo_data IS NOT NULL THEN 1 ELSE 0 END as has_photo
             FROM users u
@@ -223,6 +223,7 @@ router.get('/profile-check/:userId', async (req, res) => {
         const personalFields = [
             { field: user.first_name, name: 'First Name' },
             { field: user.last_name, name: 'Last Name' },
+            { field: user.nic, name: 'NIC' },
             { field: user.email, name: 'Email' },
             { field: user.phone, name: 'Phone' },
             { field: user.address, name: 'Address' },
@@ -275,6 +276,7 @@ router.get('/profile-check/:userId', async (req, res) => {
             personalInfo: {
                 firstName: !!user.first_name,
                 lastName: !!user.last_name,
+                nic: !!user.nic,
                 email: !!user.email,
                 phone: !!user.phone,
                 address: !!user.address,
@@ -301,6 +303,7 @@ router.get('/profile-check/:userId', async (req, res) => {
                 id: user.id,
                 firstName: user.first_name,
                 lastName: user.last_name,
+                nic: user.nic,
                 email: user.email,
                 phone: user.phone,
                 address: user.address,

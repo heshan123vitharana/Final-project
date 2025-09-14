@@ -12,12 +12,14 @@ import {
   MapPinIcon,
 } from "@heroicons/react/24/outline";
 import { validateFormWithToast, showSuccessToast, showErrorToast } from '../utils/validation';
-import GoogleMapPicker from '../components/GoogleMapPicker';
+import FreeMapPicker from '../components/FreeMapPicker';
+import SimpleLocationPicker from '../components/SimpleLocationPicker';
 
 // Enhanced profile structure outside component to avoid dependency issues
 const emptyProfile = {
   firstName: "",
   lastName: "",
+  nic: "",
   email: "",
   phoneNumber: "",
   address: "",
@@ -48,11 +50,13 @@ const MillProfile = ({ userData }) => {
   // State to control password visibility
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
 
-  // State for Google Maps modals
+  // State for location picker modals
   const [showAddressMap, setShowAddressMap] = useState(false);
   const [showMillLocationMap, setShowMillLocationMap] = useState(false);
   const [selectedAddressLocation, setSelectedAddressLocation] = useState(null);
   const [selectedMillLocation, setSelectedMillLocation] = useState(null);
+  // State for picker type (free map or simple)
+  const [useSimplePicker, setUseSimplePicker] = useState(false);
 
   // Get actual user ID from session data
   const getCurrentUserId = () => {
@@ -98,36 +102,65 @@ const MillProfile = ({ userData }) => {
           return {};
         }
       };
-      
+
       const currentUserData = getCurrentUserData();
-      
-      // Start with sessionStorage or userData as fallback
-      const savedProfile = sessionStorage.getItem("profileData");
+      console.log('🔄 Loading profile data for user:', currentUserData.email);
+
+      // ALWAYS start with current user data to ensure profile reflects logged-in user
       let initialData = {};
 
-      if (savedProfile) {
-        initialData = JSON.parse(savedProfile);
-        console.log('📦 Profile data loaded from sessionStorage');
-      } else if (currentUserData) {
-        // Initialize with userData if no saved profile exists
+      if (currentUserData && currentUserData.id) {
+        // Auto-populate profile with logged-in user's details
         initialData = {
           firstName: currentUserData.first_name || "",
           lastName: currentUserData.last_name || "",
+          nic: currentUserData.nic || "",
           email: currentUserData.email || "",
           phoneNumber: currentUserData.phone || "",
-          address: "",
-          city: "",
-          district: "",
-          postalCode: "",
+          address: currentUserData.address || "",
+          city: currentUserData.city || "",
+          district: currentUserData.district || "",
+          postalCode: currentUserData.postal_code || "",
           businessName: currentUserData.business_name || "",
           businessType: currentUserData.business_type || "private",
-          millCapacity: "",
-          millLocation: "",
-          registrationDate: currentUserData.created_at ? new Date(currentUserData.created_at).toISOString().split('T')[0] : "",
+          millCapacity: currentUserData.mill_capacity || "",
+          millLocation: currentUserData.mill_location || "",
+          registrationDate: currentUserData.registration_date ?
+            new Date(currentUserData.registration_date).toISOString().split('T')[0] :
+            (currentUserData.created_at ? new Date(currentUserData.created_at).toISOString().split('T')[0] : ""),
           profilePhoto: "",
           password: "",
         };
-        console.log('👤 Profile data initialized from userData');
+        console.log('👤 Profile auto-populated with logged-in user details');
+
+        // Load any saved profile customizations and merge with user data
+        const savedProfile = sessionStorage.getItem("profileData");
+        if (savedProfile) {
+          try {
+            const savedData = JSON.parse(savedProfile);
+            // Merge saved profile data but keep user identity fields from current user
+            initialData = {
+              ...savedData,
+              // Always use current user's identity data
+              firstName: currentUserData.first_name || savedData.firstName || "",
+              lastName: currentUserData.last_name || savedData.lastName || "",
+              nic: currentUserData.nic || savedData.nic || "",
+              email: currentUserData.email || savedData.email || "",
+              businessName: currentUserData.business_name || savedData.businessName || "",
+              businessType: currentUserData.business_type || savedData.businessType || "private",
+              registrationDate: currentUserData.registration_date ?
+                new Date(currentUserData.registration_date).toISOString().split('T')[0] :
+                (currentUserData.created_at ? new Date(currentUserData.created_at).toISOString().split('T')[0] : savedData.registrationDate || ""),
+            };
+            console.log('🔄 Profile data merged with saved customizations');
+          } catch (error) {
+            console.error('Error parsing saved profile data:', error);
+          }
+        }
+      } else {
+        console.warn('⚠️ No user data found in session');
+        // Fallback to empty profile if no user data
+        initialData = emptyProfile;
       }
 
       // ALWAYS load fresh profile photo from database (important after login)
@@ -146,11 +179,11 @@ const MillProfile = ({ userData }) => {
 
       setFormData(initialData);
       setOriginalData(initialData);
-      
+
     };
 
     loadData();
-  }, []); // Empty dependency array to run only once on mount
+  }, [userData]); // Depend on userData to reload when user changes
 
   // Handle changes in profile form fields
   const handleChange = (e) => {
@@ -166,29 +199,87 @@ const MillProfile = ({ userData }) => {
 
   // Handle address selection from map
   const handleAddressSelect = (location) => {
+    console.log('🏠 Address selected from map:', location);
     setSelectedAddressLocation(location);
-    setFormData(prev => ({ 
-      ...prev, 
-      address: location.address,
-      // Try to extract city from address if not already set
-      city: prev.city || extractCityFromAddress(location.address)
-    }));
+
+    // Extract city and district from address
+    const extractedInfo = extractLocationInfo(location.address);
+
+    setFormData(prev => {
+      const updatedData = {
+        ...prev,
+        address: location.address,
+        // Auto-fill city and district if not already set or if they seem to be extracted from address
+        city: prev.city || extractedInfo.city,
+        district: prev.district || extractedInfo.district
+      };
+      console.log('🔄 Form data updated with address:', updatedData);
+      return updatedData;
+    });
+
+    // Show success message
+    showSuccessToast('📍 Address added to your profile!');
   };
 
   // Handle mill location selection from map
   const handleMillLocationSelect = (location) => {
+    console.log('🏭 Mill location selected from map:', location);
     setSelectedMillLocation(location);
-    setFormData(prev => ({ ...prev, millLocation: location.address }));
+    setFormData(prev => {
+      const updatedData = { ...prev, millLocation: location.address };
+      console.log('🔄 Form data updated with mill location:', updatedData);
+      return updatedData;
+    });
+
+    // Show success message
+    showSuccessToast('🏭 Mill location added to your profile!');
   };
 
-  // Helper function to extract city from address
-  const extractCityFromAddress = (address) => {
-    // Simple extraction - you might want to improve this logic
-    const parts = address.split(',');
-    if (parts.length >= 2) {
-      return parts[parts.length - 2].trim();
+  // Enhanced helper function to extract location info from address
+  const extractLocationInfo = (address) => {
+    if (!address) return { city: '', district: '' };
+
+    // Split by comma and clean up parts
+    const parts = address.split(',').map(part => part.trim());
+
+    // Sri Lankan location patterns
+    const sriLankanDistricts = [
+      'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
+      'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kilinochchi', 'Mannar',
+      'Vavuniya', 'Mullaitivu', 'Batticaloa', 'Ampara', 'Trincomalee',
+      'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa', 'Badulla',
+      'Monaragala', 'Ratnapura', 'Kegalle'
+    ];
+
+    let city = '';
+    let district = '';
+
+    // Look for district matches
+    for (const part of parts) {
+      for (const dist of sriLankanDistricts) {
+        if (part.toLowerCase().includes(dist.toLowerCase())) {
+          district = dist;
+          break;
+        }
+      }
+      if (district) break;
     }
-    return '';
+
+    // Extract city (usually the first substantial part that's not a street number)
+    for (const part of parts) {
+      if (part &&
+          !part.match(/^\d/) && // Not starting with number
+          !part.toLowerCase().includes('sri lanka') &&
+          !part.toLowerCase().includes('road') &&
+          !part.toLowerCase().includes('street') &&
+          part.length > 2) {
+        city = part;
+        break;
+      }
+    }
+
+    console.log('📍 Extracted location info:', { city, district, from: address });
+    return { city, district };
   };
 
   // Upload profile photo to database
@@ -301,7 +392,7 @@ const MillProfile = ({ userData }) => {
     try {
       // Validate required fields - Personal and Business Information
       const requiredFields = [
-        'firstName', 'lastName', 'email', 'phoneNumber', 'address', 'city', 'district',
+        'firstName', 'lastName', 'nic', 'email', 'phoneNumber', 'address', 'city', 'district',
         'businessName', 'businessType', 'millCapacity', 'millLocation'
       ];
       const { isValid } = validateFormWithToast(formData, requiredFields);
@@ -330,6 +421,7 @@ const MillProfile = ({ userData }) => {
       const profileData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
+        nic: formData.nic,
         email: formData.email,
         phone: formData.phoneNumber,
         address: formData.address,
@@ -606,6 +698,29 @@ const MillProfile = ({ userData }) => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    National Identity Card (NIC) *
+                  </label>
+                  <div className="relative">
+                    <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type="text"
+                      name="nic"
+                      value={formData.nic}
+                      onChange={handleChange}
+                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                      placeholder="Enter your NIC number (e.g., 123456789V or 200012345678)"
+                      pattern="^([0-9]{9}[VvXx]|[0-9]{12})$"
+                      title="Enter a valid Sri Lankan NIC (9 digits + V/X or 12 digits)"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter your Sri Lankan National Identity Card number
+                  </p>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
                   <div className="relative">
                     <EnvelopeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -650,16 +765,34 @@ const MillProfile = ({ userData }) => {
                       placeholder="Enter your complete address"
                       required
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowAddressMap(true)}
-                      className="absolute right-3 top-3 p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Select address from map"
-                    >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                      </svg>
-                    </button>
+                    <div className="absolute right-3 top-3 flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseSimplePicker(false);
+                          setShowAddressMap(true);
+                        }}
+                        className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Select address from free map"
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseSimplePicker(true);
+                          setShowAddressMap(true);
+                        }}
+                        className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Enter address manually"
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -766,16 +899,34 @@ const MillProfile = ({ userData }) => {
                       placeholder="Enter mill location"
                       required
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowMillLocationMap(true)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Select mill location from map"
-                    >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                      </svg>
-                    </button>
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseSimplePicker(false);
+                          setShowMillLocationMap(true);
+                        }}
+                        className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Select mill location from free map"
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseSimplePicker(true);
+                          setShowMillLocationMap(true);
+                        }}
+                        className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Enter mill location manually"
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -865,22 +1016,44 @@ const MillProfile = ({ userData }) => {
           </form>
         )}
 
-        {/* Google Maps Components */}
-        <GoogleMapPicker
-          isOpen={showAddressMap}
-          onClose={() => setShowAddressMap(false)}
-          onLocationSelect={handleAddressSelect}
-          initialLocation={selectedAddressLocation}
-          title="Select Address Location"
-        />
-        
-        <GoogleMapPicker
-          isOpen={showMillLocationMap}
-          onClose={() => setShowMillLocationMap(false)}
-          onLocationSelect={handleMillLocationSelect}
-          initialLocation={selectedMillLocation}
-          title="Select Mill Location"
-        />
+        {/* Dynamic Location Pickers */}
+        {!useSimplePicker ? (
+          <>
+            <FreeMapPicker
+              isOpen={showAddressMap}
+              onClose={() => setShowAddressMap(false)}
+              onLocationSelect={handleAddressSelect}
+              initialLocation={selectedAddressLocation}
+              title="Select Address Location"
+            />
+
+            <FreeMapPicker
+              isOpen={showMillLocationMap}
+              onClose={() => setShowMillLocationMap(false)}
+              onLocationSelect={handleMillLocationSelect}
+              initialLocation={selectedMillLocation}
+              title="Select Mill Location"
+            />
+          </>
+        ) : (
+          <>
+            <SimpleLocationPicker
+              isOpen={showAddressMap}
+              onClose={() => setShowAddressMap(false)}
+              onLocationSelect={handleAddressSelect}
+              initialLocation={selectedAddressLocation}
+              title="Enter Address Location"
+            />
+
+            <SimpleLocationPicker
+              isOpen={showMillLocationMap}
+              onClose={() => setShowMillLocationMap(false)}
+              onLocationSelect={handleMillLocationSelect}
+              initialLocation={selectedMillLocation}
+              title="Enter Mill Location"
+            />
+          </>
+        )}
       </div>
     </div>
   );

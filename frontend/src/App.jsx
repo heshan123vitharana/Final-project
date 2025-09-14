@@ -125,6 +125,18 @@ function App() {
     setUserData(user)
     // Store user data in sessionStorage for session persistence
     sessionStorage.setItem('millOwnerData', JSON.stringify(user))
+
+    // Check if it's a first-time login and show appropriate message
+    if (user.isFirstLogin) {
+      // Import toast manually since it might not be available in App.jsx context
+      import('react-toastify').then(({ toast }) => {
+        toast.info('Welcome! Please complete your profile to access all features.', {
+          position: 'top-right',
+          autoClose: 5000
+        });
+      });
+    }
+
     setUserFlowState('dashboard')
   }
 

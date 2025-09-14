@@ -83,6 +83,12 @@ const ProfileCompletenessBar = ({
                 </span>
               </div>
               <div className="flex items-center space-x-2">
+                <div className={`w-3 h-3 rounded-full ${fieldStatus.personalInfo?.nic ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                <span className={`${textSizeClasses[size]} ${fieldStatus.personalInfo?.nic ? 'text-green-700' : 'text-gray-500'}`}>
+                  NIC
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
                 <div className={`w-3 h-3 rounded-full ${fieldStatus.personalInfo?.email ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                 <span className={`${textSizeClasses[size]} ${fieldStatus.personalInfo?.email ? 'text-green-700' : 'text-gray-500'}`}>
                   Email

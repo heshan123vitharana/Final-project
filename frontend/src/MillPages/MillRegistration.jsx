@@ -24,6 +24,10 @@ const MillRegistration = () => {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
+  // State for current license status
+  const [currentLicense, setCurrentLicense] = useState(null);
+  const [hasActiveLicense, setHasActiveLicense] = useState(false);
+
   // State for profile completeness and user data
   const [profileData, setProfileData] = useState(null);
   const [canApplyForLicense, setCanApplyForLicense] = useState(false);
@@ -256,12 +260,32 @@ const MillRegistration = () => {
           const historyResponse = await fetch(`http://localhost:5000/api/licenses/applications/${userId}`);
           if (historyResponse.ok) {
             const historyData = await historyResponse.json();
-            setHistory(historyData.applications || []);
+            const applications = historyData.applications || [];
+            setHistory(applications);
+
+            // Find current active or most recent license
+            const activeLicense = applications.find(app => app.status === 'approved');
+            const mostRecentLicense = applications.length > 0 ? applications[0] : null;
+
+            if (activeLicense) {
+              setCurrentLicense(activeLicense);
+              setHasActiveLicense(true);
+            } else if (mostRecentLicense) {
+              setCurrentLicense(mostRecentLicense);
+              setHasActiveLicense(false);
+            } else {
+              setCurrentLicense(null);
+              setHasActiveLicense(false);
+            }
           } else {
             setHistory([]);
+            setCurrentLicense(null);
+            setHasActiveLicense(false);
           }
         } catch (historyError) {
           setHistory([]);
+          setCurrentLicense(null);
+          setHasActiveLicense(false);
         }
         
       } catch (error) {
@@ -299,6 +323,28 @@ const MillRegistration = () => {
               setProfileCompleteness(apiData.completeness);
               setMissingFields(apiData.missingFields || []);
               setCanApplyForLicense(apiData.canApplyForLicense);
+            }
+
+            // Also refresh license status
+            const historyResponse = await fetch(`http://localhost:5000/api/licenses/applications/${userId}`);
+            if (historyResponse.ok) {
+              const historyData = await historyResponse.json();
+              const applications = historyData.applications || [];
+              setHistory(applications);
+
+              const activeLicense = applications.find(app => app.status === 'approved');
+              const mostRecentLicense = applications.length > 0 ? applications[0] : null;
+
+              if (activeLicense) {
+                setCurrentLicense(activeLicense);
+                setHasActiveLicense(true);
+              } else if (mostRecentLicense) {
+                setCurrentLicense(mostRecentLicense);
+                setHasActiveLicense(false);
+              } else {
+                setCurrentLicense(null);
+                setHasActiveLicense(false);
+              }
             }
           } catch (error) {
             // Silent error handling
@@ -382,8 +428,12 @@ const MillRegistration = () => {
         status: result.status,
         created_at: new Date().toISOString()
       };
-      
+
       setHistory(prev => [newApplication, ...prev]);
+
+      // Update current license status
+      setCurrentLicense(newApplication);
+      setHasActiveLicense(newApplication.status === 'approved');
       
       toast.success(`License application submitted successfully! Application Number: ${result.applicationNumber}`, {
         position: 'top-right',
@@ -451,17 +501,99 @@ const MillRegistration = () => {
       <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
         <button onClick={toggleStatusSection} className="text-lg font-semibold text-green-700 hover:text-green-800 flex items-center gap-2">
           {showStatusSection ? '▼' : '▶'} Status of Licence
+          {currentLicense && (
+            <span className={`ml-2 inline-block px-2 py-1 rounded-full text-xs font-semibold ${
+              currentLicense.status === 'approved' ? 'bg-green-100 text-green-700' :
+              currentLicense.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+              'bg-red-100 text-red-700'
+            }`}>
+              {currentLicense.status.charAt(0).toUpperCase() + currentLicense.status.slice(1)}
+            </span>
+          )}
         </button>
         {showStatusSection && (
           <div className="mt-4 text-gray-700">
-            <p><strong>Apply Date:</strong> 2025-08-01</p>
-            <p><strong>Status:</strong> Approved</p>
-            <p><strong>Deadline:</strong> 2026-08-01</p>
-            <div className="mt-4 flex space-x-4">
-              {/* View and Download Certificate buttons */}
-              <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700" onClick={handleViewCertificate}>View Certificate</button>
-              <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" onClick={handleDownloadCertificate}>Download Certificate</button>
-            </div>
+            {currentLicense ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p><strong>Application Number:</strong> {currentLicense.application_number || currentLicense.id}</p>
+                    <p><strong>Apply Date:</strong> {currentLicense.applied_date ?
+                      new Date(currentLicense.applied_date).toLocaleDateString() :
+                      new Date(currentLicense.created_at).toLocaleDateString()}</p>
+                    <p><strong>License Type:</strong> {currentLicense.license_type || 'Standard Mill License'}</p>
+                  </div>
+                  <div>
+                    <p><strong>Status:</strong>
+                      <span className={`ml-2 inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+                        currentLicense.status === 'approved' ? 'bg-green-100 text-green-700' :
+                        currentLicense.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {currentLicense.status.charAt(0).toUpperCase() + currentLicense.status.slice(1)}
+                      </span>
+                    </p>
+
+                    {currentLicense.status === 'approved' && (
+                      <>
+                        <p><strong>License Number:</strong> {currentLicense.license_number || 'Generating...'}</p>
+                        <p><strong>Approved Date:</strong> {currentLicense.approved_date ?
+                          new Date(currentLicense.approved_date).toLocaleDateString() :
+                          'Processing...'}</p>
+                      </>
+                    )}
+
+                    {currentLicense.status === 'rejected' && (
+                      <>
+                        <p><strong>Rejected Date:</strong> {currentLicense.rejected_date ?
+                          new Date(currentLicense.rejected_date).toLocaleDateString() :
+                          'Processing...'}</p>
+                        <p><strong>Rejection Reason:</strong> {currentLicense.rejection_reason || 'Not specified'}</p>
+                      </>
+                    )}
+
+                    {currentLicense.status === 'pending' && (
+                      <p><strong>Status:</strong> Your application is under review. You will be notified once processed.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Comments if any */}
+                {currentLicense.approval_comments && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p><strong>Admin Comments:</strong> {currentLicense.approval_comments}</p>
+                  </div>
+                )}
+
+                {/* Certificate buttons only for approved licenses */}
+                {currentLicense.status === 'approved' && (
+                  <div className="mt-4 flex space-x-4">
+                    <button
+                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                      onClick={handleViewCertificate}
+                    >
+                      View Certificate
+                    </button>
+                    <button
+                      className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                      onClick={handleDownloadCertificate}
+                    >
+                      Download Certificate
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                  <svg className="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No License Applications</h3>
+                  <p className="text-gray-600">You haven't submitted any license applications yet. Complete your profile and apply for a license to see status information here.</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -588,7 +720,7 @@ const MillRegistration = () => {
       {/* Modern License Application Form */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-hide">
             {/* Header */}
             <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 rounded-t-xl">
               <h2 className="text-2xl font-bold flex items-center">
@@ -1019,7 +1151,7 @@ const MillRegistration = () => {
                     ) : (
                       <div className="flex items-center">
                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                         Submit Application
                       </div>

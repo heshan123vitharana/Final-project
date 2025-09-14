@@ -129,17 +129,44 @@ const login = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
     );
 
+    // Get complete profile information for new users
+    const pool = require('../config/database');
+    const [userWithProfile] = await pool.execute(`
+      SELECT u.*,
+             CASE WHEN upp.photo_data IS NOT NULL THEN 1 ELSE 0 END as has_photo,
+             upp.photo_data
+      FROM users u
+      LEFT JOIN user_profile_photos upp ON u.id = upp.user_id
+      WHERE u.id = ?
+    `, [user.id]);
+
+    const fullUser = userWithProfile[0];
+
+    // Check if this is a first-time login (missing profile fields)
+    const isFirstLogin = !fullUser.address || !fullUser.city || !fullUser.district ||
+                        !fullUser.mill_capacity || !fullUser.mill_location;
+
     return res.json({
       message: 'Login successful',
       token,
+      isFirstLogin,
       user: {
-        id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        business_name: user.business_name,
-        business_type: user.business_type,
-        phone: user.phone,
-        email: user.email,
+        id: fullUser.id,
+        first_name: fullUser.first_name,
+        last_name: fullUser.last_name,
+        business_name: fullUser.business_name,
+        business_type: fullUser.business_type,
+        phone: fullUser.phone,
+        email: fullUser.email,
+        address: fullUser.address,
+        city: fullUser.city,
+        district: fullUser.district,
+        postal_code: fullUser.postal_code,
+        mill_capacity: fullUser.mill_capacity,
+        mill_location: fullUser.mill_location,
+        registration_date: fullUser.created_at,
+        has_photo: !!fullUser.has_photo,
+        profile_photo: fullUser.photo_data ? `data:image/jpeg;base64,${fullUser.photo_data}` : null
       },
     });
   } catch (e) {

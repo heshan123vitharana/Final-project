@@ -62,9 +62,10 @@ const initializeTables = async () => {
     
     // Add new columns to existing users table if they don't exist
     const columns = [
+      'nic VARCHAR(20)',
       'address TEXT',
       'city VARCHAR(255)',
-      'district VARCHAR(255)', 
+      'district VARCHAR(255)',
       'postal_code VARCHAR(10)',
       'mill_capacity VARCHAR(100)',
       'mill_location VARCHAR(255)',

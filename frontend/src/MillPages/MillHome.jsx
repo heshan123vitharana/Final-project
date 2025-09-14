@@ -15,10 +15,22 @@ import { toast } from 'react-toastify';
 
 // Home page component for the Mill Dashboard
 const MillHome = ({ userData }) => {
-  // Set page title on mount
+  // Set page title on mount and when user changes
   useEffect(() => {
-    document.title = "Dashboard | Home";
-  }, []);
+    // Get fresh user data from session for the most up-to-date info
+    const getCurrentUserData = () => {
+      try {
+        return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+      } catch (error) {
+        console.error('Error getting current user data:', error);
+        return userData || {};
+      }
+    };
+
+    const currentUser = getCurrentUserData();
+    const userName = currentUser?.first_name || userData?.first_name || 'Mill Owner';
+    document.title = `Dashboard | Welcome ${userName}`;
+  }, [userData]);
 
   // State to track selected paddy type (dry/wet)
   const [selectedType, setSelectedType] = useState('dry');
@@ -47,18 +59,41 @@ const MillHome = ({ userData }) => {
 
   // Fetch user's license data
   const fetchLicenseData = async () => {
-    if (!userData?.id) return;
+    // Get current user data from session to ensure we have the latest user ID
+    const getCurrentUserData = () => {
+      try {
+        return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+      } catch (error) {
+        console.error('Error getting current user data:', error);
+        return userData || {};
+      }
+    };
+
+    const currentUser = getCurrentUserData();
+    const userId = currentUser?.id || userData?.id;
+
+    if (!userId) {
+      console.warn('No user ID available for license data fetch');
+      return;
+    }
 
     try {
       setLoadingLicense(true);
-      const response = await fetch(`http://localhost:5000/api/licenses/applications/${userData.id}`);
+      console.log('🔍 Fetching license data for user ID:', userId);
+      const response = await fetch(`http://localhost:5000/api/licenses/applications/${userId}`);
 
       if (response.ok) {
         const data = await response.json();
         if (data.applications && data.applications.length > 0) {
           // Get the most recent application
           setLicenseData(data.applications[0]);
+          console.log('✅ License data loaded successfully');
+        } else {
+          console.log('📋 No license applications found for user');
+          setLicenseData(null);
         }
+      } else {
+        console.error('Failed to fetch license data:', response.status);
       }
     } catch (error) {
       console.error('Error fetching license data:', error);
@@ -156,17 +191,87 @@ This is an official government document. Any unauthorized reproduction is strict
   return (
     <div className="p-6">
       {/* Dashboard heading */}
-      <h1 className="text-5xl font-bold mb-4 text-green-700">
-        Welcome back, {userData?.first_name || 'Mill Owner'}!
-      </h1>
+      <div className="flex items-center mb-6">
+        <div className="mr-4">
+          {(() => {
+            // Get current user data for the most up-to-date profile photo
+            const getCurrentUserData = () => {
+              try {
+                return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+              } catch (error) {
+                return userData || {};
+              }
+            };
+            const currentUser = getCurrentUserData();
+            const profilePhoto = currentUser?.profile_photo || userData?.profile_photo;
+
+            return profilePhoto ? (
+              <img
+                src={profilePhoto}
+                alt="Profile"
+                className="w-16 h-16 rounded-full object-cover border-4 border-green-300 shadow-lg"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-green-100 border-4 border-green-300 shadow-lg flex items-center justify-center">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+            );
+          })()}
+        </div>
+        <div>
+          <h1 className="text-5xl font-bold text-green-700">
+            Welcome back, {(() => {
+              // Get current user data for the most up-to-date name
+              const getCurrentUserData = () => {
+                try {
+                  return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+                } catch (error) {
+                  return userData || {};
+                }
+              };
+              const currentUser = getCurrentUserData();
+              return currentUser?.first_name || userData?.first_name || 'Mill Owner';
+            })()}!
+          </h1>
+          {(() => {
+            const getCurrentUserData = () => {
+              try {
+                return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+              } catch (error) {
+                return userData || {};
+              }
+            };
+            const currentUser = getCurrentUserData();
+            return (currentUser?.isFirstLogin || userData?.isFirstLogin) && (
+              <p className="text-orange-600 font-medium mt-2">
+                🚀 Complete your profile to unlock all features
+              </p>
+            );
+          })()}
+        </div>
+      </div>
 
       {/* Dashboard description */}
       <p className="text-xl text-gray-700 mb-6">
-        {userData?.business_name && (
-          <span className="block font-medium text-green-800 mb-2">
-            {userData.business_name} Dashboard
-          </span>
-        )}
+        {(() => {
+          const getCurrentUserData = () => {
+            try {
+              return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+            } catch (error) {
+              return userData || {};
+            }
+          };
+          const currentUser = getCurrentUserData();
+          const businessName = currentUser?.business_name || userData?.business_name;
+
+          return businessName && (
+            <span className="block font-medium text-green-800 mb-2">
+              {businessName} Dashboard
+            </span>
+          );
+        })()}
         Use the sidebar to navigate through the system and manage mill operations effectively.
       </p>
 

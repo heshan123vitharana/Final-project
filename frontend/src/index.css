@@ -48,6 +48,20 @@ html {
   overflow-x: hidden;
 }
 
+/* Additional utility class for explicit scrollbar hiding */
+.scrollbar-hide {
+  /* Hide scrollbar for Webkit browsers */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Webkit browsers */
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
 body {
   overflow-x: hidden;
 }
