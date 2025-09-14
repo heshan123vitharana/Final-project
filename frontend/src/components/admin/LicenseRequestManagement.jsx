@@ -13,6 +13,114 @@ import {
 } from 'lucide-react'
 import { toast } from 'react-toastify'
 
+// Document Viewer Component
+const DocumentViewer = ({ documentData, documentType }) => {
+  const [displayMode, setDisplayMode] = useState('auto')
+  const [showPdfViewer, setShowPdfViewer] = useState(false)
+
+  // Helper function to determine if data includes data URL prefix
+  const getDocumentSrc = () => {
+    if (documentData.startsWith('data:')) {
+      return documentData
+    }
+
+    // Try to detect file type from the first few bytes of base64
+    try {
+      const binaryString = atob(documentData.substring(0, 20))
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+
+      // Check for PDF signature
+      if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
+        return `data:application/pdf;base64,${documentData}`
+      }
+
+      // Check for common image signatures
+      if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+        return `data:image/jpeg;base64,${documentData}`
+      }
+      if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+        return `data:image/png;base64,${documentData}`
+      }
+    } catch (error) {
+      console.log('Error detecting file type:', error)
+    }
+
+    // Default to trying as image first
+    return `data:image/jpeg;base64,${documentData}`
+  }
+
+  const documentSrc = getDocumentSrc()
+  const isPdf = documentSrc.includes('application/pdf')
+
+  const handleImageError = () => {
+    if (!showPdfViewer) {
+      setShowPdfViewer(true)
+    }
+  }
+
+  const handleDownload = () => {
+    const link = document.createElement('a')
+    link.href = documentSrc
+    const extension = isPdf || showPdfViewer ? 'pdf' : 'jpg'
+    link.download = `${documentType}_${Date.now()}.${extension}`
+    link.click()
+  }
+
+  return (
+    <div className="text-center">
+      <div className="mb-4 flex justify-center space-x-2">
+        <span className="text-sm text-gray-600">
+          Document: {documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
+        </span>
+        <button
+          onClick={handleDownload}
+          className="text-blue-600 hover:text-blue-800 text-sm underline flex items-center"
+        >
+          <Download size={14} className="mr-1" />
+          Download
+        </button>
+      </div>
+
+      {isPdf || showPdfViewer ? (
+        <div className="w-full">
+          <iframe
+            src={documentSrc.replace('data:image/jpeg;base64,', 'data:application/pdf;base64,')}
+            width="100%"
+            height="600px"
+            style={{ border: 'none' }}
+            title={`${documentType} PDF Viewer`}
+            onError={() => {
+              console.log('PDF failed to load')
+            }}
+          />
+          <p className="text-sm text-gray-500 mt-2">
+            If the document doesn't display properly, try downloading it.
+          </p>
+        </div>
+      ) : (
+        <div>
+          <img
+            src={documentSrc}
+            alt={documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
+            className="max-w-full h-auto mx-auto rounded-lg shadow-lg"
+            style={{ maxHeight: '600px' }}
+            onError={handleImageError}
+            onLoad={() => console.log('Image loaded successfully')}
+          />
+          {!showPdfViewer && (
+            <p className="text-sm text-gray-500 mt-2">
+              Click download if the image doesn't display properly
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const LicenseRequestManagement = () => {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
@@ -29,6 +137,7 @@ const LicenseRequestManagement = () => {
   const [showDocumentModal, setShowDocumentModal] = useState(false)
   const [documentData, setDocumentData] = useState(null)
   const [documentType, setDocumentType] = useState('')
+  const [loadingDocument, setLoadingDocument] = useState(false)
 
   // Fetch license applications from backend
   const fetchApplications = useCallback(async () => {
@@ -304,24 +413,42 @@ This is an official government document. Any unauthorized reproduction is strict
 
   const handleViewDocument = async (applicationId, docType) => {
     try {
-      console.log(`Fetching ${docType} for application ${applicationId}`)
+      setLoadingDocument(true)
+      console.log(`🔍 Fetching ${docType} for application ${applicationId}`)
 
       const response = await fetch(`http://localhost:5000/api/licenses/document/${applicationId}/${docType}`)
+      console.log('📡 Response status:', response.status)
 
       if (!response.ok) {
-        throw new Error('Failed to fetch document')
+        const errorText = await response.text()
+        console.error('❌ API Error:', errorText)
+        throw new Error(`Failed to fetch document: ${response.status} ${response.statusText}`)
       }
 
       const data = await response.json()
-      console.log('Document data received:', data)
+      console.log('📄 Document data received:', {
+        hasDocumentData: !!data.documentData,
+        documentDataLength: data.documentData ? data.documentData.length : 0,
+        applicationNumber: data.applicationNumber,
+        documentType: docType
+      })
+
+      if (!data.documentData) {
+        throw new Error('No document data received from server')
+      }
 
       setDocumentData(data.documentData)
       setDocumentType(docType)
       setShowDocumentModal(true)
 
     } catch (error) {
-      console.error('Error fetching document:', error)
-      toast.error('Failed to load document. Please try again.', { position: 'top-right' })
+      console.error('💥 Error fetching document:', error)
+      toast.error(`Failed to load document: ${error.message}`, {
+        position: 'top-right',
+        autoClose: 5000
+      })
+    } finally {
+      setLoadingDocument(false)
     }
   }
 
@@ -558,24 +685,38 @@ This is an official government document. Any unauthorized reproduction is strict
               
               <div>
                 <label className="block text-sm font-medium text-gray-700">Payment Receipt</label>
-                <button
-                  onClick={() => handleViewDocument(selectedRequest.id, 'payment_receipt')}
-                  className="inline-flex items-center text-blue-600 hover:text-blue-800"
-                >
-                  <Download size={16} className="mr-1" />
-                  View Payment Receipt
-                </button>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleViewDocument(selectedRequest.id, 'payment_receipt')}
+                    disabled={loadingDocument}
+                    className="inline-flex items-center text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loadingDocument ? (
+                      <RefreshCw size={16} className="mr-1 animate-spin" />
+                    ) : (
+                      <Eye size={16} className="mr-1" />
+                    )}
+                    {loadingDocument ? 'Loading...' : 'View Payment Receipt'}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">BR Document</label>
-                <button
-                  onClick={() => handleViewDocument(selectedRequest.id, 'br_document')}
-                  className="inline-flex items-center text-blue-600 hover:text-blue-800"
-                >
-                  <Download size={16} className="mr-1" />
-                  View BR Document
-                </button>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleViewDocument(selectedRequest.id, 'br_document')}
+                    disabled={loadingDocument}
+                    className="inline-flex items-center text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loadingDocument ? (
+                      <RefreshCw size={16} className="mr-1 animate-spin" />
+                    ) : (
+                      <Eye size={16} className="mr-1" />
+                    )}
+                    {loadingDocument ? 'Loading...' : 'View BR Document'}
+                  </button>
+                </div>
               </div>
               
               {selectedRequest.rejectionReason && (
@@ -855,43 +996,19 @@ This is an official government document. Any unauthorized reproduction is strict
 
             <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
               {documentData ? (
-                <div className="text-center">
-                  <img
-                    src={`data:image/jpeg;base64,${documentData}`}
-                    alt={documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
-                    className="max-w-full h-auto mx-auto rounded-lg shadow-lg"
-                    onError={(e) => {
-                      // If image fails to load, try as PDF
-                      e.target.style.display = 'none'
-                      const pdfViewer = document.createElement('iframe')
-                      pdfViewer.src = `data:application/pdf;base64,${documentData}`
-                      pdfViewer.width = '100%'
-                      pdfViewer.height = '600px'
-                      pdfViewer.style.border = 'none'
-                      e.target.parentNode.appendChild(pdfViewer)
-                    }}
-                  />
-                </div>
+                <DocumentViewer
+                  documentData={documentData}
+                  documentType={documentType}
+                />
               ) : (
                 <div className="text-center text-gray-500 py-8">
-                  Document not available
+                  <AlertCircle className="mx-auto mb-2 text-gray-400" size={48} />
+                  <p>Document not available</p>
                 </div>
               )}
             </div>
 
             <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => {
-                  const link = document.createElement('a')
-                  link.href = `data:application/octet-stream;base64,${documentData}`
-                  link.download = `${documentType}_${Date.now()}.pdf`
-                  link.click()
-                }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-              >
-                <Download className="mr-2" size={16} />
-                Download
-              </button>
               <button
                 onClick={() => {
                   setShowDocumentModal(false)
