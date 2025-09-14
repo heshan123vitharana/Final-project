@@ -44,22 +44,39 @@ const MillHome = ({ userData }) => {
   const [profilePhoto, setProfilePhoto] = useState('');
   const [loadingPhoto, setLoadingPhoto] = useState(false);
 
-  // Sample data for dry paddy stock
-  const dryPaddyData = [
-    { variety: 'Nadu', stock: 1200 },
-    { variety: 'Samba', stock: 800 },
-    { variety: 'Red Rice', stock: 450 },
-  ];
+  // Stock data state
+  const [stockData, setStockData] = useState([]);
+  const [loadingStock, setLoadingStock] = useState(false);
+  const [stockError, setStockError] = useState(null);
 
-  // Sample data for wet paddy stock
-  const wetPaddyData = [
-    { variety: 'Nadu', stock: 600 },
-    { variety: 'Samba', stock: 950 },
-    { variety: 'Red Rice', stock: 300 },
-  ];
+  // Process stock data for chart display
+  const processStockData = (rawData, condition) => {
+    const filtered = rawData.filter(item => item.paddy_condition === condition);
+
+    // Group by paddy type and sum quantities
+    const grouped = filtered.reduce((acc, item) => {
+      // Map database paddy types to display names
+      let variety = item.paddy_type;
+      if (variety === 'Nadu - White') variety = 'Nadu White';
+      if (variety === 'Nadu - Red') variety = 'Nadu Red';
+      if (variety === 'Kiri Samba') variety = 'Kiri Samba';
+
+      if (!acc[variety]) {
+        acc[variety] = 0;
+      }
+      acc[variety] += parseFloat(item.total_quantity);
+      return acc;
+    }, {});
+
+    // Convert to chart format
+    return Object.entries(grouped).map(([variety, stock]) => ({
+      variety,
+      stock: Math.round(stock * 100) / 100 // Round to 2 decimal places
+    }));
+  };
 
   // Select chart data based on selected paddy type
-  const chartData = selectedType === 'dry' ? dryPaddyData : wetPaddyData;
+  const chartData = processStockData(stockData, selectedType === 'dry' ? 'Dry' : 'Wet');
 
   // Get actual user ID from session data
   const getCurrentUserId = () => {
@@ -92,6 +109,46 @@ const MillHome = ({ userData }) => {
     }
   };
 
+  // Fetch stock summary from API
+  const fetchStockData = async () => {
+    try {
+      setLoadingStock(true);
+      setStockError(null);
+
+      // Get authentication token from session storage
+      const millOwnerData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+      const token = millOwnerData.token || sessionStorage.getItem('token');
+
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('http://localhost:5000/api/stock/summary', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setStockData(result.data || []);
+        console.log('📊 Stock data loaded successfully:', result.data);
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch stock data');
+      }
+    } catch (error) {
+      console.error('⚠️ Stock data fetch failed:', error);
+      setStockError(error.message);
+      // Set empty data so chart shows "No data available"
+      setStockData([]);
+    } finally {
+      setLoadingStock(false);
+    }
+  };
+
   // Load profile photo when component mounts
   useEffect(() => {
     const fetchProfilePhoto = async () => {
@@ -113,6 +170,11 @@ const MillHome = ({ userData }) => {
     };
 
     fetchProfilePhoto();
+  }, [userData?.id]);
+
+  // Load stock data when component mounts
+  useEffect(() => {
+    fetchStockData();
   }, [userData?.id]);
 
   // Fetch user's license data
@@ -420,52 +482,126 @@ This is an official government document. Any unauthorized reproduction is strict
       </div>
 
       {/* Chart type selection buttons */}
-      <div className="flex space-x-4 mb-6">
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex space-x-4">
+          <button
+            onClick={() => setSelectedType('dry')}
+            className={`px-4 py-2 rounded font-semibold border ${
+              selectedType === 'dry'
+                ? 'bg-green-600 text-white'
+                : 'bg-white text-green-700 border-green-600'
+            }`}
+          >
+            Dry Paddy
+          </button>
+          <button
+            onClick={() => setSelectedType('wet')}
+            className={`px-4 py-2 rounded font-semibold border ${
+              selectedType === 'wet'
+                ? 'bg-green-600 text-white'
+                : 'bg-white text-green-700 border-green-600'
+            }`}
+          >
+            Wet Paddy
+          </button>
+        </div>
+
+        {/* Refresh button */}
         <button
-          onClick={() => setSelectedType('dry')}
-          className={`px-4 py-2 rounded font-semibold border ${
-            selectedType === 'dry'
-              ? 'bg-green-600 text-white'
-              : 'bg-white text-green-700 border-green-600'
-          }`}
+          onClick={fetchStockData}
+          disabled={loadingStock}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
         >
-          Dry Paddy
-        </button>
-        <button
-          onClick={() => setSelectedType('wet')}
-          className={`px-4 py-2 rounded font-semibold border ${
-            selectedType === 'wet'
-              ? 'bg-green-600 text-white'
-              : 'bg-white text-green-700 border-green-600'
-          }`}
-        >
-          Wet Paddy
+          {loadingStock ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          )}
+          Refresh Data
         </button>
       </div>
 
       {/* Paddy stock bar chart */}
-      <div className="bg-white rounded-lg shadow-md p-4">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4 capitalize">
-          {selectedType} Paddy Stock Levels by Variety
-        </h2>
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={chartData}>
-            {/* Grid lines */}
-            <CartesianGrid strokeDasharray="3 3" />
-            {/* X-axis for paddy variety */}
-            <XAxis dataKey="variety" />
-            {/* Y-axis for stock levels */}
-            <YAxis 
-              label={{ value: 'Stock (MT)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
-            />
-            {/* Tooltip on hover */}
-            <Tooltip formatter={(value) => [`${value} MT`, 'Stock']} />
-            {/* Chart legend */}
-            <Legend />
-            {/* Bar for stock data */}
-            <Bar dataKey="stock" fill="#38a169" name="Stock (MT)" />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-800 capitalize">
+            {selectedType} Paddy Stock Levels by Variety
+          </h2>
+          <div className="text-sm text-gray-600">
+            Total Varieties: {chartData.length} |
+            Total Stock: {chartData.reduce((sum, item) => sum + item.stock, 0).toFixed(2)} MT
+          </div>
+        </div>
+
+        {loadingStock ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading stock data...</p>
+            </div>
+          </div>
+        ) : stockError ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <p className="text-red-600 mb-2">Failed to load stock data</p>
+              <p className="text-gray-600 text-sm mb-4">{stockError}</p>
+              <button
+                onClick={fetchStockData}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No {selectedType} paddy stock found</h3>
+              <p className="text-gray-600 mb-4">Add some stock entries to see the chart data</p>
+              <button
+                onClick={() => window.location.href = '#/mill-update-stock'}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                Add Stock Entry
+              </button>
+            </div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={chartData}>
+              {/* Grid lines */}
+              <CartesianGrid strokeDasharray="3 3" />
+              {/* X-axis for paddy variety */}
+              <XAxis dataKey="variety" />
+              {/* Y-axis for stock levels */}
+              <YAxis
+                label={{ value: 'Stock (MT)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+              />
+              {/* Tooltip on hover */}
+              <Tooltip
+                formatter={(value) => [`${value} MT`, 'Stock']}
+                labelFormatter={(label) => `Variety: ${label}`}
+              />
+              {/* Chart legend */}
+              <Legend />
+              {/* Bar for stock data */}
+              <Bar
+                dataKey="stock"
+                fill={selectedType === 'dry' ? "#38a169" : "#3182ce"}
+                name={`${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)} Paddy Stock (MT)`}
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Certificate Viewing Modal */}

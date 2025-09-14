@@ -202,6 +202,10 @@ const initializeTables = async () => {
     `);
     console.log('✅ Test user ready');
 
+    // Initialize stock tables
+    const StockModel = require('../models/stockModel');
+    await StockModel.initializeStockTables();
+
     console.log('✅ MySQL database initialized successfully');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
