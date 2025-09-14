@@ -21,6 +21,7 @@ const Reports = () => {
   const [selectedMillType, setSelectedMillType] = useState('all')
   const [reportType, setReportType] = useState('stock')
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [isPreviewingPDF, setIsPreviewingPDF] = useState(false)
 
   const regions = [
     'All Regions',
@@ -228,7 +229,7 @@ const Reports = () => {
 
   const handlePreviewReport = async () => {
     try {
-      setIsGeneratingPDF(true)
+      setIsPreviewingPDF(true)
       
       // Add a small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 300))
@@ -262,7 +263,7 @@ const Reports = () => {
       console.error('Error previewing PDF:', error)
       alert('Error generating PDF preview. Please check console for details.')
     } finally {
-      setIsGeneratingPDF(false)
+      setIsPreviewingPDF(false)
     }
   }
 
@@ -452,10 +453,10 @@ const Reports = () => {
               </button>
               <button
                 onClick={() => handlePreviewReport()}
-                disabled={isGeneratingPDF}
+                disabled={isPreviewingPDF}
                 className="w-full bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center"
               >
-                {isGeneratingPDF ? (
+                {isPreviewingPDF ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
