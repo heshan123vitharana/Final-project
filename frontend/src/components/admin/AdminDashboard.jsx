@@ -107,7 +107,7 @@ const AdminDashboard = ({ onLogout }) => {
           </div>
 
           {/* Navigation - takes up remaining space */}
-          <nav className="flex-1 mt-8 overflow-y-auto">
+          <nav className="flex-1 mt-8 overflow-y-auto scrollbar-hide">
             {navigationItems.map((item) => {
               const IconComponent = item.icon
               return (
@@ -178,7 +178,7 @@ const AdminDashboard = ({ onLogout }) => {
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-6 overflow-y-auto" style={{ height: 'calc(100vh - 73px)' }}>
+        <main className="flex-1 p-6 overflow-y-auto scrollbar-hide" style={{ height: 'calc(100vh - 73px)' }}>
           {ActiveComponent && <ActiveComponent />}
         </main>
       </div>

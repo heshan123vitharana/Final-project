@@ -513,7 +513,7 @@ This is an official government document. Any unauthorized reproduction is strict
 
       {/* Requests Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -620,7 +620,7 @@ This is an official government document. Any unauthorized reproduction is strict
       {/* Request Details Modal */}
       {showModal && selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">License Request Details</h3>
               <button
@@ -802,7 +802,7 @@ This is an official government document. Any unauthorized reproduction is strict
       {/* Certificate Modal */}
       {showCertificateModal && certificateData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-hide">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold text-green-600 flex items-center">
                 <FileCheck className="mr-2" size={24} />
@@ -977,7 +977,7 @@ This is an official government document. Any unauthorized reproduction is strict
       {/* Document Viewing Modal */}
       {showDocumentModal && documentData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-hide">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">
                 {documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
