@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Factory, Package, Info, X } from 'lucide-react'
+import { MapPin, Factory, Package, Info } from 'lucide-react'
 
 // Mock data for mill locations in Sri Lanka
 const millLocations = [
@@ -276,10 +276,9 @@ const MillMap = () => {
               <h3 className="text-lg font-semibold text-gray-800">Mill Details</h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600 rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-green-500"
-                aria-label="Close"
+                className="text-gray-400 hover:text-gray-600"
               >
-                <X size={24} />
+                <Info size={24} />
               </button>
             </div>
             
