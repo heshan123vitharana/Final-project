@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
+const { generateLicense, saveLicenseToDatabase } = require('../utils/licenseGenerator');
 
 // Apply for mill license
 router.post('/apply', async (req, res) => {
@@ -199,11 +200,11 @@ router.get('/applications/:userId', async (req, res) => {
 router.get('/profile-check/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
-        console.log(`🔍 Profile check requested for user ID: ${userId}`);
+        console.log(`🔍 UPDATED PROFILE CHECK requested for user ID: ${userId}`);
 
         const [userResult] = await pool.execute(`
             SELECT u.id, u.first_name, u.last_name, u.nic, u.email, u.phone, u.business_name, u.business_type,
-                   u.address, u.city, u.district, u.postal_code, u.mill_capacity, u.mill_location,
+                   u.address, u.city, u.district, u.postal_code, u.mill_capacity, u.mill_location, u.mill_district,
                    u.license_number, u.registration_date, u.created_at,
                    CASE WHEN upp.photo_data IS NOT NULL THEN 1 ELSE 0 END as has_photo
             FROM users u
@@ -217,6 +218,7 @@ router.get('/profile-check/:userId', async (req, res) => {
 
         const user = userResult[0];
         console.log(`👤 User data retrieved:`, JSON.stringify(user, null, 2));
+        console.log('🔍 Mill district value:', user.mill_district);
 
         // Calculate profile completeness with weighted categories
         // Personal Information Fields (50%)
@@ -238,6 +240,7 @@ router.get('/profile-check/:userId', async (req, res) => {
             { field: user.business_type, name: 'Business Type' },
             { field: user.mill_capacity, name: 'Mill Capacity' },
             { field: user.mill_location, name: 'Mill Location' },
+            { field: user.mill_district, name: 'Mill District' },
             { field: user.registration_date, name: 'Registration Date' }
         ];
         
@@ -289,6 +292,7 @@ router.get('/profile-check/:userId', async (req, res) => {
                 businessType: !!user.business_type,
                 millCapacity: !!user.mill_capacity,
                 millLocation: !!user.mill_location,
+                millDistrict: !!user.mill_district,
                 registrationDate: !!user.registration_date
             },
             completedCount: filledPersonalFields.length + filledBusinessFields.length,
@@ -314,6 +318,7 @@ router.get('/profile-check/:userId', async (req, res) => {
                 businessType: user.business_type,
                 millCapacity: user.mill_capacity,
                 millLocation: user.mill_location,
+                millDistrict: user.mill_district,
                 registrationDate: user.registration_date,
                 hasPhoto: !!user.has_photo,
                 createdAt: user.created_at
@@ -483,9 +488,11 @@ router.put('/admin/approve/:applicationId', async (req, res) => {
 
         console.log(`📋 Admin approving license application: ${applicationId}`);
 
-        // Get the application details
+        // Get the application details with full user information for license generation
         const [applicationResult] = await pool.execute(`
-            SELECT ml.*, u.first_name, u.last_name, u.email, u.business_name
+            SELECT ml.*, u.first_name, u.last_name, u.email, u.business_name, u.nic,
+                   u.address, u.city, u.district, u.postal_code, u.mill_capacity,
+                   u.mill_location, u.business_type
             FROM mill_licenses ml
             JOIN users u ON ml.user_id = u.id
             WHERE ml.id = ?
@@ -507,8 +514,8 @@ router.put('/admin/approve/:applicationId', async (req, res) => {
 
         // Update application status to approved
         const [updateResult] = await pool.execute(`
-            UPDATE mill_licenses 
-            SET status = 'approved', 
+            UPDATE mill_licenses
+            SET status = 'approved',
                 approved_date = CURRENT_TIMESTAMP,
                 license_number = ?,
                 approval_comments = ?
@@ -520,6 +527,33 @@ router.put('/admin/approve/:applicationId', async (req, res) => {
         }
 
         console.log(`✅ License application ${applicationId} approved with license number: ${licenseNumber}`);
+
+        // Generate the license document automatically
+        try {
+            console.log('📄 Generating license document...');
+
+            const licenseData = {
+                licenseNumber: licenseNumber,
+                firstName: application.first_name,
+                lastName: application.last_name,
+                nic: application.nic,
+                address: application.address,
+                city: application.city,
+                district: application.district,
+                millLocation: application.mill_location,
+                millCapacity: application.mill_capacity,
+                applicationNumber: application.application_number,
+                applicationDate: application.created_at
+            };
+
+            const licenseBuffer = await generateLicense(licenseData);
+            await saveLicenseToDatabase(applicationId, licenseBuffer, pool);
+
+            console.log('✅ License document generated and saved successfully');
+        } catch (licenseError) {
+            console.error('⚠️ Warning: Failed to generate license document:', licenseError.message);
+            // Don't fail the approval process if license generation fails
+        }
 
         res.status(200).json({
             message: 'License application approved successfully',
@@ -646,6 +680,56 @@ router.get('/admin/statistics', (_req, res) => {
             millTypes: []
         }
     });
+});
+
+// Download generated license
+router.get('/download/:applicationId', async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+
+        console.log(`📄 Downloading license for application: ${applicationId}`);
+
+        // Get the generated license
+        const [result] = await pool.execute(`
+            SELECT generated_license, license_number, application_number, status
+            FROM mill_licenses
+            WHERE id = ?
+        `, [applicationId]);
+
+        if (result.length === 0) {
+            return res.status(404).json({ message: 'License application not found' });
+        }
+
+        const license = result[0];
+
+        if (license.status !== 'approved') {
+            return res.status(400).json({ message: 'License is not approved yet' });
+        }
+
+        if (!license.generated_license) {
+            return res.status(404).json({ message: 'Generated license not found' });
+        }
+
+        // Convert base64 back to buffer
+        const licenseBuffer = Buffer.from(license.generated_license, 'base64');
+
+        // Set response headers for PDF download
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="License-${license.license_number}.pdf"`);
+        res.setHeader('Content-Length', licenseBuffer.length);
+
+        console.log(`✅ License downloaded: ${license.license_number}`);
+
+        // Send the PDF
+        res.send(licenseBuffer);
+
+    } catch (error) {
+        console.error('Error downloading license:', error);
+        res.status(500).json({
+            message: 'Failed to download license',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
 });
 
 module.exports = router;

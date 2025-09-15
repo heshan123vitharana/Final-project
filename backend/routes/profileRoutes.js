@@ -181,20 +181,21 @@ router.put('/update/:userId', async (req, res) => {
             businessType,
             millCapacity,
             millLocation,
+            millDistrict,
             registrationDate
         } = req.body;
 
         console.log(`📝 Updating complete profile for user ${userId}`);
-        console.log('📝 Received data:', { firstName, lastName, nic, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation, registrationDate });
+        console.log('📝 Received data:', { firstName, lastName, nic, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation, millDistrict, registrationDate });
 
         // Update user profile with all fields (only the fields that are sent from frontend)
         const [result] = await pool.execute(`
             UPDATE users
             SET first_name = ?, last_name = ?, nic = ?, email = ?, phone = ?,
                 address = ?, city = ?, district = ?, postal_code = ?,
-                business_name = ?, business_type = ?, mill_capacity = ?, mill_location = ?, registration_date = ?
+                business_name = ?, business_type = ?, mill_capacity = ?, mill_location = ?, mill_district = ?, registration_date = ?
             WHERE id = ?
-        `, [firstName, lastName, nic, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation, registrationDate, userId]);
+        `, [firstName, lastName, nic, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation, millDistrict, registrationDate, userId]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'User not found' });
@@ -219,6 +220,7 @@ router.put('/update/:userId', async (req, res) => {
                 businessType,
                 millCapacity,
                 millLocation,
+                millDistrict,
                 registrationDate
             }
         });
@@ -332,6 +334,7 @@ router.get('/completeness/:userId', async (req, res) => {
             { field: user.business_type, name: 'Business Type' },
             { field: user.mill_capacity, name: 'Mill Capacity' },
             { field: user.mill_location, name: 'Mill Location' },
+            { field: user.mill_district, name: 'Mill District' },
             { field: user.registration_date, name: 'Registration Date' }
         ];
         
@@ -391,7 +394,7 @@ router.get('/completeness/:userId', async (req, res) => {
 
         // Create field status for frontend display
         const fieldStatus = {
-            totalCount: 14, // Updated: 9 personal + 5 business = 14 fields (added NIC)
+            totalCount: 15, // Updated: 9 personal + 6 business = 15 fields (added NIC and Mill District)
             completedCount: filledPersonalFields.length + filledBusinessFields.length,
             personalCompleteness,
             businessCompleteness,
@@ -411,6 +414,7 @@ router.get('/completeness/:userId', async (req, res) => {
                 businessType: !!(user.business_type && user.business_type.toString().trim() !== ''),
                 millCapacity: !!(user.mill_capacity && user.mill_capacity.toString().trim() !== ''),
                 millLocation: !!(user.mill_location && user.mill_location.toString().trim() !== ''),
+                millDistrict: !!(user.mill_district && user.mill_district.toString().trim() !== ''),
                 registrationDate: !!(user.registration_date && user.registration_date.toString().trim() !== '')
             }
         };
@@ -535,6 +539,7 @@ router.get('/debug/:userId', async (req, res) => {
             { field: user.business_type, name: 'Business Type' },
             { field: user.mill_capacity, name: 'Mill Capacity' },
             { field: user.mill_location, name: 'Mill Location' },
+            { field: user.mill_district, name: 'Mill District' },
             { field: user.registration_date, name: 'Registration Date' }
         ];
         

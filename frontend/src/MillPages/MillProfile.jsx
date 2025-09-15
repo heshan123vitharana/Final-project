@@ -15,6 +15,52 @@ import { validateFormWithToast, showSuccessToast, showErrorToast } from '../util
 import FreeMapPicker from '../components/FreeMapPicker';
 import SimpleLocationPicker from '../components/SimpleLocationPicker';
 
+// Sri Lankan Districts organized by provinces
+const sriLankanDistricts = [
+  // Western Province
+  'Colombo',
+  'Gampaha',
+  'Kalutara',
+
+  // Central Province
+  'Kandy',
+  'Matale',
+  'Nuwara Eliya',
+
+  // Southern Province
+  'Galle',
+  'Matara',
+  'Hambantota',
+
+  // Northern Province
+  'Jaffna',
+  'Kilinochchi',
+  'Mannar',
+  'Mullaitivu',
+  'Vavuniya',
+
+  // Eastern Province
+  'Ampara',
+  'Batticaloa',
+  'Trincomalee',
+
+  // North Western Province
+  'Kurunegala',
+  'Puttalam',
+
+  // North Central Province
+  'Anuradhapura',
+  'Polonnaruwa',
+
+  // Uva Province
+  'Badulla',
+  'Monaragala',
+
+  // Sabaragamuwa Province
+  'Ratnapura',
+  'Kegalle'
+];
+
 // Enhanced profile structure outside component to avoid dependency issues
 const emptyProfile = {
   firstName: "",
@@ -30,6 +76,7 @@ const emptyProfile = {
   businessType: "private",
   millCapacity: "",
   millLocation: "",
+  millDistrict: "",
   registrationDate: "",
   profilePhoto: "",
   password: "",
@@ -125,6 +172,7 @@ const MillProfile = ({ userData }) => {
           businessType: currentUserData.business_type || "private",
           millCapacity: currentUserData.mill_capacity || "",
           millLocation: currentUserData.mill_location || "",
+          millDistrict: currentUserData.mill_district || "",
           registrationDate: currentUserData.registration_date ?
             new Date(currentUserData.registration_date).toISOString().split('T')[0] :
             (currentUserData.created_at ? new Date(currentUserData.created_at).toISOString().split('T')[0] : ""),
@@ -242,19 +290,10 @@ const MillProfile = ({ userData }) => {
     // Split by comma and clean up parts
     const parts = address.split(',').map(part => part.trim());
 
-    // Sri Lankan location patterns
-    const sriLankanDistricts = [
-      'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
-      'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kilinochchi', 'Mannar',
-      'Vavuniya', 'Mullaitivu', 'Batticaloa', 'Ampara', 'Trincomalee',
-      'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa', 'Badulla',
-      'Monaragala', 'Ratnapura', 'Kegalle'
-    ];
-
     let city = '';
     let district = '';
 
-    // Look for district matches
+    // Look for district matches using the main sriLankanDistricts array
     for (const part of parts) {
       for (const dist of sriLankanDistricts) {
         if (part.toLowerCase().includes(dist.toLowerCase())) {
@@ -393,7 +432,7 @@ const MillProfile = ({ userData }) => {
       // Validate required fields - Personal and Business Information
       const requiredFields = [
         'firstName', 'lastName', 'nic', 'email', 'phoneNumber', 'address', 'city', 'district',
-        'businessName', 'businessType', 'millCapacity', 'millLocation'
+        'businessName', 'businessType', 'millCapacity', 'millLocation', 'millDistrict'
       ];
       const { isValid } = validateFormWithToast(formData, requiredFields);
       
@@ -432,6 +471,7 @@ const MillProfile = ({ userData }) => {
         businessType: formData.businessType,
         millCapacity: formData.millCapacity,
         millLocation: formData.millLocation,
+        millDistrict: formData.millDistrict,
         registrationDate: formData.registrationDate
       };
 
@@ -644,10 +684,19 @@ const MillProfile = ({ userData }) => {
             <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
               <div className="flex items-center gap-3">
                 <MapPinIcon className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600 text-sm">District</span>
+                <span className="text-gray-600 text-sm">Owner District</span>
               </div>
               <span className="text-gray-900 font-medium text-sm">
                 {formData.district || <span className="text-gray-400">Not set</span>}
+              </span>
+            </div>
+            <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+              <div className="flex items-center gap-3">
+                <MapPinIcon className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-600 text-sm">Mill District</span>
+              </div>
+              <span className="text-gray-900 font-medium text-sm">
+                {formData.millDistrict || <span className="text-gray-400">Not set</span>}
               </span>
             </div>
           </div>
@@ -811,15 +860,20 @@ const MillProfile = ({ userData }) => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">District *</label>
-                    <input
-                      type="text"
+                    <select
                       name="district"
                       value={formData.district}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                      placeholder="Enter district"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors bg-white"
                       required
-                    />
+                    >
+                      <option value="">Select your district</option>
+                      {sriLankanDistricts.map((district) => (
+                        <option key={district} value={district}>
+                          {district}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Postal Code</label>
@@ -887,46 +941,68 @@ const MillProfile = ({ userData }) => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Mill Location *</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="millLocation"
-                      value={formData.millLocation}
-                      onChange={handleChange}
-                      className="w-full px-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                      placeholder="Enter mill location"
-                      required
-                    />
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex gap-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUseSimplePicker(false);
-                          setShowMillLocationMap(true);
-                        }}
-                        className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-                        title="Select mill location from free map"
-                      >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                        </svg>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUseSimplePicker(true);
-                          setShowMillLocationMap(true);
-                        }}
-                        className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Enter mill location manually"
-                      >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Mill Location *</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="millLocation"
+                        value={formData.millLocation}
+                        onChange={handleChange}
+                        className="w-full px-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                        placeholder="Enter mill location"
+                        required
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUseSimplePicker(false);
+                            setShowMillLocationMap(true);
+                          }}
+                          className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Select mill location from free map"
+                        >
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUseSimplePicker(true);
+                            setShowMillLocationMap(true);
+                          }}
+                          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Enter mill location manually"
+                        >
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Mill District *</label>
+                    <select
+                      name="millDistrict"
+                      value={formData.millDistrict}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors bg-white"
+                      required
+                    >
+                      <option value="">Select mill district</option>
+                      {sriLankanDistricts.map((district) => (
+                        <option key={district} value={district}>
+                          {district}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Select the district where your mill is located for paddy pricing
+                    </p>
                   </div>
                 </div>
 

@@ -10,10 +10,10 @@ router.get('/check/:userId', async (req, res) => {
 
         // Get user data from database
         const [userResult] = await pool.execute(`
-            SELECT u.id, u.first_name, u.last_name, u.email, u.phone, 
-                   u.address, u.city, u.district, u.postal_code, 
-                   u.business_name, u.business_type, u.mill_capacity, 
-                   u.mill_location, u.license_number, u.registration_date, 
+            SELECT u.id, u.first_name, u.last_name, u.nic, u.email, u.phone,
+                   u.address, u.city, u.district, u.postal_code,
+                   u.business_name, u.business_type, u.mill_capacity,
+                   u.mill_location, u.mill_district, u.license_number, u.registration_date,
                    u.created_at,
                    CASE WHEN upp.photo_data IS NOT NULL THEN 1 ELSE 0 END as has_photo
             FROM users u
@@ -48,6 +48,7 @@ router.get('/check/:userId', async (req, res) => {
         const personalFields = [
             { key: 'first_name', name: 'First Name', value: user.first_name },
             { key: 'last_name', name: 'Last Name', value: user.last_name },
+            { key: 'nic', name: 'NIC', value: user.nic },
             { key: 'email', name: 'Email', value: user.email },
             { key: 'phone', name: 'Phone', value: user.phone },
             { key: 'address', name: 'Address', value: user.address },
@@ -62,7 +63,7 @@ router.get('/check/:userId', async (req, res) => {
             { key: 'business_type', name: 'Business Type', value: user.business_type },
             { key: 'mill_capacity', name: 'Mill Capacity', value: user.mill_capacity },
             { key: 'mill_location', name: 'Mill Location', value: user.mill_location },
-            { key: 'license_number', name: 'License Number', value: user.license_number },
+            { key: 'mill_district', name: 'Mill District', value: user.mill_district },
             { key: 'registration_date', name: 'Registration Date', value: user.registration_date }
         ];
         
@@ -131,7 +132,7 @@ router.get('/check/:userId', async (req, res) => {
                               field.key === 'business_type' ? 'businessType' :
                               field.key === 'mill_capacity' ? 'millCapacity' :
                               field.key === 'mill_location' ? 'millLocation' :
-                              field.key === 'license_number' ? 'licenseNumber' :
+                              field.key === 'mill_district' ? 'millDistrict' :
                               field.key === 'registration_date' ? 'registrationDate' :
                               field.key;
             fieldStatus.businessInfo[frontendKey] = isFieldFilled(field.value);
@@ -143,6 +144,7 @@ router.get('/check/:userId', async (req, res) => {
                 id: user.id,
                 firstName: user.first_name,
                 lastName: user.last_name,
+                nic: user.nic,
                 email: user.email,
                 phone: user.phone,
                 address: user.address,
@@ -153,7 +155,7 @@ router.get('/check/:userId', async (req, res) => {
                 businessType: user.business_type,
                 millCapacity: user.mill_capacity,
                 millLocation: user.mill_location,
-                licenseNumber: user.license_number,
+                millDistrict: user.mill_district,
                 registrationDate: user.registration_date,
                 hasPhoto: !!user.has_photo,
                 createdAt: user.created_at

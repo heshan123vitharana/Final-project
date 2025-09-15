@@ -119,6 +119,27 @@ const MillPaddyPrice = () => {
     }
   };
 
+  // Auto-select mill district from user profile
+  useEffect(() => {
+    const loadUserMillDistrict = () => {
+      try {
+        const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+        const millDistrict = userData.mill_district;
+
+        if (millDistrict && millDistrict.trim() !== '') {
+          console.log('🏭 Auto-selecting mill district for paddy prices:', millDistrict);
+          setSelectedDistrict(millDistrict);
+        } else {
+          console.log('🏭 No mill district found in user profile');
+        }
+      } catch (error) {
+        console.error('Error loading user mill district:', error);
+      }
+    };
+
+    loadUserMillDistrict();
+  }, []);
+
   // Set page title on mount and fetch initial data
   useEffect(() => {
     document.title = "Dashboard | Paddy Prices";
@@ -324,18 +345,26 @@ const MillPaddyPrice = () => {
           ))}
         </select>
 
-        <select
-          value={selectedDistrict}
-          onChange={(e) => setSelectedDistrict(e.target.value)}
-          className="border border-green-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400"
-        >
-          <option value="">All Districts</option>
-          {uniqueDistricts.filter(district => district && district !== 'Unknown').map((district, idx) => (
-            <option key={idx} value={district}>
-              {district}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={selectedDistrict}
+            onChange={(e) => setSelectedDistrict(e.target.value)}
+            className="border border-green-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400"
+          >
+            <option value="">All Districts</option>
+            {uniqueDistricts.filter(district => district && district !== 'Unknown').map((district, idx) => (
+              <option key={idx} value={district}>
+                {district}
+              </option>
+            ))}
+          </select>
+          {selectedDistrict && (
+            <div className="absolute -bottom-6 left-0 text-xs text-green-600 flex items-center">
+              <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+              Auto-selected from mill location
+            </div>
+          )}
+        </div>
       </div>
 
           {/* Enhanced Table displaying filtered paddy prices */}

@@ -33,10 +33,32 @@ const MillUpdateStock = ({ userData }) => {
   // State for loading
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Get current user data from session
+  // Get current user data from session with fallback
   const getCurrentUserData = () => {
     try {
-      return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+      // Try multiple possible session storage keys
+      let user = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+
+      // If millOwnerData doesn't have district, try userData from props
+      if (!user.district && userData?.district) {
+        user = { ...user, ...userData };
+      }
+
+      // If still no district, try other session storage keys
+      if (!user.district) {
+        const authData = JSON.parse(sessionStorage.getItem('userData') || '{}');
+        if (authData.district) {
+          user = { ...user, ...authData };
+        }
+      }
+
+      // Final fallback to props
+      if (!user.district && userData) {
+        user = { ...user, ...userData };
+      }
+
+      console.log('🔍 Current user data:', user);
+      return user;
     } catch (error) {
       console.error('Error getting current user data:', error);
       return userData || {};
@@ -84,15 +106,20 @@ const MillUpdateStock = ({ userData }) => {
   useEffect(() => {
     document.title = "Dashboard | Update Stock";
 
-    // Get current user data
+    // Get current user data with comprehensive logging
     const user = getCurrentUserData();
+    console.log('🔍 Setting current user:', user);
     setCurrentUser(user);
 
-    // No need to auto-populate region since it's removed from form
-
     // Fetch initial prices for user's district
-    if (user.district) {
+    if (user?.district) {
+      console.log('🌍 Fetching prices for district:', user.district);
       fetchPrices(user.district);
+    } else {
+      console.warn('⚠️ No district found in user data. Available keys:', Object.keys(user || {}));
+      console.warn('📊 userData prop:', userData);
+      console.warn('💾 Session storage millOwnerData:', sessionStorage.getItem('millOwnerData'));
+      console.warn('💾 Session storage userData:', sessionStorage.getItem('userData'));
     }
   }, [userData]);
 
@@ -131,6 +158,12 @@ const MillUpdateStock = ({ userData }) => {
   // Re-fetch prices when paddy type or condition changes
   useEffect(() => {
     if (currentUser?.district && (formData.paddy_type || formData.paddy_condition)) {
+      console.log('🔄 Refetching prices for:', {
+        district: currentUser.district,
+        paddyType: formData.paddy_type,
+        condition: formData.paddy_condition
+      });
+
       // Create mapping for variety names
       const varietyMapping = {
         'Nadu - White': 'Nadu',
@@ -141,6 +174,8 @@ const MillUpdateStock = ({ userData }) => {
 
       const mappedVariety = varietyMapping[formData.paddy_type] || formData.paddy_type;
       fetchPrices(currentUser.district, mappedVariety, formData.paddy_condition);
+    } else if (!currentUser?.district) {
+      console.warn('⚠️ Cannot fetch prices - no district available in currentUser:', currentUser);
     }
   }, [formData.paddy_type, formData.paddy_condition, currentUser?.district]);
 
@@ -161,9 +196,22 @@ const MillUpdateStock = ({ userData }) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     try {
-      const token = userData?.token;
+      // Try multiple sources for the token
+      let token = userData?.token;
+
+      // If no token in userData, try sessionStorage
       if (!token) {
-        throw new Error('Authentication token not found');
+        const millOwnerData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+        token = millOwnerData.token;
+      }
+
+      // If still no token, try authToken or other common keys
+      if (!token) {
+        token = sessionStorage.getItem('authToken') || sessionStorage.getItem('token');
+      }
+
+      if (!token) {
+        throw new Error('Authentication token not found. Please log in again.');
       }
 
       const stockData = {
@@ -172,7 +220,6 @@ const MillUpdateStock = ({ userData }) => {
         paddy_type: formData.paddy_type,
         paddy_condition: formData.paddy_condition,
         quantity: parseFloat(formData.quantity),
-        region: currentUser?.district || 'Central', // Use user's district
         entry_date: formData.entry_date,
         price_per_kg: unitPrice,
         notes: formData.notes
@@ -208,12 +255,23 @@ const MillUpdateStock = ({ userData }) => {
         setUnitPrice(0);
         setAvailablePrices([]);
       } else {
-        setNotification(`❌ ${result.message || 'Failed to add stock data'}`);
+        // Handle specific error messages
+        if (result.errors && Array.isArray(result.errors)) {
+          setNotification(`❌ Validation Error: ${result.errors.join(', ')}`);
+        } else if (result.message) {
+          setNotification(`❌ ${result.message}`);
+        } else {
+          setNotification('❌ Failed to add stock data');
+        }
         console.error('Stock addition error:', result);
       }
     } catch (error) {
       console.error('Stock addition error:', error);
-      setNotification("❌ Network error. Please try again.");
+      if (error.message.includes('Authentication token')) {
+        setNotification("❌ Please log in again to add stock data.");
+      } else {
+        setNotification("❌ Network error. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
       // Hide notification after 4 seconds
@@ -310,9 +368,21 @@ const MillUpdateStock = ({ userData }) => {
         <div>
           <label className="block text-sm font-semibold mb-1 text-green-800">Your District</label>
           <div className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-            <span className="font-medium">{currentUser?.district || 'Loading...'}</span>
-            <span className="text-sm text-gray-500 ml-2">(Auto-selected from your profile)</span>
+            <span className="font-medium">
+              {currentUser?.district || userData?.district || 'District not available'}
+            </span>
+            <span className="text-sm text-gray-500 ml-2">
+              {currentUser?.district || userData?.district ?
+                '(Auto-selected from your profile)' :
+                '(Please update your profile with district information)'
+              }
+            </span>
           </div>
+          {!currentUser?.district && !userData?.district && (
+            <p className="text-xs text-red-600 mt-1">
+              ⚠️ District information is required for price calculation. Please update your profile.
+            </p>
+          )}
         </div>
 
         {/* Paddy Type dropdown */}

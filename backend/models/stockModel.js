@@ -15,7 +15,7 @@ class StockModel {
           paddy_type ENUM('Nadu - White', 'Nadu - Red', 'Samba', 'Kiri Samba') NOT NULL,
           paddy_condition ENUM('Wet', 'Dry') NOT NULL,
           quantity DECIMAL(10,2) NOT NULL,
-          region ENUM('North', 'South', 'Central') NOT NULL,
+          region ENUM('North', 'South', 'Central') DEFAULT 'Central',
           entry_date DATE NOT NULL,
           price_per_kg DECIMAL(8,2) NOT NULL,
           total_amount DECIMAL(12,2) NOT NULL,
@@ -33,7 +33,7 @@ class StockModel {
           mill_id INT NOT NULL,
           paddy_type ENUM('Nadu - White', 'Nadu - Red', 'Samba', 'Kiri Samba') NOT NULL,
           paddy_condition ENUM('Wet', 'Dry') NOT NULL,
-          region ENUM('North', 'South', 'Central') NOT NULL,
+          region ENUM('North', 'South', 'Central') DEFAULT 'Central',
           total_quantity DECIMAL(12,2) DEFAULT 0,
           last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           FOREIGN KEY (mill_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -65,16 +65,17 @@ class StockModel {
       } = stockData;
 
       const total_amount = quantity * price_per_kg;
+      const finalRegion = region || 'Central'; // Default to Central if no region provided
 
       // Insert stock entry
       const [result] = await db.execute(`
-        INSERT INTO stock_entries 
+        INSERT INTO stock_entries
         (mill_id, farmer_id, farmer_name, paddy_type, paddy_condition, quantity, region, entry_date, price_per_kg, total_amount, notes)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [mill_id, farmer_id, farmer_name, paddy_type, paddy_condition, quantity, region, entry_date, price_per_kg, total_amount, notes]);
+      `, [mill_id, farmer_id, farmer_name, paddy_type, paddy_condition, quantity, finalRegion, entry_date, price_per_kg, total_amount, notes]);
 
       // Update stock summary
-      await this.updateStockSummary(mill_id, paddy_type, paddy_condition, region, quantity);
+      await this.updateStockSummary(mill_id, paddy_type, paddy_condition, finalRegion, quantity);
 
       return {
         id: result.insertId,

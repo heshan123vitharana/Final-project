@@ -4,11 +4,19 @@ const StockModel = require('../models/stockModel');
 const validateStockData = (data) => {
   const errors = [];
   
-  const required = ['farmer_id', 'farmer_name', 'paddy_type', 'paddy_condition', 'quantity', 'region', 'entry_date', 'price_per_kg'];
+  const required = ['farmer_id', 'farmer_name', 'paddy_type', 'paddy_condition', 'quantity', 'entry_date', 'price_per_kg'];
   
   required.forEach(field => {
-    if (!data[field] || String(data[field]).trim() === '') {
-      errors.push(`${field} is required`);
+    // Special handling for numeric fields
+    if (field === 'price_per_kg' || field === 'quantity') {
+      if (data[field] === undefined || data[field] === null || data[field] === '') {
+        errors.push(`${field} is required`);
+      }
+    } else {
+      // String fields
+      if (!data[field] || String(data[field]).trim() === '') {
+        errors.push(`${field} is required`);
+      }
     }
   });
 
@@ -24,11 +32,6 @@ const validateStockData = (data) => {
     errors.push('Invalid paddy condition');
   }
 
-  // Validate region
-  const validRegions = ['North', 'South', 'Central'];
-  if (data.region && !validRegions.includes(data.region)) {
-    errors.push('Invalid region');
-  }
 
   // Validate quantity
   if (data.quantity && (isNaN(data.quantity) || parseFloat(data.quantity) <= 0)) {
@@ -53,8 +56,11 @@ const addStock = async (req, res) => {
     const mill_id = req.user.sub; // From JWT token
     const stockData = { ...req.body, mill_id };
 
+    console.log('📦 Stock data received:', stockData);
+
     // Validate input
     const errors = validateStockData(stockData);
+    console.log('🔍 Validation errors:', errors);
     if (errors.length > 0) {
       return res.status(400).json({ 
         message: 'Validation failed', 
