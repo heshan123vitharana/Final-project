@@ -136,6 +136,38 @@ const LicenseRequestManagement = () => {
   const [documentData, setDocumentData] = useState(null)
   const [documentType, setDocumentType] = useState('')
   const [loadingDocument, setLoadingDocument] = useState(false)
+  const [loadingCertificate, setLoadingCertificate] = useState(false)
+
+  // Fetch certificate data from backend for approved applications
+  const handleViewCertificate = async (applicationId) => {
+    try {
+      setLoadingCertificate(true)
+      
+      const response = await fetch(`http://localhost:5000/api/licenses/admin/certificate/${applicationId}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to retrieve certificate')
+      }
+
+      const data = await response.json()
+      
+      if (data.success && data.certificate) {
+        setCertificateData({ 
+          certificate: data.certificate, 
+          request: data.application 
+        })
+        setShowCertificateModal(true)
+      } else {
+        toast.error('Certificate not available', { position: 'top-right' })
+      }
+      
+    } catch (error) {
+      console.error('Error fetching certificate:', error)
+      toast.error(`Failed to load certificate: ${error.message}`, { position: 'top-right' })
+    } finally {
+      setLoadingCertificate(false)
+    }
+  }
 
   // Fetch license applications from backend
   const fetchApplications = useCallback(async () => {
@@ -557,8 +589,8 @@ This is an official government document. Any unauthorized reproduction is strict
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {request.certificateNumber ? (
-                      <span className="font-mono text-green-600">{request.certificateNumber}</span>
+                    {request.licenseNumber ? (
+                      <span className="font-mono text-green-600">{request.licenseNumber}</span>
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
@@ -594,17 +626,18 @@ This is an official government document. Any unauthorized reproduction is strict
                         </button>
                       </>
                     )}
-                    {request.status === 'approved' && request.certificateNumber && (
+                    {request.status === 'approved' && request.licenseNumber && (
                       <button
-                        onClick={() => {
-                          const certificate = generateCertificate(request)
-                          setCertificateData({ certificate, request })
-                          setShowCertificateModal(true)
-                        }}
-                        className="text-green-600 hover:text-green-900 inline-flex items-center"
+                        onClick={() => handleViewCertificate(request.id)}
+                        disabled={loadingCertificate}
+                        className="text-green-600 hover:text-green-900 inline-flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <FileCheck size={16} className="mr-1" />
-                        View Certificate
+                        {loadingCertificate ? (
+                          <RefreshCw size={16} className="mr-1 animate-spin" />
+                        ) : (
+                          <FileCheck size={16} className="mr-1" />
+                        )}
+                        {loadingCertificate ? 'Loading...' : 'View Certificate'}
                       </button>
                     )}
                   </td>
@@ -744,6 +777,26 @@ This is an official government document. Any unauthorized reproduction is strict
                   className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
                 >
                   Reject License
+                </button>
+              </div>
+            )}
+            
+            {selectedRequest.status === 'approved' && selectedRequest.licenseNumber && (
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowModal(false)
+                    handleViewCertificate(selectedRequest.id)
+                  }}
+                  disabled={loadingCertificate}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {loadingCertificate ? (
+                    <RefreshCw size={20} className="mr-2 animate-spin" />
+                  ) : (
+                    <FileCheck size={20} className="mr-2" />
+                  )}
+                  {loadingCertificate ? 'Loading Certificate...' : 'View Certificate'}
                 </button>
               </div>
             )}

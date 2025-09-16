@@ -732,4 +732,87 @@ router.get('/download/:applicationId', async (req, res) => {
     }
 });
 
+// Admin route to view certificate for approved applications
+router.get('/admin/certificate/:applicationId', async (req, res) => {
+    try {
+        console.log('🎖️ Admin certificate view request received');
+        const { applicationId } = req.params;
+
+        // First get the license application details
+        const applicationQuery = `
+            SELECT ml.*, u.first_name, u.last_name, u.business_name, u.business_type, 
+                   u.city, u.district, u.mill_capacity, u.email, u.phone
+            FROM mill_licenses ml
+            JOIN mill_owners u ON ml.user_id = u.id
+            WHERE ml.id = ? AND ml.status = 'approved'
+        `;
+
+        const [applications] = await pool.execute(applicationQuery, [applicationId]);
+
+        if (applications.length === 0) {
+            return res.status(404).json({
+                message: 'Approved license application not found'
+            });
+        }
+
+        const application = applications[0];
+
+        // Check if certificate file exists
+        if (application.certificate_path) {
+            try {
+                // If we have a certificate file path, try to serve it
+                const fs = require('fs');
+                const path = require('path');
+                const certificatePath = path.join(__dirname, '..', application.certificate_path);
+                
+                if (fs.existsSync(certificatePath)) {
+                    const fileBuffer = fs.readFileSync(certificatePath);
+                    res.setHeader('Content-Type', 'application/pdf');
+                    res.setHeader('Content-Disposition', `inline; filename="Certificate_${application.license_number}.pdf"`);
+                    return res.send(fileBuffer);
+                }
+            } catch (fileError) {
+                console.log('Certificate file not found, generating new one:', fileError.message);
+            }
+        }
+
+        // If no certificate file exists, generate certificate data for frontend display
+        const certificateData = {
+            licenseNumber: application.license_number,
+            holderName: `${application.first_name} ${application.last_name}`,
+            holderAddress: `${application.city}, ${application.district}`,
+            businessName: application.business_name,
+            businessLocation: `${application.city}, ${application.district}`,
+            millCapacity: application.mill_capacity,
+            commencementDate: application.approved_date ? new Date(application.approved_date).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+            expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB'), // 1 year from now
+            issueDate: application.approved_date ? new Date(application.approved_date).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+            issuingOfficer: 'Director General, Paddy Marketing Board',
+            applicationId: application.id,
+            businessType: application.business_type
+        };
+
+        console.log(`✅ Certificate data generated for license: ${application.license_number}`);
+
+        res.json({
+            success: true,
+            certificate: certificateData,
+            application: {
+                id: application.id,
+                applicationNumber: application.application_number,
+                status: application.status,
+                submittedDate: application.created_at,
+                approvedDate: application.approved_date
+            }
+        });
+
+    } catch (error) {
+        console.error('Error retrieving certificate:', error);
+        res.status(500).json({
+            message: 'Failed to retrieve certificate',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
 module.exports = router;

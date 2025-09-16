@@ -7,6 +7,7 @@ const stockRoutes = require('./routes/stockRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const licenseRoutes = require('./routes/licenseRoutes');
 const completenessRoutes = require('./routes/completenessRoutes');
+const enhancedRoutes = require('./routes/enhancedRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -57,6 +58,8 @@ app.use('/api/licenses', licenseRoutes);
 console.log('✅ License routes registered');
 app.use('/api/completeness', completenessRoutes);
 console.log('✅ Completeness routes registered');
+app.use('/api/enhanced', enhancedRoutes);
+console.log('✅ Enhanced features routes registered');
 
 // 404 handler for undefined routes (must be after all other routes)
 app.use((req, res, _next) => {

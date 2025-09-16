@@ -188,6 +188,139 @@ const initializeTables = async () => {
     }
     console.log('✅ Mill licenses table ready');
 
+    // Enhanced Features - Sri Lanka Districts Table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS sri_lanka_districts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        province VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Sri Lanka districts table ready');
+
+    // Enhanced Features - District Paddy Prices Table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS district_paddy_prices (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        district_name VARCHAR(100) NOT NULL,
+        paddy_type ENUM('Nadu - White', 'Nadu - Red', 'Samba', 'Kiri Samba') NOT NULL,
+        paddy_condition ENUM('Wet', 'Dry') NOT NULL,
+        price_per_kg DECIMAL(10,2) NOT NULL,
+        effective_date DATE NOT NULL,
+        created_by INT,
+        status ENUM('Active', 'Inactive') DEFAULT 'Active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_district_type (district_name, paddy_type),
+        INDEX idx_status_date (status, effective_date)
+      )
+    `);
+    console.log('✅ District paddy prices table ready');
+
+    // Enhanced Features - Add certificate and password management columns
+    const enhancedUserColumns = [
+      'password_change_required BOOLEAN DEFAULT FALSE',
+      'password_expires_at TIMESTAMP NULL',
+      'password_changed_at TIMESTAMP NULL'
+    ];
+    
+    for (const column of enhancedUserColumns) {
+      const columnName = column.split(' ')[0];
+      try {
+        await pool.execute(`ALTER TABLE users ADD COLUMN ${column}`);
+        console.log(`✅ Added column ${columnName} to users table`);
+      } catch (error) {
+        if (!error.message.includes('Duplicate column name')) {
+          console.log(`ℹ️ Column ${columnName} might already exist`);
+        }
+      }
+    }
+
+    const enhancedLicenseColumns = [
+      'certificate_path VARCHAR(255)',
+      'certificate_generated_at TIMESTAMP NULL'
+    ];
+    
+    for (const column of enhancedLicenseColumns) {
+      const columnName = column.split(' ')[0];
+      try {
+        await pool.execute(`ALTER TABLE mill_licenses ADD COLUMN ${column}`);
+        console.log(`✅ Added column ${columnName} to mill_licenses table`);
+      } catch (error) {
+        if (!error.message.includes('Duplicate column name')) {
+          console.log(`ℹ️ Column ${columnName} might already exist`);
+        }
+      }
+    }
+
+    // Insert Sri Lankan districts data
+    const districts = [
+      ['Colombo', 'Western Province'],
+      ['Gampaha', 'Western Province'],
+      ['Kalutara', 'Western Province'],
+      ['Kandy', 'Central Province'],
+      ['Matale', 'Central Province'],
+      ['Nuwara Eliya', 'Central Province'],
+      ['Galle', 'Southern Province'],
+      ['Matara', 'Southern Province'],
+      ['Hambantota', 'Southern Province'],
+      ['Jaffna', 'Northern Province'],
+      ['Kilinochchi', 'Northern Province'],
+      ['Mannar', 'Northern Province'],
+      ['Mullaitivu', 'Northern Province'],
+      ['Vavuniya', 'Northern Province'],
+      ['Puttalam', 'North Western Province'],
+      ['Kurunegala', 'North Western Province'],
+      ['Anuradhapura', 'North Central Province'],
+      ['Polonnaruwa', 'North Central Province'],
+      ['Badulla', 'Uva Province'],
+      ['Monaragala', 'Uva Province'],
+      ['Ratnapura', 'Sabaragamuwa Province'],
+      ['Kegalle', 'Sabaragamuwa Province'],
+      ['Ampara', 'Eastern Province'],
+      ['Batticaloa', 'Eastern Province'],
+      ['Trincomalee', 'Eastern Province']
+    ];
+
+    for (const [name, province] of districts) {
+      try {
+        await pool.execute(
+          'INSERT IGNORE INTO sri_lanka_districts (name, province) VALUES (?, ?)',
+          [name, province]
+        );
+      } catch (error) {
+        console.log(`ℹ️ District ${name} might already exist`);
+      }
+    }
+    console.log('✅ Sri Lankan districts data loaded');
+
+    // Insert sample district paddy prices
+    const samplePrices = [
+      ['Hambantota', 'Nadu - White', 'Dry', 85.00],
+      ['Hambantota', 'Nadu - White', 'Wet', 75.00],
+      ['Hambantota', 'Kiri Samba', 'Dry', 95.00],
+      ['Hambantota', 'Kiri Samba', 'Wet', 85.00],
+      ['Colombo', 'Nadu - White', 'Dry', 90.00],
+      ['Colombo', 'Nadu - White', 'Wet', 80.00],
+      ['Kandy', 'Samba', 'Dry', 100.00],
+      ['Kandy', 'Samba', 'Wet', 90.00],
+      ['Galle', 'Nadu - Red', 'Dry', 88.00],
+      ['Galle', 'Nadu - Red', 'Wet', 78.00]
+    ];
+
+    for (const [district, type, condition, price] of samplePrices) {
+      try {
+        await pool.execute(
+          'INSERT IGNORE INTO district_paddy_prices (district_name, paddy_type, paddy_condition, price_per_kg, effective_date) VALUES (?, ?, ?, ?, CURDATE())',
+          [district, type, condition, price]
+        );
+      } catch (error) {
+        console.log(`ℹ️ Price entry for ${district} ${type} ${condition} might already exist`);
+      }
+    }
+    console.log('✅ Sample district paddy prices loaded');
+
     // Insert default admin (use INSERT IGNORE to avoid duplicates)
     await pool.execute(`
       INSERT IGNORE INTO admin (username, email, password, status) 
