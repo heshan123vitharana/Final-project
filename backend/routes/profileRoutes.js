@@ -59,9 +59,9 @@ router.post('/upload-photo', async (req, res) => {
 
     // Insert or update profile photo
     await pool.execute(`
-      INSERT INTO user_profile_photos (user_id, photo_data, filename, file_size, mime_type) 
+      INSERT INTO user_profile_photos (user_id, photo_data, filename, file_size, mime_type)
       VALUES (?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE 
+      ON DUPLICATE KEY UPDATE
         photo_data = VALUES(photo_data),
         filename = VALUES(filename),
         file_size = VALUES(file_size),

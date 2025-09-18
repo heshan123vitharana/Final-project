@@ -1,5 +1,6 @@
 // models/userModel.js
 const db = require('../database');
+const { getDefaultProfilePhotoBase64 } = require('../utils/defaultProfilePhoto');
 
 const createUser = async (user) => {
   try {
@@ -30,6 +31,25 @@ const createUser = async (user) => {
 
     const userId = result?.insertId ?? result?.lastID ?? result?.lastId ?? null;
     console.log('✅ User created successfully:', { userId, email });
+
+    // Create default profile photo for the new user
+    try {
+      console.log('🖼️ Generating default profile photo for user:', userId);
+      const defaultPhotoBase64 = getDefaultProfilePhotoBase64(200);
+      console.log('🖼️ Photo generated, length:', defaultPhotoBase64.length);
+
+      const result = await db.execute(
+        `INSERT INTO user_profile_photos (user_id, photo_data, filename, file_size, mime_type)
+         VALUES (?, ?, ?, ?, ?)`,
+        [userId, defaultPhotoBase64, 'default_avatar.png', defaultPhotoBase64.length, 'image/png']
+      );
+      console.log('✅ Default profile photo assigned to user:', userId, 'Result:', result[0]);
+    } catch (photoError) {
+      console.error('❌ Error creating default profile photo:', photoError.message);
+      console.error('❌ Full error:', photoError);
+      // Don't fail the user creation if photo assignment fails
+    }
+
     return { insertId: userId };
   } catch (error) {
     console.error('❌ Error creating user:', error.message);
@@ -51,13 +71,13 @@ const findByEmail = async (email) => {
     console.log('🔍 Finding user by email:', email);
     const [rows] = await db.execute(`SELECT * FROM users WHERE email = ? LIMIT 1`, [email]);
     const user = rows && rows[0];
-    
+
     if (user) {
       console.log('✅ User found:', { id: user.id, email: user.email });
     } else {
       console.log('❌ User not found for email:', email);
     }
-    
+
     return user;
   } catch (error) {
     console.error('❌ Error finding user by email:', error.message);
@@ -65,7 +85,29 @@ const findByEmail = async (email) => {
   }
 };
 
+const getUserWithProfilePhoto = async (userId) => {
+  try {
+    const [rows] = await db.execute(`
+      SELECT u.*,
+             CASE WHEN upp.photo_data IS NOT NULL THEN 1 ELSE 0 END as has_photo,
+             upp.photo_data,
+             upp.filename,
+             upp.file_size,
+             upp.mime_type
+      FROM users u
+      LEFT JOIN user_profile_photos upp ON u.id = upp.user_id
+      WHERE u.id = ?
+    `, [userId]);
+
+    return rows[0] || null;
+  } catch (error) {
+    console.error('❌ Error getting user with profile photo:', error.message);
+    throw error;
+  }
+};
+
 module.exports = {
   createUser,
   findByEmail,
+  getUserWithProfilePhoto,
 };

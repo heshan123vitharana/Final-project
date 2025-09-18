@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import ProfileCompletenessBar from '../components/ProfileCompletenessBar';
 
 const MillRegistration = () => {
@@ -425,10 +425,7 @@ const MillRegistration = () => {
       // Update current license status
       setCurrentLicense(newApplication);
       
-      toast.success(`License application submitted successfully! Application Number: ${result.applicationNumber}`, {
-        position: 'top-right',
-        autoClose: 5000
-      });
+      toast.success(`License application submitted successfully! Application Number: ${result.applicationNumber}`);
       handleCloseForm();
     } catch (error) {
 

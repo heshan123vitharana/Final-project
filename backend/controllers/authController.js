@@ -130,17 +130,8 @@ const login = async (req, res) => {
     );
 
     // Get complete profile information for new users
-    const pool = require('../config/database');
-    const [userWithProfile] = await pool.execute(`
-      SELECT u.*,
-             CASE WHEN upp.photo_data IS NOT NULL THEN 1 ELSE 0 END as has_photo,
-             upp.photo_data
-      FROM users u
-      LEFT JOIN user_profile_photos upp ON u.id = upp.user_id
-      WHERE u.id = ?
-    `, [user.id]);
-
-    const fullUser = userWithProfile[0];
+    const { getUserWithProfilePhoto } = require('../models/userModel');
+    const fullUser = await getUserWithProfilePhoto(user.id);
 
     // Check if this is a first-time login (missing profile fields)
     const isFirstLogin = !fullUser.address || !fullUser.city || !fullUser.district ||
@@ -166,7 +157,7 @@ const login = async (req, res) => {
         mill_location: fullUser.mill_location,
         registration_date: fullUser.created_at,
         has_photo: !!fullUser.has_photo,
-        profile_photo: fullUser.photo_data ? `data:image/jpeg;base64,${fullUser.photo_data}` : null
+        profile_photo: fullUser.photo_data ? `data:${fullUser.mime_type || 'image/png'};base64,${fullUser.photo_data}` : null
       },
     });
   } catch (e) {

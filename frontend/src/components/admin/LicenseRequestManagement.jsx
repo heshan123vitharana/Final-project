@@ -10,7 +10,7 @@ import {
   FileCheck,
   RefreshCw
 } from 'lucide-react'
-import { toast } from 'react-toastify'
+import toast from 'react-hot-toast'
 
 // Document Viewer Component
 const DocumentViewer = ({ documentData, documentType }) => {
@@ -158,12 +158,12 @@ const LicenseRequestManagement = () => {
         })
         setShowCertificateModal(true)
       } else {
-        toast.error('Certificate not available', { position: 'top-right' })
+        toast.error('Certificate not available')
       }
       
     } catch (error) {
       console.error('Error fetching certificate:', error)
-      toast.error(`Failed to load certificate: ${error.message}`, { position: 'top-right' })
+      toast.error(`Failed to load certificate: ${error.message}`)
     } finally {
       setLoadingCertificate(false)
     }
@@ -321,11 +321,11 @@ const LicenseRequestManagement = () => {
       setCertificateData({ certificate, request })
       setShowCertificateModal(true)
       
-      toast.success(`License approved successfully! License Number: ${data.licenseNumber}`, { position: 'top-right', autoClose: 5000 })
+      toast.success(`License approved successfully! License Number: ${data.licenseNumber}`)
       
     } catch (error) {
       console.error('Error approving application:', error)
-      toast.error(`Failed to approve application: ${error.message}`, { position: 'top-right' })
+      toast.error(`Failed to approve application: ${error.message}`)
     } finally {
       setProcessingAction(null)
     }
@@ -338,7 +338,7 @@ const LicenseRequestManagement = () => {
 
   const confirmReject = async () => {
     if (!rejectionReason.trim()) {
-      toast.warning('Please provide a reason for rejection', { position: 'top-right' })
+      toast.error('Please provide a reason for rejection')
       return
     }
 
@@ -377,11 +377,11 @@ const LicenseRequestManagement = () => {
       setRejectionReason('')
       setRequestToReject(null)
       
-      toast.success('License application rejected successfully.', { position: 'top-right' })
+      toast.success('License application rejected successfully.')
       
     } catch (error) {
       console.error('Error rejecting application:', error)
-      toast.error(`Failed to reject application: ${error.message}`, { position: 'top-right' })
+      toast.error(`Failed to reject application: ${error.message}`)
     } finally {
       setProcessingAction(null)
     }
@@ -473,10 +473,7 @@ This is an official government document. Any unauthorized reproduction is strict
 
     } catch (error) {
       console.error('💥 Error fetching document:', error)
-      toast.error(`Failed to load document: ${error.message}`, {
-        position: 'top-right',
-        autoClose: 5000
-      })
+      toast.error(`Failed to load document: ${error.message}`)
     } finally {
       setLoadingDocument(false)
     }
@@ -1004,7 +1001,7 @@ This is an official government document. Any unauthorized reproduction is strict
               <button
                 onClick={() => {
                   // Simulate sending email
-                  toast.success(`Certificate sent to ${certificateData.request.email}`, { position: 'top-right' })
+                  toast.success(`Certificate sent to ${certificateData.request.email}`)
                 }}
                 className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
               >

@@ -6,7 +6,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    phoneNumber: '',
+    phoneNumber: '+94',
     businessName: '',
     businessType: 'private',
     email: '',
@@ -35,10 +35,24 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+
+    // Special handling for phone number to maintain +94 prefix
+    if (name === 'phoneNumber') {
+      // Ensure the value always starts with +94
+      let phoneValue = value
+      if (!phoneValue.startsWith('+94')) {
+        phoneValue = '+94' + phoneValue.replace(/^\+?94?/, '')
+      }
+      setFormData(prev => ({
+        ...prev,
+        [name]: phoneValue
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }))
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -204,7 +218,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                     value={formData.phoneNumber}
                     onChange={handleInputChange}
                     className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm"
-                    placeholder="Phone number"
+                    placeholder="+94xxxxxxxxx"
                   />
                 </div>
 

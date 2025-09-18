@@ -11,7 +11,7 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 
 // Home page component for the Mill Dashboard
 const MillHome = ({ userData }) => {
@@ -217,7 +217,7 @@ const MillHome = ({ userData }) => {
       }
     } catch (error) {
       console.error('Error fetching license data:', error);
-      toast.error('Failed to load license status. Please try again.', { position: 'top-right' });
+      toast.error('Failed to load license status. Please try again.');
     } finally {
       setLoadingLicense(false);
     }
@@ -291,7 +291,7 @@ This is an official government document. Any unauthorized reproduction is strict
     link.download = `PMB_License_Certificate_${certificate.holderName.replace(/\s+/g, '_')}.txt`;
     link.click();
     window.URL.revokeObjectURL(url);
-    toast.success('Certificate downloaded successfully!', { position: 'top-right' });
+    toast.success('Certificate downloaded successfully!');
   };
 
   // Get status icon and color

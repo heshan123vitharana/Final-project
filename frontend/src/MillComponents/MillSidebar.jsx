@@ -20,6 +20,63 @@ import pmbLogo from '../assets/logo-p.png';
 const MillSidebar = ({ onBackToHome }) => {
   // State to control sidebar collapse (responsive)
   const [isCollapsed, setIsCollapsed] = useState(false);
+  // State for user profile photo
+  const [profilePhoto, setProfilePhoto] = useState('');
+  const [userName, setUserName] = useState('');
+
+  // Get current user ID from session data
+  const getCurrentUserId = () => {
+    try {
+      const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+      return userData.id || userData.user_id || 1;
+    } catch (error) {
+      console.error('Error getting user ID from session:', error);
+      return 1;
+    }
+  };
+
+  // Load profile photo from database
+  const loadProfilePhoto = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/profile/photo/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.photoData;
+      } else if (response.status === 404) {
+        return null; // No profile photo found, will use default
+      } else {
+        console.error('Failed to load profile photo:', response.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error loading profile photo:', error);
+      return null;
+    }
+  };
+
+  // Load user data and profile photo
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+        const fullName = userData.first_name && userData.last_name
+          ? `${userData.first_name} ${userData.last_name}`
+          : userData.first_name || userData.email || 'User';
+        setUserName(fullName);
+
+        // Load profile photo
+        const userId = getCurrentUserId();
+        const photoData = await loadProfilePhoto(userId);
+        if (photoData) {
+          setProfilePhoto(photoData);
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      }
+    };
+
+    loadUserData();
+  }, []);
 
   // Collapse sidebar on small screens (mobile)
   useEffect(() => {
@@ -110,6 +167,33 @@ const MillSidebar = ({ onBackToHome }) => {
             </NavLink>
           ))}
         </nav>
+
+        {/* User Profile Section */}
+        {!isCollapsed && (
+          <div className="p-4 border-t border-white border-opacity-20">
+            <div className="flex items-center gap-3 text-white">
+              {profilePhoto ? (
+                <img
+                  src={profilePhoto}
+                  alt="Profile"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white border-opacity-30"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-white bg-opacity-20 border-2 border-white border-opacity-30 flex items-center justify-center">
+                  <UserCircleIcon className="w-6 h-6 text-white" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">
+                  {userName}
+                </p>
+                <p className="text-xs text-white text-opacity-70">
+                  Mill Owner
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Logout Button - fixed at bottom */}
         <div className="p-4 flex-shrink-0">

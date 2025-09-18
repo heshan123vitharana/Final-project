@@ -1,5 +1,5 @@
 // frontend/src/components/DynamicPriceSelector.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const DynamicPriceSelector = ({ 
   millDistrict, 
@@ -13,17 +13,13 @@ const DynamicPriceSelector = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch prices when district, type, or condition changes
-  useEffect(() => {
+  // Memoized fetch function to avoid dependency issues
+  const fetchPrices = useCallback(async () => {
     if (!millDistrict || !paddyType || !paddyCondition) {
       setAvailablePrices([]);
       return;
     }
 
-    fetchPrices();
-  }, [millDistrict, paddyType, paddyCondition]);
-
-  const fetchPrices = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -58,7 +54,12 @@ const DynamicPriceSelector = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [millDistrict, paddyType, paddyCondition, onPriceSelect]);
+
+  // Fetch prices when district, type, or condition changes
+  useEffect(() => {
+    fetchPrices();
+  }, [fetchPrices]);
 
   const handlePriceChange = (e) => {
     const priceId = parseInt(e.target.value);

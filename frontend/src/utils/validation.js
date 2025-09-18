@@ -1,15 +1,4 @@
-import { toast } from 'react-toastify';
-
-// Toast configuration
-export const toastConfig = {
-  position: "top-right",
-  autoClose: 4000,
-  hideProgressBar: false,
-  closeOnClick: true,
-  pauseOnHover: true,
-  draggable: true,
-  progress: undefined,
-};
+import toast from 'react-hot-toast';
 
 // Validation rules
 export const validationRules = {
@@ -35,8 +24,8 @@ export const validationRules = {
   },
   phoneNumber: {
     required: true,
-    pattern: /^[+]?[1-9][\d]{0,15}$/,
-    message: 'Please enter a valid phone number'
+    pattern: /^\+947[0-8]\d{7}$/,
+    message: 'Please enter a valid Sri Lankan phone number in international format (+94771234567)'
   },
   businessName: {
     required: true,
@@ -118,19 +107,21 @@ export const validateForm = (formData, requiredFields) => {
 
 // Toast notification helpers
 export const showSuccessToast = (message) => {
-  toast.success(message, toastConfig);
+  toast.success(message);
 };
 
 export const showErrorToast = (message) => {
-  toast.error(message, toastConfig);
+  toast.error(message);
 };
 
 export const showInfoToast = (message) => {
-  toast.info(message, toastConfig);
+  toast(message);
 };
 
 export const showWarningToast = (message) => {
-  toast.warn(message, toastConfig);
+  toast(message, {
+    icon: '⚠️',
+  });
 };
 
 // Form validation with toast notifications
