@@ -222,7 +222,9 @@ const initializeTables = async () => {
     const enhancedUserColumns = [
       'password_change_required BOOLEAN DEFAULT FALSE',
       'password_expires_at TIMESTAMP NULL',
-      'password_changed_at TIMESTAMP NULL'
+      'password_changed_at TIMESTAMP NULL',
+      'reset_token VARCHAR(255) DEFAULT NULL',
+      'reset_token_expires TIMESTAMP NULL'
     ];
     
     for (const column of enhancedUserColumns) {

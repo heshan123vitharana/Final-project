@@ -106,8 +106,83 @@ const getUserWithProfilePhoto = async (userId) => {
   }
 };
 
+// Save reset token for password reset
+const saveResetToken = async (userId, resetTokenHash, resetTokenExpires) => {
+  try {
+    console.log('🔑 Saving reset token for user:', userId);
+    const [result] = await db.execute(
+      `UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?`,
+      [resetTokenHash, resetTokenExpires, userId]
+    );
+    console.log('✅ Reset token saved successfully');
+    return result;
+  } catch (error) {
+    console.error('❌ Error saving reset token:', error.message);
+    throw error;
+  }
+};
+
+// Find user by reset token
+const findByResetToken = async (resetTokenHash) => {
+  try {
+    console.log('🔍 Finding user by reset token');
+    const [rows] = await db.execute(
+      `SELECT * FROM users WHERE reset_token = ? AND reset_token_expires > NOW() LIMIT 1`,
+      [resetTokenHash]
+    );
+    const user = rows && rows[0];
+
+    if (user) {
+      console.log('✅ User found with valid reset token:', { id: user.id, email: user.email });
+    } else {
+      console.log('❌ No user found with valid reset token');
+    }
+
+    return user;
+  } catch (error) {
+    console.error('❌ Error finding user by reset token:', error.message);
+    throw error;
+  }
+};
+
+// Update user password
+const updatePassword = async (userId, hashedPassword) => {
+  try {
+    console.log('🔒 Updating password for user:', userId);
+    const [result] = await db.execute(
+      `UPDATE users SET password = ?, password_changed_at = NOW() WHERE id = ?`,
+      [hashedPassword, userId]
+    );
+    console.log('✅ Password updated successfully');
+    return result;
+  } catch (error) {
+    console.error('❌ Error updating password:', error.message);
+    throw error;
+  }
+};
+
+// Clear reset token after successful password reset
+const clearResetToken = async (userId) => {
+  try {
+    console.log('🧹 Clearing reset token for user:', userId);
+    const [result] = await db.execute(
+      `UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE id = ?`,
+      [userId]
+    );
+    console.log('✅ Reset token cleared successfully');
+    return result;
+  } catch (error) {
+    console.error('❌ Error clearing reset token:', error.message);
+    throw error;
+  }
+};
+
 module.exports = {
   createUser,
   findByEmail,
   getUserWithProfilePhoto,
+  saveResetToken,
+  findByResetToken,
+  updatePassword,
+  clearResetToken,
 };

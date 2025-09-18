@@ -1,6 +1,8 @@
 // controllers/authController.js
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const userModel = require('../models/userModel');
 
 const toEnumBusinessType = (value) => {
@@ -214,4 +216,195 @@ const logout = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getProfile, logout };
+// Configure nodemailer transporter
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // You can change this to your preferred email service
+  auth: {
+    user: process.env.EMAIL_USER || 'your-email@gmail.com',
+    pass: process.env.EMAIL_PASS || 'your-app-password'
+  }
+});
+
+// Forgot password function
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Check if user exists
+    const user = await userModel.findByEmail(email);
+    if (!user) {
+      // Don't reveal that the user doesn't exist for security reasons
+      return res.json({ message: 'If an account with this email exists, you will receive a password reset link.' });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const resetTokenExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+    // Save reset token to database (you'll need to add these fields to your user model)
+    await userModel.saveResetToken(user.id, resetTokenHash, resetTokenExpires);
+
+    // Create reset URL
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+
+    // Email content
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'noreply@paddymarketingboard.com',
+      to: email,
+      subject: 'Password Reset Request - Paddy Marketing Board',
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+          <div style="background: linear-gradient(135deg, #10B981, #059669); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">Password Reset Request</h1>
+          </div>
+
+          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
+              Hello <strong>${user.first_name} ${user.last_name}</strong>,
+            </p>
+
+            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
+              We received a request to reset your password for your Paddy Marketing Board account.
+            </p>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}"
+                 style="background: linear-gradient(135deg, #10B981, #059669);
+                        color: white;
+                        padding: 15px 30px;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        font-weight: bold;
+                        display: inline-block;
+                        font-size: 16px;">
+                Reset Password
+              </a>
+            </div>
+
+            <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+              If the button above doesn't work, copy and paste this link into your browser:
+            </p>
+
+            <p style="font-size: 14px; color: #0066cc; word-break: break-all; background: #f0f0f0; padding: 10px; border-radius: 4px;">
+              ${resetUrl}
+            </p>
+
+            <div style="border-left: 4px solid #f59e0b; padding-left: 15px; margin: 20px 0;">
+              <p style="font-size: 14px; color: #92400e; margin: 0;">
+                <strong>Important:</strong> This link will expire in 10 minutes for security reasons.
+              </p>
+            </div>
+
+            <p style="font-size: 14px; color: #666;">
+              If you didn't request this password reset, please ignore this email. Your account remains secure.
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+            <p style="font-size: 12px; color: #999; text-align: center;">
+              This email was sent from Paddy Marketing Board<br>
+              © ${new Date().getFullYear()} Sri Lanka Paddy Marketing Board. All rights reserved.
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+    // Send email
+    await transporter.sendMail(mailOptions);
+
+    res.json({ message: 'If an account with this email exists, you will receive a password reset link.' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+};
+
+// Verify reset token function
+const verifyResetToken = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({ message: 'Token is required' });
+    }
+
+    // Hash the token to compare with stored hash
+    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with valid reset token
+    const user = await userModel.findByResetToken(resetTokenHash);
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    // Check if token is expired
+    if (new Date() > new Date(user.reset_token_expires)) {
+      return res.status(400).json({ message: 'Reset token has expired' });
+    }
+
+    res.json({ message: 'Token is valid', email: user.email });
+  } catch (error) {
+    console.error('Verify reset token error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Reset password function
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+
+    // Validate password
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    // Hash the token to compare with stored hash
+    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with valid reset token
+    const user = await userModel.findByResetToken(resetTokenHash);
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    // Check if token is expired
+    if (new Date() > new Date(user.reset_token_expires)) {
+      return res.status(400).json({ message: 'Reset token has expired' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password and clear reset token
+    await userModel.updatePassword(user.id, hashedPassword);
+    await userModel.clearResetToken(user.id);
+
+    res.json({ message: 'Password reset successful' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  getProfile,
+  logout,
+  forgotPassword,
+  verifyResetToken,
+  resetPassword
+};

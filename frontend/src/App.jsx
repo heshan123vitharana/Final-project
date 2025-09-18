@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react'
-import { BrowserRouter as Router } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Header from './components/Header'
 import HeroSection from './components/HeroSection'
 import About from './components/About-New'
@@ -13,6 +13,7 @@ import AdminLogin from './components/AdminLogin'
 import MillOwnerRegistration from './components/MillOwnerRegistration'
 import AuthPage from './components/AuthPage'
 import AdminDashboard from './components/admin/AdminDashboard'
+import ResetPassword from './components/ResetPassword'
 import { SectionTransition } from './components/PageTransition'
 import { getHeaderHeight, scrollIntoViewWithOffset, smoothScrollTo } from './utils/scroll'
 import MillLayout from './MillComponents/MillLayout'
@@ -298,9 +299,15 @@ function App() {
   return (
     <ToastProvider>
       <Router>
-      <div className="min-h-screen bg-white relative overflow-hidden">
-        {/* Render different flows based on user state */}
-      {userFlowState === 'auth' && (
+        <Routes>
+          {/* Reset Password Route */}
+          <Route path="/reset-password" element={<ResetPassword />} />
+
+          {/* Main App Route */}
+          <Route path="/*" element={
+            <div className="min-h-screen bg-white relative overflow-hidden">
+              {/* Render different flows based on user state */}
+              {userFlowState === 'auth' && (
         <AuthPage 
           onAuthSuccess={handleAuthSuccess}
           onExit={() => setUserFlowState('home')}
@@ -450,8 +457,10 @@ function App() {
       )}
         </>
         )}
-      </div>
-    </Router>
+            </div>
+          } />
+        </Routes>
+      </Router>
     </ToastProvider>
   )
 }

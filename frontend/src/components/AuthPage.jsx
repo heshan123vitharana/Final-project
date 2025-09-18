@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import MillLogin from './MillLogin'
 import MillSignUp from './MillSignUp'
+import ForgotPassword from './ForgotPassword'
 
 const AuthPage = ({ onAuthSuccess, onExit }) => {
-  const [currentView, setCurrentView] = useState('login') // 'login' or 'signup'
+  const [currentView, setCurrentView] = useState('login') // 'login', 'signup', or 'forgot-password'
 
   const handleLoginSuccess = (userData) => {
     onAuthSuccess(userData)
@@ -21,6 +22,19 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
     setCurrentView('login')
   }
 
+  const goToForgotPassword = () => {
+    setCurrentView('forgot-password')
+  }
+
+  if (currentView === 'forgot-password') {
+    return (
+      <ForgotPassword
+        onBackToLogin={goToLogin}
+        onExit={onExit}
+      />
+    )
+  }
+
   if (currentView === 'signup') {
     return (
       <MillSignUp 
@@ -32,9 +46,10 @@ const AuthPage = ({ onAuthSuccess, onExit }) => {
   }
 
   return (
-    <MillLogin 
+    <MillLogin
       onLoginSuccess={handleLoginSuccess}
       onGoToSignUp={goToSignUp}
+      onGoToForgotPassword={goToForgotPassword}
       onExit={onExit}
     />
   )
