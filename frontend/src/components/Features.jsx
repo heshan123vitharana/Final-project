@@ -127,7 +127,15 @@ const Features = () => {
   };
 
   return (
-    <section id="features" className="relative min-h-screen gov-section-bg overflow-hidden py-24">
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+        * {
+          font-family: 'Poppins', sans-serif;
+        }
+      `}</style>
+      <section id="features" className="relative min-h-screen gov-section-bg overflow-hidden py-24">
       {/* Very Light Background Elements */}
       <div className="absolute inset-0">
         {/* Ultra light gradient overlay */}
@@ -159,90 +167,88 @@ const Features = () => {
           </p>
         </div>
 
-        {/* Modern Masonry Gallery Layout */}
-        <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
-          {galleryItems.map((item, index) => {
-            const colors = getColorClasses(item.color);
-            const isLarge = index % 4 === 0; // Make every 4th item larger
-            
-            return (
-              <div
-                key={index}
-                className={`gov-card group relative break-inside-avoid mb-8 overflow-hidden cursor-pointer hover:-translate-y-3 ${
-                  isLarge ? 'lg:col-span-2' : ''
-                }`}
-                style={{ 
-                  animationDelay: `${index * 150}ms`,
-                }}
-              >
-                {/* Image Container with Overlay */}
-                <div className="relative overflow-hidden">
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-64 md:h-80 object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  
-                  {/* Gradient Overlay */}
-                  <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent group-hover:from-black/70 transition-all duration-500`}></div>
-                  
-                  {/* Category Badge */}
-                  <div className="absolute top-4 left-4">
-                    <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wide rounded-full ${colors.accent} ${colors.textLight} shadow-lg`}>
-                      {item.category}
-                    </span>
-                  </div>
-                  
-                  {/* Stats Badge */}
-                  <div className="absolute top-4 right-4">
-                    <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                      <span className={`text-xs font-semibold ${colors.text}`}>
-                        {item.stats}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Content Section */}
-                <div className="p-6 md:p-8">
-                  {/* Subtitle */}
-                  <p className={`text-sm font-medium ${colors.text} mb-2 tracking-wide uppercase`}>
-                    {item.subtitle}
-                  </p>
-                  
-                  {/* Title */}
-                  <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 group-hover:text-gray-800 transition-colors leading-tight">
-                    {item.title}
-                  </h3>
-                  
-                  {/* Description */}
-                  <p className="text-gray-600 leading-relaxed mb-6 text-sm md:text-base">
-                    {item.description}
-                  </p>
-                  
-                  {/* Action Area */}
-                  <div className="flex items-center justify-between">
-                    <button className={`flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${colors.bg} text-white rounded-xl font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg`}>
-                      <span>Explore</span>
-                      <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                      </svg>
-                    </button>
-                    
-                    {/* Type Indicator */}
-                    <div className={`w-3 h-3 rounded-full ${colors.accent} animate-pulse`}></div>
-                  </div>
-                </div>
-                
-                {/* Hover Effect Overlay */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${colors.bg} opacity-0 group-hover:opacity-5 transition-all duration-500 pointer-events-none`}></div>
+        {/* Modern Services Layout */}
+        <div className="flex flex-col md:flex-row items-center">
+          <img className="max-w-2xl w-full" src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/features/group-image-1.png" alt="Services Excellence" />
+          <div className="space-y-10 px-4 md:px-0">
+            <div className="flex items-center justify-center gap-6 max-w-md">
+              <div className="p-6 aspect-square bg-violet-100 rounded-full">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 18.667V24.5m4.668-8.167V24.5m4.664-12.833V24.5m2.333-21L15.578 13.587a.584.584 0 0 1-.826 0l-3.84-3.84a.583.583 0 0 0-.825 0L2.332 17.5M4.668 21v3.5m4.664-8.167V24.5" stroke="#7F22FE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
-            );
-          })}
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-slate-700">Real-Time Analytics</h3>
+                <p className="text-sm text-slate-600">Get instant insights into your rice production with live dashboards and market data.</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-6 max-w-md">
+              <div className="p-6 aspect-square bg-green-100 rounded-full">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 11.667A2.333 2.333 0 0 0 11.667 14c0 1.19-.117 2.929-.304 4.667m4.972-3.36c0 2.776 0 7.443-1.167 10.36m5.004-1.144c.14-.7.502-2.683.583-3.523M2.332 14a11.667 11.667 0 0 1 21-7m-21 11.667h.01m23.092 0c.233-2.333.152-6.246 0-7" stroke="#00A63E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M5.832 22.75C6.415 21 6.999 17.5 6.999 14a7 7 0 0 1 .396-2.333m2.695 13.999c.245-.77.525-1.54.665-2.333m-.255-15.4A7 7 0 0 1 21 14v2.333" stroke="#00A63E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-slate-700">Government-Grade Security</h3>
+                <p className="text-sm text-slate-600">End-to-end encryption, secure transactions, compliance with national standards.</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-6 max-w-md">
+              <div className="p-6 aspect-square bg-orange-100 rounded-full">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4.668 25.666h16.333a2.333 2.333 0 0 0 2.334-2.333V8.166L17.5 2.333H7a2.333 2.333 0 0 0-2.333 2.333v4.667" stroke="#F54900" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16.332 2.333V7a2.334 2.334 0 0 0 2.333 2.333h4.667m-21 8.167h11.667M10.5 21l3.5-3.5-3.5-3.5" stroke="#F54900" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-slate-700">Comprehensive Reports</h3>
+                <p className="text-sm text-slate-600">Export professional agricultural reports for government compliance and quality assurance.</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-6 max-w-md">
+              <div className="p-6 aspect-square bg-blue-100 rounded-full">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 2.333c6.443 0 11.667 5.224 11.667 11.667 0 6.443-5.224 11.667-11.667 11.667S2.333 20.443 2.333 14C2.333 7.557 7.557 2.333 14 2.333z" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9.333 14l4.667 4.667L23.333 9.333" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-slate-700">Quality Assurance</h3>
+                <p className="text-sm text-slate-600">Rigorous quality control processes ensuring every grain meets international standards.</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-6 max-w-md">
+              <div className="p-6 aspect-square bg-emerald-100 rounded-full">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 25.667c6.443 0 11.667-5.224 11.667-11.667S20.443 2.333 14 2.333 2.333 7.557 2.333 14s5.224 11.667 11.667 11.667z" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9.333 14H18.667M14 9.333v9.334" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-slate-700">Farmer Support Network</h3>
+                <p className="text-sm text-slate-600">24/7 support system connecting farmers with agricultural experts and government resources.</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-6 max-w-md">
+              <div className="p-6 aspect-square bg-teal-100 rounded-full">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12.25 6.417c0-.644.522-1.167 1.167-1.167h1.166c.645 0 1.167.523 1.167 1.167v2.916c0 .645-.522 1.167-1.167 1.167h-1.166c-.645 0-1.167-.522-1.167-1.167V6.417z" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M5.833 14c0-.644.523-1.167 1.167-1.167h2.917c.644 0 1.166.523 1.166 1.167v7.583c0 .645-.522 1.167-1.166 1.167H7c-.644 0-1.167-.522-1.167-1.167V14z" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M18.083 17.5c0-.644.523-1.167 1.167-1.167H21.167c.644 0 1.166.523 1.166 1.167v4.083c0 .645-.522 1.167-1.166 1.167h-1.917c-.644 0-1.167-.522-1.167-1.167V17.5z" stroke="#14B8A6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-slate-700">Sustainable Practices</h3>
+                <p className="text-sm text-slate-600">Implementing eco-friendly farming methods to protect environment for future generations.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
       </div>
-    </section>
+      </section>
+    </>
   );
 };
 
