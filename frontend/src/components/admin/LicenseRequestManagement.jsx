@@ -146,7 +146,8 @@ const LicenseRequestManagement = () => {
       const response = await fetch(`http://localhost:5000/api/licenses/admin/certificate/${applicationId}`)
       
       if (!response.ok) {
-        throw new Error('Failed to retrieve certificate')
+        const errorData = await response.json().catch(() => ({ message: 'Failed to retrieve certificate' }))
+        throw new Error(errorData.message || 'Failed to retrieve certificate')
       }
 
       const data = await response.json()
@@ -158,7 +159,7 @@ const LicenseRequestManagement = () => {
         })
         setShowCertificateModal(true)
       } else {
-        toast.error('Certificate not available')
+        toast.error(data.message || 'Certificate not available')
       }
       
     } catch (error) {
@@ -624,18 +625,7 @@ This is an official government document. Any unauthorized reproduction is strict
                       </>
                     )}
                     {request.status === 'approved' && request.licenseNumber && (
-                      <button
-                        onClick={() => handleViewCertificate(request.id)}
-                        disabled={loadingCertificate}
-                        className="text-green-600 hover:text-green-900 inline-flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loadingCertificate ? (
-                          <RefreshCw size={16} className="mr-1 animate-spin" />
-                        ) : (
-                          <FileCheck size={16} className="mr-1" />
-                        )}
-                        {loadingCertificate ? 'Loading...' : 'View Certificate'}
-                      </button>
+                      <></>
                     )}
                   </td>
                 </tr>

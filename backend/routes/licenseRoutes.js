@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 const { generateLicense, saveLicenseToDatabase } = require('../utils/licenseGenerator');
+const CertificateDataGenerator = require('../utils/certificateDataGenerator');
+const UnifiedCertificateGenerator = require('../utils/unifiedCertificateGenerator');
 
 // Apply for mill license
 router.post('/apply', async (req, res) => {
@@ -528,30 +530,52 @@ router.put('/admin/approve/:applicationId', async (req, res) => {
 
         console.log(`✅ License application ${applicationId} approved with license number: ${licenseNumber}`);
 
-        // Generate the license document automatically
+        // Generate the license document automatically using UNIFIED generator
         try {
-            console.log('📄 Generating license document...');
+            console.log('📄 Generating unified license document...');
 
-            const licenseData = {
-                licenseNumber: licenseNumber,
-                firstName: application.first_name,
-                lastName: application.last_name,
-                nic: application.nic,
-                address: application.address,
+            // Create user object from application data
+            const user = {
+                first_name: application.first_name,
+                last_name: application.last_name,
+                business_name: application.business_name,
+                business_type: application.business_type,
                 city: application.city,
                 district: application.district,
-                millLocation: application.mill_location,
-                millCapacity: application.mill_capacity,
-                applicationNumber: application.application_number,
-                applicationDate: application.created_at
+                mill_district: application.mill_district,
+                address: application.address,
+                mill_location: application.mill_location,
+                mill_capacity: application.mill_capacity,
+                email: application.email,
+                phone: application.phone,
+                nic: application.nic,
+                postal_code: application.postal_code
             };
 
-            const licenseBuffer = await generateLicense(licenseData);
-            await saveLicenseToDatabase(applicationId, licenseBuffer, pool);
+            // Create application object with license number
+            const applicationWithLicense = {
+                ...application,
+                license_number: licenseNumber,
+                approved_date: new Date().toISOString()
+            };
 
-            console.log('✅ License document generated and saved successfully');
+            // Use UNIFIED certificate generator for consistency
+            const unifiedGenerator = new UnifiedCertificateGenerator();
+            const certificateData = unifiedGenerator.generateStandardizedCertificateData(applicationWithLicense, user);
+
+            // Validate certificate data before generation
+            const validation = unifiedGenerator.validateCertificateData(certificateData);
+            if (!validation.isValid) {
+                console.warn('⚠️ Certificate validation warnings:', validation.errors);
+            }
+
+            // Generate PDF using unified system
+            const licenseBuffer = await unifiedGenerator.generatePDFLicense(certificateData);
+            await unifiedGenerator.saveLicenseToDatabase(applicationId, licenseBuffer, pool);
+
+            console.log('✅ Unified license document generated and saved successfully');
         } catch (licenseError) {
-            console.error('⚠️ Warning: Failed to generate license document:', licenseError.message);
+            console.error('⚠️ Warning: Failed to generate unified license document:', licenseError.message);
             // Don't fail the approval process if license generation fails
         }
 
@@ -682,7 +706,7 @@ router.get('/admin/statistics', (_req, res) => {
     });
 });
 
-// Download generated license
+// Download generated license (existing PDF download)
 router.get('/download/:applicationId', async (req, res) => {
     try {
         const { applicationId } = req.params;
@@ -732,18 +756,19 @@ router.get('/download/:applicationId', async (req, res) => {
     }
 });
 
-// Admin route to view certificate for approved applications
-router.get('/admin/certificate/:applicationId', async (req, res) => {
+// Get certificate data for users (UNIFIED data for frontend display/download)
+router.get('/certificate/:applicationId', async (req, res) => {
     try {
-        console.log('🎖️ Admin certificate view request received');
+        console.log('📄 UNIFIED Certificate data request for application:', req.params.applicationId);
         const { applicationId } = req.params;
 
-        // First get the license application details
+        // Get the license application details
         const applicationQuery = `
-            SELECT ml.*, u.first_name, u.last_name, u.business_name, u.business_type, 
-                   u.city, u.district, u.mill_capacity, u.email, u.phone
+            SELECT ml.*, u.first_name, u.last_name, u.business_name, u.business_type,
+                   u.city, u.district, u.mill_district, u.address, u.mill_location, u.mill_capacity,
+                   u.email, u.phone, u.nic, u.postal_code
             FROM mill_licenses ml
-            JOIN mill_owners u ON ml.user_id = u.id
+            JOIN users u ON ml.user_id = u.id
             WHERE ml.id = ? AND ml.status = 'approved'
         `;
 
@@ -751,48 +776,39 @@ router.get('/admin/certificate/:applicationId', async (req, res) => {
 
         if (applications.length === 0) {
             return res.status(404).json({
-                message: 'Approved license application not found'
+                message: 'Certificate not found or application not approved'
             });
         }
 
         const application = applications[0];
-
-        // Check if certificate file exists
-        if (application.certificate_path) {
-            try {
-                // If we have a certificate file path, try to serve it
-                const fs = require('fs');
-                const path = require('path');
-                const certificatePath = path.join(__dirname, '..', application.certificate_path);
-                
-                if (fs.existsSync(certificatePath)) {
-                    const fileBuffer = fs.readFileSync(certificatePath);
-                    res.setHeader('Content-Type', 'application/pdf');
-                    res.setHeader('Content-Disposition', `inline; filename="Certificate_${application.license_number}.pdf"`);
-                    return res.send(fileBuffer);
-                }
-            } catch (fileError) {
-                console.log('Certificate file not found, generating new one:', fileError.message);
-            }
-        }
-
-        // If no certificate file exists, generate certificate data for frontend display
-        const certificateData = {
-            licenseNumber: application.license_number,
-            holderName: `${application.first_name} ${application.last_name}`,
-            holderAddress: `${application.city}, ${application.district}`,
-            businessName: application.business_name,
-            businessLocation: `${application.city}, ${application.district}`,
-            millCapacity: application.mill_capacity,
-            commencementDate: application.approved_date ? new Date(application.approved_date).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
-            expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB'), // 1 year from now
-            issueDate: application.approved_date ? new Date(application.approved_date).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
-            issuingOfficer: 'Director General, Paddy Marketing Board',
-            applicationId: application.id,
-            businessType: application.business_type
+        const user = {
+            first_name: application.first_name,
+            last_name: application.last_name,
+            business_name: application.business_name,
+            business_type: application.business_type,
+            city: application.city,
+            district: application.district,
+            mill_district: application.mill_district,
+            address: application.address,
+            mill_location: application.mill_location,
+            mill_capacity: application.mill_capacity,
+            email: application.email,
+            phone: application.phone,
+            nic: application.nic,
+            postal_code: application.postal_code
         };
 
-        console.log(`✅ Certificate data generated for license: ${application.license_number}`);
+        // Use UNIFIED certificate generator for consistency
+        const unifiedGenerator = new UnifiedCertificateGenerator();
+        const certificateData = unifiedGenerator.generateStandardizedCertificateData(application, user);
+
+        // Validate the certificate data
+        const validation = unifiedGenerator.validateCertificateData(certificateData);
+        if (!validation.isValid) {
+            console.warn('⚠️ Certificate data validation warnings:', validation.errors);
+        }
+
+        console.log(`✅ UNIFIED Certificate data retrieved for license: ${certificateData.licenseNumber}`);
 
         res.json({
             success: true,
@@ -803,13 +819,226 @@ router.get('/admin/certificate/:applicationId', async (req, res) => {
                 status: application.status,
                 submittedDate: application.created_at,
                 approvedDate: application.approved_date
+            },
+            validation: validation,
+            // Add download options
+            downloadOptions: {
+                textCertificate: `/api/licenses/download-text/${applicationId}`,
+                pdfCertificate: `/api/licenses/download/${applicationId}`,
+                imageCertificate: `/api/licenses/download-image/${applicationId}`
             }
         });
 
     } catch (error) {
-        console.error('Error retrieving certificate:', error);
+        console.error('Error retrieving UNIFIED certificate data:', error);
+        res.status(500).json({
+            message: 'Failed to retrieve certificate data',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// Admin route to view certificate for approved applications (UNIFIED)
+router.get('/admin/certificate/:applicationId', async (req, res) => {
+    try {
+        console.log('🎖️ Admin UNIFIED certificate view request received for ID:', req.params.applicationId);
+        const { applicationId } = req.params;
+
+        // First get the license application details
+        const applicationQuery = `
+            SELECT ml.*, u.first_name, u.last_name, u.business_name, u.business_type,
+                   u.city, u.district, u.mill_district, u.address, u.mill_location, u.mill_capacity,
+                   u.email, u.phone, u.nic, u.postal_code
+            FROM mill_licenses ml
+            JOIN users u ON ml.user_id = u.id
+            WHERE ml.id = ? AND ml.status = 'approved'
+        `;
+
+        const [applications] = await pool.execute(applicationQuery, [applicationId]);
+
+        if (applications.length === 0) {
+            return res.status(404).json({
+                message: 'Certificate not found or application not approved'
+            });
+        }
+
+        const application = applications[0];
+        const user = {
+            first_name: application.first_name,
+            last_name: application.last_name,
+            business_name: application.business_name,
+            business_type: application.business_type,
+            city: application.city,
+            district: application.district,
+            mill_district: application.mill_district,
+            address: application.address,
+            mill_location: application.mill_location,
+            mill_capacity: application.mill_capacity,
+            email: application.email,
+            phone: application.phone,
+            nic: application.nic,
+            postal_code: application.postal_code
+        };
+
+        // Use UNIFIED certificate data generator for consistency
+        const unifiedGenerator = new UnifiedCertificateGenerator();
+        const certificateData = unifiedGenerator.generateStandardizedCertificateData(application, user);
+
+        // Validate the certificate data
+        const validation = unifiedGenerator.validateCertificateData(certificateData);
+        if (!validation.isValid) {
+            console.warn('⚠️ Certificate data validation warnings:', validation.errors);
+        }
+
+        console.log(`✅ UNIFIED Certificate data generated for admin view: ${certificateData.licenseNumber}`);
+
+        // Return complete certificate data for admin view
+        res.json({
+            success: true,
+            certificate: certificateData,
+            application: {
+                id: application.id,
+                applicationNumber: application.application_number,
+                status: application.status,
+                submittedDate: application.created_at,
+                approvedDate: application.approved_date
+            },
+            validation: validation,
+            message: 'UNIFIED Certificate data generated successfully'
+        });
+
+    } catch (error) {
+        console.error('Error retrieving UNIFIED admin certificate:', error);
         res.status(500).json({
             message: 'Failed to retrieve certificate',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// UNIFIED download endpoints for different certificate formats
+// Download text certificate using unified generator
+router.get('/download-text/:applicationId', async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+        console.log(`📄 UNIFIED Text certificate download for application: ${applicationId}`);
+
+        // Get application and user data
+        const applicationQuery = `
+            SELECT ml.*, u.first_name, u.last_name, u.business_name, u.business_type,
+                   u.city, u.district, u.mill_district, u.address, u.mill_location, u.mill_capacity,
+                   u.email, u.phone, u.nic, u.postal_code
+            FROM mill_licenses ml
+            JOIN users u ON ml.user_id = u.id
+            WHERE ml.id = ? AND ml.status = 'approved'
+        `;
+
+        const [applications] = await pool.execute(applicationQuery, [applicationId]);
+
+        if (applications.length === 0) {
+            return res.status(404).json({ message: 'Certificate not found or not approved' });
+        }
+
+        const application = applications[0];
+        const user = {
+            first_name: application.first_name,
+            last_name: application.last_name,
+            business_name: application.business_name,
+            business_type: application.business_type,
+            city: application.city,
+            district: application.district,
+            mill_district: application.mill_district,
+            address: application.address,
+            mill_location: application.mill_location,
+            mill_capacity: application.mill_capacity,
+            email: application.email,
+            phone: application.phone,
+            nic: application.nic,
+            postal_code: application.postal_code
+        };
+
+        // Generate unified certificate data
+        const unifiedGenerator = new UnifiedCertificateGenerator();
+        const certificateData = unifiedGenerator.generateStandardizedCertificateData(application, user);
+
+        // Generate text certificate
+        const textCertificate = unifiedGenerator.generateTextCertificate(certificateData);
+
+        // Set headers for download
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="PMB_License_Certificate_${certificateData.licenseNumber.replace(/[^a-zA-Z0-9]/g, '_')}.txt"`);
+
+        console.log(`✅ UNIFIED Text certificate downloaded: ${certificateData.licenseNumber}`);
+        res.send(textCertificate);
+
+    } catch (error) {
+        console.error('Error downloading UNIFIED text certificate:', error);
+        res.status(500).json({
+            message: 'Failed to download text certificate',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// Download image certificate using unified generator
+router.get('/download-image/:applicationId', async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+        console.log(`🖼️ UNIFIED Image certificate download for application: ${applicationId}`);
+
+        // Get application and user data
+        const applicationQuery = `
+            SELECT ml.*, u.first_name, u.last_name, u.business_name, u.business_type,
+                   u.city, u.district, u.mill_district, u.address, u.mill_location, u.mill_capacity,
+                   u.email, u.phone, u.nic, u.postal_code
+            FROM mill_licenses ml
+            JOIN users u ON ml.user_id = u.id
+            WHERE ml.id = ? AND ml.status = 'approved'
+        `;
+
+        const [applications] = await pool.execute(applicationQuery, [applicationId]);
+
+        if (applications.length === 0) {
+            return res.status(404).json({ message: 'Certificate not found or not approved' });
+        }
+
+        const application = applications[0];
+        const user = {
+            first_name: application.first_name,
+            last_name: application.last_name,
+            business_name: application.business_name,
+            business_type: application.business_type,
+            city: application.city,
+            district: application.district,
+            mill_district: application.mill_district,
+            address: application.address,
+            mill_location: application.mill_location,
+            mill_capacity: application.mill_capacity,
+            email: application.email,
+            phone: application.phone,
+            nic: application.nic,
+            postal_code: application.postal_code
+        };
+
+        // Generate unified certificate data
+        const unifiedGenerator = new UnifiedCertificateGenerator();
+        const certificateData = unifiedGenerator.generateStandardizedCertificateData(application, user);
+
+        // Generate image certificate
+        const imageBuffer = await unifiedGenerator.generateImageCertificate(certificateData);
+
+        // Set headers for download
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Content-Disposition', `attachment; filename="PMB_License_Certificate_${certificateData.licenseNumber.replace(/[^a-zA-Z0-9]/g, '_')}.png"`);
+        res.setHeader('Content-Length', imageBuffer.length);
+
+        console.log(`✅ UNIFIED Image certificate downloaded: ${certificateData.licenseNumber}`);
+        res.send(imageBuffer);
+
+    } catch (error) {
+        console.error('Error downloading UNIFIED image certificate:', error);
+        res.status(500).json({
+            message: 'Failed to download image certificate',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
         });
     }

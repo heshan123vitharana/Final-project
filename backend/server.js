@@ -12,19 +12,39 @@ const enhancedRoutes = require('./routes/enhancedRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS middleware
+// Enhanced CORS middleware to fix cross-origin issues
 app.use((req, res, next) => {
-    // Set CORS headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    // Get the origin from the request
+    const origin = req.headers.origin;
+
+    // Define allowed origins
+    const allowedOrigins = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3001',
+        'http://localhost:3002',
+        'http://127.0.0.1:3002',
+        // Add production domain when available
+    ];
+
+    // Set CORS headers based on origin
+    if (allowedOrigins.includes(origin) || !origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    }
+
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Length, X-Requested-With');
     res.setHeader('Access-Control-Max-Age', '86400');
-    
+
     // Handle preflight OPTIONS requests
     if (req.method === 'OPTIONS') {
+        console.log(`🔄 CORS preflight for ${req.path} from origin: ${origin}`);
         return res.status(200).end();
     }
-    
+
     next();
 });
 // Increase payload limit for image uploads (50MB)

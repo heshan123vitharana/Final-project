@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, ResponsiveContainer
 } from 'recharts';
@@ -38,6 +38,7 @@ const MillHome = ({ userData }) => {
   // License status state
   const [licenseData, setLicenseData] = useState(null);
   const [loadingLicense, setLoadingLicense] = useState(false);
+  const [loadingCertificate, setLoadingCertificate] = useState(false);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
 
   // Profile photo state
@@ -175,10 +176,10 @@ const MillHome = ({ userData }) => {
   // Load stock data when component mounts
   useEffect(() => {
     fetchStockData();
-  }, [userData?.id]);
+  }, []);
 
   // Fetch user's license data
-  const fetchLicenseData = async () => {
+  const fetchLicenseData = useCallback(async () => {
     // Get current user data from session to ensure we have the latest user ID
     const getCurrentUserData = () => {
       try {
@@ -221,12 +222,12 @@ const MillHome = ({ userData }) => {
     } finally {
       setLoadingLicense(false);
     }
-  };
+  }, [userData, setLoadingLicense, setLicenseData]);
 
   // Load license data when component mounts
   useEffect(() => {
     fetchLicenseData();
-  }, [userData?.id]);
+  }, [fetchLicenseData]);
 
   // Generate certificate data for approved licenses
   const generateCertificate = (applicationData) => {
@@ -247,12 +248,29 @@ const MillHome = ({ userData }) => {
   };
 
   // Download certificate function
-  const downloadCertificate = (certificate) => {
-    const certificateContent = `
+  const downloadCertificate = async (applicationId) => {
+    try {
+      setLoadingCertificate(true);
+
+      // Fetch certificate data from the unified endpoint
+      const response = await fetch(`http://localhost:5000/api/licenses/certificate/${applicationId}`);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to retrieve certificate' }));
+        throw new Error(errorData.message || 'Failed to retrieve certificate');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.certificate) {
+        const certificate = data.certificate;
+
+        // Generate formatted certificate content using server data
+        const certificateContent = `
 GOVERNMENT OF SRI LANKA
 PADDY MARKETING BOARD
 
-MILL LICENSE
+LICENSE TO OPERATE RICE MILL
 
 License issued under Section 10 of the Paddy Marketing Board Act No. 14 of 1971
 
@@ -268,14 +286,18 @@ License Number: ${certificate.licenseNumber}
 
 This license is issued to the above-mentioned license holder by the Paddy Marketing Board to operate a business of milling, parboiling, or processing rice at the aforementioned business location, following the consideration of the application submitted by the license holder. This license is subject to the specific conditions stipulated herein.
 
+CONDITIONS:
+1. This license is non-transferable and must be displayed prominently at the business premises.
+2. The license holder must comply with all regulations under the Paddy Marketing Board Act.
+3. Regular inspections may be conducted by authorized officers of the PMB.
+4. Any changes to the business location or capacity must be reported immediately.
+5. This license must be renewed annually before the expiry date.
+
 Issued by the Paddy Marketing Board.
 
 Date: ${certificate.issueDate}
-Place: Colombo 02
-Address: Sir Chittampalam A. Gardiner Mawatha
-Housing Secretariat Building
-6th Floor
-By the Paddy Marketing Board
+Place: ${certificate.issuedAt}
+Address: ${certificate.officeAddress}
 
 ${certificate.issuingOfficer}
 Issuing Officer
@@ -284,14 +306,25 @@ PMB
 This is an official government document. Any unauthorized reproduction is strictly prohibited.
 `;
 
-    const blob = new Blob([certificateContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `PMB_License_Certificate_${certificate.holderName.replace(/\s+/g, '_')}.txt`;
-    link.click();
-    window.URL.revokeObjectURL(url);
-    toast.success('Certificate downloaded successfully!');
+        // Download as text file (for now - can be enhanced to download PDF)
+        const blob = new Blob([certificateContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `PMB_License_Certificate_${certificate.holderName.replace(/\s+/g, '_')}.txt`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+
+        toast.success('Certificate downloaded successfully!');
+      } else {
+        toast.error(data.message || 'Certificate not available');
+      }
+    } catch (error) {
+      console.error('Error downloading certificate:', error);
+      toast.error(`Failed to download certificate: ${error.message}`);
+    } finally {
+      setLoadingCertificate(false);
+    }
   };
 
   // Get status icon and color
@@ -339,7 +372,7 @@ This is an official government document. Any unauthorized reproduction is strict
               const getCurrentUserData = () => {
                 try {
                   return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-                } catch (error) {
+                } catch {
                   return userData || {};
                 }
               };
@@ -351,7 +384,7 @@ This is an official government document. Any unauthorized reproduction is strict
             const getCurrentUserData = () => {
               try {
                 return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-              } catch (error) {
+              } catch {
                 return userData || {};
               }
             };
@@ -371,7 +404,7 @@ This is an official government document. Any unauthorized reproduction is strict
           const getCurrentUserData = () => {
             try {
               return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-            } catch (error) {
+            } catch {
               return userData || {};
             }
           };
@@ -740,14 +773,12 @@ This is an official government document. Any unauthorized reproduction is strict
             {/* Action Buttons */}
             <div className="flex space-x-4 mt-6">
               <button
-                onClick={() => {
-                  const certificate = generateCertificate(licenseData);
-                  if (certificate) downloadCertificate(certificate);
-                }}
-                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                onClick={() => downloadCertificate(licenseData.id)}
+                disabled={loadingCertificate}
+                className={`flex-1 ${loadingCertificate ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white px-4 py-3 rounded-lg transition-colors flex items-center justify-center`}
               >
                 <Download className="mr-2" size={20} />
-                Download Certificate
+                {loadingCertificate ? 'Downloading...' : 'Download Certificate'}
               </button>
               <button
                 onClick={() => setShowCertificateModal(false)}
