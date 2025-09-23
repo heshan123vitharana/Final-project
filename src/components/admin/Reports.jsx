@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { 
-  Download, 
-  FileText, 
-  Calendar, 
-  Filter, 
+import { useState, useEffect } from 'react'
+import {
+  Download,
+  FileText,
+  Calendar,
+  Filter,
   BarChart3,
   TrendingUp,
   Users,
@@ -17,8 +17,12 @@ const Reports = () => {
   })
   const [selectedRegion, setSelectedRegion] = useState('all')
   const [selectedMillType, setSelectedMillType] = useState('all')
-  const [reportType, setReportType] = useState('stock')
+  const [reportType, setReportType] = useState('licenses')
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [isPreviewingPDF, setIsPreviewingPDF] = useState(false)
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
+  const [reportData, setReportData] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   const regions = [
     'All Regions',
@@ -41,8 +45,8 @@ const Reports = () => {
     { id: 'licenses', name: 'License Status Report', icon: FileText }
   ]
 
-  // Mock report data
-  const reportData = {
+  // Mock report data for fallback
+  const mockReportData = {
     stock: {
       summary: {
         totalStock: 20700,
@@ -109,12 +113,28 @@ const Reports = () => {
     }
   }
 
+  // Initialize reportData with mock data
+  useEffect(() => {
+    setReportData(mockReportData)
+  }, [])
+
+  // Get current report data
+  const getCurrentReportData = () => {
+    return reportData || mockReportData
+  }
+
   const generatePDFReport = async () => {
     // Dynamic import to ensure autoTable plugin is loaded
     const { jsPDF } = await import('jspdf')
     await import('jspdf-autotable')
-    
+
     const doc = new jsPDF()
+
+    // Ensure autoTable is available
+    if (typeof doc.autoTable !== 'function') {
+      console.error('autoTable plugin not loaded properly')
+      return
+    }
     const currentData = reportData[reportType]
     
     // Header with PMB branding

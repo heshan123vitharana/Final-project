@@ -56,6 +56,79 @@ const mockLicenseRequests = [
   }
 ]
 
+// Document Viewer Component
+const DocumentViewer = ({ documentType, getDocumentSrc }) => {
+  const [showPdfViewer, setShowPdfViewer] = useState(false)
+
+  const documentSrc = getDocumentSrc()
+  const isPdf = documentSrc.includes('application/pdf')
+
+  const handleImageError = () => {
+    if (!showPdfViewer) {
+      setShowPdfViewer(true)
+    }
+  }
+
+  const handleDownload = () => {
+    const link = document.createElement('a')
+    link.href = documentSrc
+    const extension = isPdf || showPdfViewer ? 'pdf' : 'jpg'
+    link.download = `${documentType}_${Date.now()}.${extension}`
+    link.click()
+  }
+
+  return (
+    <div className="text-center">
+      <div className="mb-4 flex justify-center space-x-2">
+        <span className="text-sm text-gray-600">
+          Document: {documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
+        </span>
+        <button
+          onClick={handleDownload}
+          className="text-blue-600 hover:text-blue-800 text-sm underline flex items-center"
+        >
+          <Download size={14} className="mr-1" />
+          Download
+        </button>
+      </div>
+
+      {isPdf || showPdfViewer ? (
+        <div className="w-full">
+          <iframe
+            src={documentSrc.replace('data:image/jpeg;base64,', 'data:application/pdf;base64,')}
+            width="100%"
+            height="600px"
+            style={{ border: 'none' }}
+            title={`${documentType} PDF Viewer`}
+            onError={() => {
+              console.log('PDF failed to load')
+            }}
+          />
+          <p className="text-sm text-gray-500 mt-2">
+            If the document doesn't display properly, try downloading it.
+          </p>
+        </div>
+      ) : (
+        <div>
+          <img
+            src={documentSrc}
+            alt={documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
+            className="max-w-full h-auto mx-auto rounded-lg shadow-lg"
+            style={{ maxHeight: '600px' }}
+            onError={handleImageError}
+            onLoad={() => {/* Image loaded */}}
+          />
+          {!showPdfViewer && (
+            <p className="text-sm text-gray-500 mt-2">
+              Click download if the image doesn't display properly
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const LicenseRequestManagement = () => {
   const [requests, setRequests] = useState(mockLicenseRequests)
   const [selectedRequest, setSelectedRequest] = useState(null)
@@ -67,6 +140,67 @@ const LicenseRequestManagement = () => {
   const [requestToReject, setRequestToReject] = useState(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [certificateData, setCertificateData] = useState(null)
+  const [processingAction, setProcessingAction] = useState(null)
+  const [showDocumentModal, setShowDocumentModal] = useState(false)
+  const [documentData, setDocumentData] = useState(null)
+  const [documentType, setDocumentType] = useState('')
+  const [loadingDocument, setLoadingDocument] = useState(false)
+  const [loadingCertificate, setLoadingCertificate] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  // Fetch certificate data from backend for approved applications
+  const handleViewCertificate = async (applicationId) => {
+    try {
+      setLoadingCertificate(true)
+      
+      const response = await fetch(`http://localhost:5000/api/licenses/admin/certificate/${applicationId}`)
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to retrieve certificate' }))
+        throw new Error(errorData.message || 'Failed to retrieve certificate')
+      }
+
+      const data = await response.json()
+      
+      if (data.success && data.certificate) {
+        setCertificateData({ 
+          certificate: data.certificate, 
+          request: data.application 
+        })
+        setShowCertificateModal(true)
+      } else {
+        console.error(data.message || 'Certificate not available')
+      }
+      
+    } catch (error) {
+      console.error('Error fetching certificate:', error)
+      console.error(`Failed to load certificate: ${error.message}`)
+    } finally {
+      setLoadingCertificate(false)
+    }
+  }
+
+  // Fetch license applications from backend
+  const fetchApplications = async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (statusFilter && statusFilter !== 'all') {
+        params.append('status', statusFilter)
+      }
+      if (searchTerm.trim()) {
+        params.append('search', searchTerm.trim())
+      }
+
+      // For now, use mock data since backend integration is in progress
+      setRequests(mockLicenseRequests)
+    } catch (error) {
+      console.error('Error fetching applications:', error)
+      setRequests(mockLicenseRequests) // Fallback to mock data
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.millName.toLowerCase().includes(searchTerm.toLowerCase()) ||
