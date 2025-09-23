@@ -23,18 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-
+# Windows accidental device file names
 nul
 backend/nul
-
-# Backup and temporary files
-*_backup.*
-*_original.*
-*.tmp
-*~
-
-# Build logs and cache
-.turbo/
-*.log
-
-.claude/
