@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Download,
   FileText,
@@ -10,6 +10,75 @@ import {
   Package,
   RefreshCw
 } from 'lucide-react'
+import toast from 'react-hot-toast'
+
+// Mock report data for other report types (moved outside component to avoid dependency warnings)
+const mockReportData = {
+  stock: {
+    summary: {
+      totalStock: 20700,
+      totalCapacity: 25000,
+      utilizationRate: 83,
+      activeMills: 8
+    },
+    breakdown: [
+      { category: 'Private Mills', value: 12500, percentage: 60 },
+      { category: 'Government Mills', value: 8200, percentage: 40 }
+    ]
+  },
+  production: {
+    summary: {
+      monthlyProduction: 5240,
+      dailyAverage: 169,
+      targetAchievement: 87,
+      qualityGrade: 'A+'
+    },
+    breakdown: [
+      { category: 'Premium Grade', value: 2100, percentage: 40 },
+      { category: 'Standard Grade', value: 2040, percentage: 39 },
+      { category: 'Commercial Grade', value: 1100, percentage: 21 }
+    ]
+  },
+  financial: {
+    summary: {
+      totalRevenue: 2450000,
+      totalCosts: 1890000,
+      profit: 560000,
+      profitMargin: 23
+    },
+    breakdown: [
+      { category: 'Processing Revenue', value: 1470000, percentage: 60 },
+      { category: 'Storage Revenue', value: 735000, percentage: 30 },
+      { category: 'Other Revenue', value: 245000, percentage: 10 }
+    ]
+  },
+  mills: {
+    summary: {
+      totalMills: 8,
+      activeMills: 7,
+      averageUtilization: 83,
+      topPerformer: 'Green Valley Rice Mill'
+    },
+    breakdown: [
+      { category: 'High Performance (>85%)', value: 3, percentage: 38 },
+      { category: 'Good Performance (70-85%)', value: 4, percentage: 50 },
+      { category: 'Low Performance (<70%)', value: 1, percentage: 12 }
+    ]
+  },
+  licenses: {
+    summary: {
+      totalApplications: 15,
+      approved: 8,
+      pending: 5,
+      rejected: 2
+    },
+    breakdown: [
+      { category: 'Approved', value: 8, percentage: 53 },
+      { category: 'Pending', value: 5, percentage: 33 },
+      { category: 'Rejected', value: 2, percentage: 14 }
+    ]
+  }
+}
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState({
@@ -19,7 +88,8 @@ const Reports = () => {
   const [selectedRegion, setSelectedRegion] = useState('all')
   const [selectedMillType, setSelectedMillType] = useState('all')
   const [reportType, setReportType] = useState('licenses')
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
+  const [isPreviewingPDF, setIsPreviewingPDF] = useState(false)
   const [reportData, setReportData] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -45,7 +115,7 @@ const Reports = () => {
   ]
 
   // Fetch real license data
-  const fetchLicenseStatistics = async () => {
+  const fetchLicenseStatistics = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -62,7 +132,7 @@ const Reports = () => {
       const data = await response.json()
       console.log('License statistics:', data)
 
-      const { overall, regional, millTypes } = data.data
+      const { overall } = data.data
 
       const processedData = {
         licenses: {
@@ -85,6 +155,7 @@ const Reports = () => {
 
     } catch (error) {
       console.error('Error fetching license statistics:', error)
+      toast.error('Failed to fetch license statistics. Using fallback data.')
       // Fallback to empty data
       setReportData({
         licenses: {
@@ -105,7 +176,7 @@ const Reports = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [dateRange.from, dateRange.to, selectedRegion])
 
   // Load data when component mounts or filters change
   useEffect(() => {
@@ -115,75 +186,7 @@ const Reports = () => {
       // For other report types, use mock data for now
       setReportData(mockReportData)
     }
-  }, [reportType, dateRange, selectedRegion])
-
-  // Mock report data for other report types
-  const mockReportData = {
-    stock: {
-      summary: {
-        totalStock: 20700,
-        totalCapacity: 25000,
-        utilizationRate: 83,
-        activeMills: 8
-      },
-      breakdown: [
-        { category: 'Private Mills', value: 12500, percentage: 60 },
-        { category: 'Government Mills', value: 8200, percentage: 40 }
-      ]
-    },
-    production: {
-      summary: {
-        monthlyProduction: 5240,
-        dailyAverage: 169,
-        targetAchievement: 87,
-        qualityGrade: 'A+'
-      },
-      breakdown: [
-        { category: 'Premium Grade', value: 2100, percentage: 40 },
-        { category: 'Standard Grade', value: 2040, percentage: 39 },
-        { category: 'Commercial Grade', value: 1100, percentage: 21 }
-      ]
-    },
-    financial: {
-      summary: {
-        totalRevenue: 2450000,
-        totalCosts: 1890000,
-        profit: 560000,
-        profitMargin: 23
-      },
-      breakdown: [
-        { category: 'Processing Revenue', value: 1470000, percentage: 60 },
-        { category: 'Storage Revenue', value: 735000, percentage: 30 },
-        { category: 'Other Revenue', value: 245000, percentage: 10 }
-      ]
-    },
-    mills: {
-      summary: {
-        totalMills: 8,
-        activeMills: 7,
-        averageUtilization: 83,
-        topPerformer: 'Green Valley Rice Mill'
-      },
-      breakdown: [
-        { category: 'High Performance (>85%)', value: 3, percentage: 38 },
-        { category: 'Good Performance (70-85%)', value: 4, percentage: 50 },
-        { category: 'Low Performance (<70%)', value: 1, percentage: 12 }
-      ]
-    },
-    licenses: {
-      summary: {
-        totalApplications: 15,
-        approved: 8,
-        pending: 5,
-        rejected: 2
-      },
-      breakdown: [
-        { category: 'Approved', value: 8, percentage: 53 },
-        { category: 'Pending', value: 5, percentage: 33 },
-        { category: 'Rejected', value: 2, percentage: 14 }
-      ]
-    }
-  }
+  }, [reportType, dateRange, selectedRegion, fetchLicenseStatistics])
 
   const generatePDFReport = async () => {
     // Dynamic import to ensure autoTable plugin is loaded
@@ -234,9 +237,9 @@ const Reports = () => {
           ? value.toLocaleString() 
           : value
         
-        doc.setFont(undefined, 'bold')
+        doc.setFont('helvetica', 'bold')
         doc.text(`${formattedKey}:`, 14, yPosition)
-        doc.setFont(undefined, 'normal')
+        doc.setFont('helvetica', 'normal')
         doc.text(String(formattedValue), 80, yPosition)
         yPosition += 8
       })
@@ -291,14 +294,14 @@ const Reports = () => {
         let tableY = yPosition + 15
         
         // Header
-        doc.setFont(undefined, 'bold')
+        doc.setFont('helvetica', 'bold')
         doc.text('Category', 14, tableY)
         doc.text('Value', 80, tableY)
         doc.text('Percentage/Rate', 140, tableY)
         tableY += 10
-        
+
         // Data rows
-        doc.setFont(undefined, 'normal')
+        doc.setFont('helvetica', 'normal')
         tableData.forEach(row => {
           doc.text(row[0] || '', 14, tableY)
           doc.text(row[1] || '', 80, tableY)
@@ -329,20 +332,20 @@ const Reports = () => {
 
   const handlePreviewReport = async () => {
     try {
-      setIsGeneratingPDF(true)
+      setIsPreviewingPDF(true)
       
       // Add a small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 300))
-      
+
       const doc = await generatePDFReport()
-      
+
       // Create blob and URL for preview
       const pdfBlob = doc.output('blob')
       const pdfUrl = URL.createObjectURL(pdfBlob)
-      
+
       // Try to open in new window
       const newWindow = window.open(pdfUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes')
-      
+
       if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
         // If popup is blocked, create a download link instead
         const link = document.createElement('a')
@@ -351,19 +354,19 @@ const Reports = () => {
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
-        
+
         // Show notification
-        alert('PDF preview downloaded (popup may have been blocked by your browser)')
+        toast.success('PDF preview downloaded (popup may have been blocked by your browser)')
       }
-      
+
       // Clean up URL after a delay
       setTimeout(() => URL.revokeObjectURL(pdfUrl), 10000)
-      
+
     } catch (error) {
       console.error('Error previewing PDF:', error)
-      alert('Error generating PDF preview. Please check console for details.')
+      toast.error('Error generating PDF preview. Please try again.')
     } finally {
-      setIsGeneratingPDF(false)
+      setIsPreviewingPDF(false)
     }
   }
 
@@ -371,7 +374,7 @@ const Reports = () => {
     const filename = `PMB_${reportType}_report_${dateRange.from}_to_${dateRange.to}.${format}`
     
     if (format === 'pdf') {
-      setIsGeneratingPDF(true)
+      setIsDownloadingPDF(true)
       try {
         // Add a small delay to show loading state
         await new Promise(resolve => setTimeout(resolve, 500))
@@ -382,13 +385,13 @@ const Reports = () => {
         doc.save(filename)
         
         // Show success notification
-        showSuccessNotification('PDF downloaded successfully!')
+        toast.success('PDF downloaded successfully!')
         
       } catch (error) {
         console.error('Error generating PDF:', error)
-        alert(`Error generating PDF report: ${error.message}. Please try again.`)
+        toast.error(`Error generating PDF report: ${error.message}. Please try again.`)
       } finally {
-        setIsGeneratingPDF(false)
+        setIsDownloadingPDF(false)
       }
     } else if (format === 'csv') {
       try {
@@ -408,37 +411,15 @@ const Reports = () => {
           document.body.removeChild(link)
           URL.revokeObjectURL(url)
           
-          showSuccessNotification('CSV downloaded successfully!')
+          toast.success('CSV downloaded successfully!')
         }
       } catch (error) {
         console.error('Error generating CSV:', error)
-        alert('Error generating CSV report. Please try again.')
+        toast.error('Error generating CSV report. Please try again.')
       }
     }
   }
 
-  const showSuccessNotification = (message) => {
-    // Create and show success notification
-    const notification = document.createElement('div')
-    notification.innerHTML = `
-      <div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300">
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-          </svg>
-          ${message}
-        </div>
-      </div>
-    `
-    document.body.appendChild(notification)
-    
-    // Remove notification after 3 seconds
-    setTimeout(() => {
-      if (notification.parentNode) {
-        document.body.removeChild(notification)
-      }
-    }, 3000)
-  }
 
   const generateCSVContent = () => {
     const data = reportData[reportType]
@@ -542,10 +523,10 @@ const Reports = () => {
             <div className="space-y-2">
               <button
                 onClick={() => handleDownloadReport('pdf')}
-                disabled={isGeneratingPDF}
+                disabled={isDownloadingPDF}
                 className="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center"
               >
-                {isGeneratingPDF ? (
+                {isDownloadingPDF ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -562,10 +543,10 @@ const Reports = () => {
               </button>
               <button
                 onClick={() => handlePreviewReport()}
-                disabled={isGeneratingPDF}
+                disabled={isPreviewingPDF}
                 className="w-full bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center"
               >
-                {isGeneratingPDF ? (
+                {isPreviewingPDF ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
