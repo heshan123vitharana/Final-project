@@ -190,19 +190,31 @@ const Reports = () => {
   }
 
   const generatePDFReport = async () => {
-    // Dynamic import to ensure autoTable plugin is loaded
-    const { jsPDF } = await import('jspdf')
-    await import('jspdf-autotable')
+    try {
+      // Dynamic import to ensure autoTable plugin is loaded
+      const { jsPDF } = await import('jspdf')
+      const autoTable = await import('jspdf-autotable')
 
-    const doc = new jsPDF()
+      const doc = new jsPDF()
 
-    // Ensure autoTable is available
-    if (typeof doc.autoTable !== 'function') {
-      console.error('autoTable plugin not loaded properly')
-      return
-    }
+      // Ensure autoTable is available - try multiple ways to access it
+      if (typeof doc.autoTable !== 'function') {
+        // Try to manually assign autoTable if it's not automatically attached
+        if (autoTable.default && typeof autoTable.default === 'function') {
+          doc.autoTable = autoTable.default.bind(doc)
+        } else if (autoTable.autoTable && typeof autoTable.autoTable === 'function') {
+          doc.autoTable = autoTable.autoTable.bind(doc)
+        } else {
+          console.warn('autoTable plugin not available, falling back to basic table rendering')
+        }
+      }
+
     const currentData = reportData[reportType]
-    
+
+    if (!currentData) {
+      throw new Error('No report data available for the selected report type')
+    }
+
     // Header with PMB branding
     doc.setFillColor(34, 197, 94) // Green color
     doc.rect(0, 0, 210, 25, 'F')
@@ -270,30 +282,34 @@ const Reports = () => {
       
       try {
         // Using autoTable method
-        doc.autoTable({
-          startY: yPosition + 5,
-          head: [['Category', 'Value', 'Percentage/Rate']],
-          body: tableData,
-          theme: 'striped',
-          headStyles: { 
-            fillColor: [34, 197, 94],
-            textColor: [255, 255, 255],
-            fontSize: 12,
-            fontStyle: 'bold'
-          },
-          bodyStyles: {
-            fontSize: 10
-          },
-          alternateRowStyles: {
-            fillColor: [248, 250, 252]
-          },
-          margin: { left: 14, right: 14 },
-          columnStyles: {
-            0: { cellWidth: 60 },
-            1: { cellWidth: 60, halign: 'right' },
-            2: { cellWidth: 40, halign: 'center' }
-          }
-        })
+        if (typeof doc.autoTable === 'function') {
+          doc.autoTable({
+            startY: yPosition + 5,
+            head: [['Category', 'Value', 'Percentage/Rate']],
+            body: tableData,
+            theme: 'striped',
+            headStyles: {
+              fillColor: [34, 197, 94],
+              textColor: [255, 255, 255],
+              fontSize: 12,
+              fontStyle: 'bold'
+            },
+            bodyStyles: {
+              fontSize: 10
+            },
+            alternateRowStyles: {
+              fillColor: [248, 250, 252]
+            },
+            margin: { left: 14, right: 14 },
+            columnStyles: {
+              0: { cellWidth: 60 },
+              1: { cellWidth: 60, halign: 'right' },
+              2: { cellWidth: 40, halign: 'center' }
+            }
+          })
+        } else {
+          throw new Error('autoTable not available')
+        }
       } catch (autoTableError) {
         console.error('AutoTable error:', autoTableError)
         // Fallback to basic table if autoTable fails
@@ -333,26 +349,39 @@ const Reports = () => {
       doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 10)
       doc.text(`Generated on ${new Date().toLocaleDateString()}`, doc.internal.pageSize.width - 60, doc.internal.pageSize.height - 5)
     }
-    
+
     return doc
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      throw new Error(`PDF generation failed: ${error.message}`)
+    }
   }
 
   const handlePreviewReport = async () => {
+    if (!reportData || !reportData[reportType]) {
+      toast.error('No report data available. Please refresh the data first.')
+      return
+    }
+
     try {
       setIsPreviewingPDF(true)
-      
+
       // Add a small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 300))
-      
+
       const doc = await generatePDFReport()
-      
+
+      if (!doc) {
+        throw new Error('Failed to generate PDF document')
+      }
+
       // Create blob and URL for preview
       const pdfBlob = doc.output('blob')
       const pdfUrl = URL.createObjectURL(pdfBlob)
-      
+
       // Try to open in new window
       const newWindow = window.open(pdfUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes')
-      
+
       if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
         // If popup is blocked, create a download link instead
         const link = document.createElement('a')
@@ -361,42 +390,52 @@ const Reports = () => {
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
-        
-        // Show notification
-        alert('PDF preview downloaded (popup may have been blocked by your browser)')
+
+        toast.info('PDF preview downloaded (popup may have been blocked by your browser)')
+      } else {
+        toast.success('PDF preview opened in new window')
       }
-      
+
       // Clean up URL after a delay
       setTimeout(() => URL.revokeObjectURL(pdfUrl), 10000)
-      
+
     } catch (error) {
       console.error('Error previewing PDF:', error)
-      alert('Error generating PDF preview. Please check console for details.')
+      toast.error(`Error generating PDF preview: ${error.message}`)
     } finally {
       setIsPreviewingPDF(false)
     }
   }
 
   const handleDownloadReport = async (format) => {
+    if (!reportData || !reportData[reportType]) {
+      toast.error('No report data available. Please refresh the data first.')
+      return
+    }
+
     const filename = `PMB_${reportType}_report_${dateRange.from}_to_${dateRange.to}.${format}`
-    
+
     if (format === 'pdf') {
       setIsDownloadingPDF(true)
       try {
         // Add a small delay to show loading state
         await new Promise(resolve => setTimeout(resolve, 500))
-        
+
         const doc = await generatePDFReport()
-        
+
+        if (!doc) {
+          throw new Error('Failed to generate PDF document')
+        }
+
         // Use the save method to trigger download
         doc.save(filename)
-        
+
         // Show success notification
-        showSuccessNotification('PDF downloaded successfully!')
-        
+        toast.success('PDF downloaded successfully!')
+
       } catch (error) {
         console.error('Error generating PDF:', error)
-        alert(`Error generating PDF report: ${error.message}. Please try again.`)
+        toast.error(`Error generating PDF report: ${error.message}`)
       } finally {
         setIsDownloadingPDF(false)
       }
@@ -405,7 +444,7 @@ const Reports = () => {
         // CSV download functionality
         const csvContent = generateCSVContent()
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-        
+
         // Create download link
         const link = document.createElement('a')
         if (link.download !== undefined) {
@@ -416,13 +455,17 @@ const Reports = () => {
           document.body.appendChild(link)
           link.click()
           document.body.removeChild(link)
-          URL.revokeObjectURL(url)
-          
-          showSuccessNotification('CSV downloaded successfully!')
+
+          // Clean up URL after a short delay
+          setTimeout(() => URL.revokeObjectURL(url), 1000)
+
+          toast.success('CSV downloaded successfully!')
+        } else {
+          throw new Error('Download not supported in this browser')
         }
       } catch (error) {
         console.error('Error generating CSV:', error)
-        alert('Error generating CSV report. Please try again.')
+        toast.error(`Error generating CSV report: ${error.message}`)
       }
     }
   }
@@ -452,20 +495,36 @@ const Reports = () => {
 
   const generateCSVContent = () => {
     const data = reportData[reportType]
+
+    if (!data) {
+      throw new Error('No data available for CSV export')
+    }
+
     let csv = 'Report Type,Date Range,Region,Mill Type\n'
-    csv += `${reportType},${dateRange.from} to ${dateRange.to},${selectedRegion},${selectedMillType}\n\n`
-    
+    csv += `"${reportType}","${dateRange.from} to ${dateRange.to}","${selectedRegion}","${selectedMillType}"\n\n`
+
     csv += 'Summary Metrics\n'
-    Object.entries(data.summary).forEach(([key, value]) => {
-      csv += `${key},${value}\n`
-    })
-    
-    csv += '\nBreakdown\n'
+    csv += 'Metric,Value\n'
+    if (data.summary) {
+      Object.entries(data.summary).forEach(([key, value]) => {
+        const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+        csv += `"${formattedKey}","${value}"\n`
+      })
+    }
+
+    csv += '\nBreakdown Analysis\n'
     csv += 'Category,Value,Percentage\n'
-    data.breakdown.forEach(item => {
-      csv += `${item.category},${item.value},${item.percentage}\n`
-    })
-    
+    if (data.breakdown && Array.isArray(data.breakdown)) {
+      data.breakdown.forEach(item => {
+        const category = item.category || item.name || 'Unknown'
+        const value = item.value || 0
+        const percentage = item.percentage || 0
+        csv += `"${category}","${value}","${percentage}%"\n`
+      })
+    }
+
+    csv += `\nGenerated on,"${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}"\n`
+
     return csv
   }
 
