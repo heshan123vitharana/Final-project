@@ -1,5 +1,57 @@
 require('dotenv').config();
-const mysql = require('mysql2/promise');
+
+// Check if we should use SQLite
+const useSQLite = process.env.USE_SQLITE === 'true';
+
+if (useSQLite) {
+  // SQLite configuration
+  const sqlite3 = require('sqlite3').verbose();
+  const path = require('path');
+  
+  const dbPath = path.join(__dirname, '..', 'paddy_management.db');
+  console.log('🔧 SQLite Database config loaded:', {
+    path: dbPath,
+    exists: require('fs').existsSync(dbPath)
+  });
+  
+  const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('❌ SQLite connection failed:', err.message);
+    } else {
+      console.log('✅ Connected to SQLite database successfully');
+    }
+  });
+  
+  // SQLite query wrapper to match MySQL interface
+  const sqlitePool = {
+    execute: (query, params = []) => {
+      return new Promise((resolve, reject) => {
+        // Convert MySQL syntax to SQLite where needed
+        let sqliteQuery = query
+          .replace(/AUTO_INCREMENT/g, 'AUTOINCREMENT')
+          .replace(/INT AUTO_INCREMENT/g, 'INTEGER')
+          .replace(/ENUM\([^)]+\)/g, 'TEXT')
+          .replace(/TIMESTAMP DEFAULT CURRENT_TIMESTAMP/g, 'DATETIME DEFAULT CURRENT_TIMESTAMP');
+        
+        if (sqliteQuery.toLowerCase().includes('select')) {
+          db.all(sqliteQuery, params, (err, rows) => {
+            if (err) reject(err);
+            else resolve([rows]);
+          });
+        } else {
+          db.run(sqliteQuery, params, function(err) {
+            if (err) reject(err);
+            else resolve([{ insertId: this.lastID, affectedRows: this.changes }]);
+          });
+        }
+      });
+    }
+  };
+  
+  module.exports = sqlitePool;
+} else {
+  // MySQL configuration (original code)
+  const mysql = require('mysql2/promise');
 
 // Database connection configuration
 const dbConfig = {
@@ -46,7 +98,7 @@ const initializeTables = async () => {
         business_name VARCHAR(255) NOT NULL,
         business_type ENUM('private', 'government') NOT NULL,
         phone VARCHAR(20) NOT NULL,
-        email VARCHAR(255) NOT NULL UNIQUE,
+        email VARCHAR(191) NOT NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
         address TEXT,
         city VARCHAR(255),
@@ -91,8 +143,8 @@ const initializeTables = async () => {
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS admin (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(255) NOT NULL UNIQUE,
-        email VARCHAR(255) NOT NULL UNIQUE,
+        username VARCHAR(191) NOT NULL UNIQUE,
+        email VARCHAR(191) NOT NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
         status ENUM('active', 'inactive') DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -352,3 +404,4 @@ const initializeTables = async () => {
 setTimeout(initializeTables, 1000);
 
 module.exports = pool;
+}
