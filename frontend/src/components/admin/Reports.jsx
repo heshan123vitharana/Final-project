@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Download,
   FileText,
@@ -10,6 +10,7 @@ import {
   Package,
   RefreshCw
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState({
@@ -21,6 +22,7 @@ const Reports = () => {
   const [reportType, setReportType] = useState('licenses')
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [isPreviewingPDF, setIsPreviewingPDF] = useState(false)
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
   const [reportData, setReportData] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -46,7 +48,7 @@ const Reports = () => {
   ]
 
   // Fetch real license data
-  const fetchLicenseStatistics = useCallback(async () => {
+  const fetchLicenseStatistics = async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -63,7 +65,7 @@ const Reports = () => {
       const data = await response.json()
       console.log('License statistics:', data)
 
-      const { overall } = data.data
+      const { overall, regional, millTypes } = data.data
 
       const processedData = {
         licenses: {
@@ -86,6 +88,7 @@ const Reports = () => {
 
     } catch (error) {
       console.error('Error fetching license statistics:', error)
+      toast.error('Failed to fetch license statistics. Using fallback data.')
       // Fallback to empty data
       setReportData({
         licenses: {
@@ -106,10 +109,20 @@ const Reports = () => {
     } finally {
       setLoading(false)
     }
-  }, [dateRange, selectedRegion, setLoading, setReportData])
+  }
+
+  // Load data when component mounts or filters change
+  useEffect(() => {
+    if (reportType === 'licenses') {
+      fetchLicenseStatistics()
+    } else {
+      // For other report types, use mock data for now
+      setReportData(mockReportData)
+    }
+  }, [reportType, dateRange, selectedRegion])
 
   // Mock report data for other report types
-  const mockReportData = useMemo(() => ({
+  const mockReportData = {
     stock: {
       summary: {
         totalStock: 20700,
@@ -174,17 +187,7 @@ const Reports = () => {
         { category: 'Rejected', value: 2, percentage: 14 }
       ]
     }
-  }), [])
-
-  // Load data when component mounts or filters change
-  useEffect(() => {
-    if (reportType === 'licenses') {
-      fetchLicenseStatistics()
-    } else {
-      // For other report types, use mock data for now
-      setReportData(mockReportData)
-    }
-  }, [reportType, dateRange, selectedRegion, fetchLicenseStatistics, mockReportData])
+  }
 
   const generatePDFReport = async () => {
     // Dynamic import to ensure autoTable plugin is loaded
@@ -378,7 +381,7 @@ const Reports = () => {
     const filename = `PMB_${reportType}_report_${dateRange.from}_to_${dateRange.to}.${format}`
     
     if (format === 'pdf') {
-      setIsGeneratingPDF(true)
+      setIsDownloadingPDF(true)
       try {
         // Add a small delay to show loading state
         await new Promise(resolve => setTimeout(resolve, 500))
@@ -395,7 +398,7 @@ const Reports = () => {
         console.error('Error generating PDF:', error)
         alert(`Error generating PDF report: ${error.message}. Please try again.`)
       } finally {
-        setIsGeneratingPDF(false)
+        setIsDownloadingPDF(false)
       }
     } else if (format === 'csv') {
       try {
@@ -549,10 +552,10 @@ const Reports = () => {
             <div className="space-y-2">
               <button
                 onClick={() => handleDownloadReport('pdf')}
-                disabled={isGeneratingPDF}
+                disabled={isDownloadingPDF}
                 className="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center"
               >
-                {isGeneratingPDF ? (
+                {isDownloadingPDF ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
