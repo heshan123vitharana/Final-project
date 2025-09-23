@@ -47,11 +47,7 @@ const MillPaddyPrice = () => {
         const highest = Math.max(...validPrices);
         const lowest = Math.min(...validPrices);
         
-        console.log('📊 Calculated database statistics from', validPrices.length, 'prices:');
-        console.log('📊 All prices:', validPrices.sort((a, b) => b - a));
-        console.log('📊 Average:', average.toFixed(2));
-        console.log('📊 Highest:', highest);
-        console.log('📊 Lowest:', lowest);
+        // Calculated database statistics
         
         setDatabaseStats({
           totalEntries: allPrices.length,
@@ -127,10 +123,7 @@ const MillPaddyPrice = () => {
         const millDistrict = userData.mill_district;
 
         if (millDistrict && millDistrict.trim() !== '') {
-          console.log('🏭 Auto-selecting mill district for paddy prices:', millDistrict);
           setSelectedDistrict(millDistrict);
-        } else {
-          console.log('🏭 No mill district found in user profile');
         }
       } catch (error) {
         console.error('Error loading user mill district:', error);
@@ -197,6 +190,7 @@ const MillPaddyPrice = () => {
 
   return (
     <div className="p-6 bg-green-50 min-h-screen">
+
       {/* Page heading with refresh button */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-green-700 border-b-4 border-green-300 pb-2">

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useState, useEffect, memo } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   HomeIcon,
   ClipboardDocumentListIcon,
@@ -18,7 +18,8 @@ import pmbLogo from '../assets/logo-p.png';
 
 // Sidebar component for navigation
 const MillSidebar = ({ onBackToHome }) => {
-  // State to control sidebar collapse (responsive)
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   // State for user profile photo
   const [profilePhoto, setProfilePhoto] = useState('');
@@ -88,7 +89,6 @@ const MillSidebar = ({ onBackToHome }) => {
   // Toggle sidebar collapse/expand
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
 
-  // Navigation items for sidebar
   const navItems = [
     { to: 'home', icon: <HomeIcon className="h-5 w-5" />, label: 'Home' },
     { to: 'register', icon: <ClipboardDocumentListIcon className="h-5 w-5" />, label: 'Mill Registration' },
@@ -142,17 +142,20 @@ const MillSidebar = ({ onBackToHome }) => {
           </div>
         </div>
 
-        {/* Navigation - takes up remaining space */}
         <nav className="flex-1 mt-8 overflow-y-auto">
-          {navItems.map(({ to, icon, label, style }) => (
-            <NavLink
+          {navItems.map(({ to, icon, label }) => (
+            <button
               key={to}
-              to={to}
-              className={({ isActive }) =>
-                `group relative w-full flex items-center px-4 py-3 text-left hover:bg-white hover:bg-opacity-15 transition-colors backdrop-blur-sm ${
-                  isActive ? 'bg-white bg-opacity-20 border-r-4 border-yellow-400 shadow-lg' : ''
-                } ${isCollapsed ? 'justify-center' : ''} ${style || ''}`
-              }
+              onClick={(e) => {
+                e.preventDefault();
+                const targetPath = `/mill/${to}`;
+                navigate(targetPath);
+              }}
+              className="group relative w-full flex items-center px-4 py-3 text-left hover:bg-white hover:bg-opacity-15 transition-colors backdrop-blur-sm text-white border-none cursor-pointer"
+              style={{
+                backgroundColor: location.pathname === `/mill/${to}` ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                borderRight: location.pathname === `/mill/${to}` ? '4px solid #facc15' : 'none'
+              }}
             >
               <div className="drop-shadow-lg">{icon}</div>
               <span className={`ml-3 drop-shadow-lg ${isCollapsed ? 'hidden' : 'block'}`}>
@@ -164,7 +167,7 @@ const MillSidebar = ({ onBackToHome }) => {
                   {label}
                 </span>
               )}
-            </NavLink>
+            </button>
           ))}
         </nav>
 
@@ -199,7 +202,6 @@ const MillSidebar = ({ onBackToHome }) => {
         <div className="p-4 flex-shrink-0">
           <button
             onClick={() => {
-              console.log('Logout button clicked');
               if (onBackToHome) {
                 onBackToHome();
               }
@@ -226,4 +228,4 @@ const MillSidebar = ({ onBackToHome }) => {
   );
 };
 
-export default MillSidebar;
+export default memo(MillSidebar);

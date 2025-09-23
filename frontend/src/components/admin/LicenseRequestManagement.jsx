@@ -106,7 +106,7 @@ const DocumentViewer = ({ documentData, documentType }) => {
             className="max-w-full h-auto mx-auto rounded-lg shadow-lg"
             style={{ maxHeight: '600px' }}
             onError={handleImageError}
-            onLoad={() => console.log('Image loaded successfully')}
+            onLoad={() => {/* Image loaded */}}
           />
           {!showPdfViewer && (
             <p className="text-sm text-gray-500 mt-2">
@@ -182,10 +182,10 @@ const LicenseRequestManagement = () => {
         params.append('search', searchTerm.trim())
       }
 
-      console.log('Fetching applications from:', `http://localhost:5000/api/licenses/admin/applications?${params}`)
+      // Fetching applications from API
 
       const response = await fetch(`http://localhost:5000/api/licenses/admin/applications?${params}`)
-      console.log('Response status:', response.status, response.statusText)
+      // API response received
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -194,7 +194,7 @@ const LicenseRequestManagement = () => {
       }
 
       const data = await response.json()
-      console.log('API Response:', data)
+      // API data received
 
       // Handle both old and new API response formats
       let applications = []
@@ -225,7 +225,7 @@ const LicenseRequestManagement = () => {
         approvalComments: app.approval_comments || null
       }))
 
-      console.log('Transformed applications:', transformedApplications)
+      // Applications transformed for UI
       setRequests(transformedApplications)
     } catch (error) {
       console.error('Error fetching applications:', error)
@@ -239,9 +239,9 @@ const LicenseRequestManagement = () => {
   // Load applications on component mount and when filters change
   useEffect(() => {
     fetchApplications()
-  }, [statusFilter, fetchApplications])
+  }, [fetchApplications])
 
-  // Search with debounce
+  // Search with debounce - only trigger on searchTerm change
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchApplications()

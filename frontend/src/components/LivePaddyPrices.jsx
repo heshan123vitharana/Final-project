@@ -54,46 +54,35 @@ const LivePaddyPrices = () => {
   useEffect(() => {
     const fetchPricesData = async () => {
       try {
-        console.log('🔄 LivePaddyPrices: Starting data fetch...');
         setLoading(true);
-        console.log('📡 LivePaddyPrices: Fetching from http://localhost:5000/api/prices');
         const response = await fetch('http://localhost:5000/api/prices');
-        console.log('📨 LivePaddyPrices: Response status:', response.status, response.statusText);
         
         if (response.ok) {
           const data = await response.json();
-          console.log('✅ LivePaddyPrices: Backend data received:', data);
           const processedData = data.data || data;
-          console.log('✅ LivePaddyPrices: Processed data:', processedData);
           
           // Ensure processedData is an array
           if (Array.isArray(processedData)) {
             setPricesData(processedData);
           } else {
-            console.warn('⚠️ LivePaddyPrices: Received data is not an array:', processedData);
             setPricesData([]);
           }
         } else {
-          console.warn('⚠️ LivePaddyPrices: Backend responded with error status, using fallback');
           // Fallback to local data if backend is not available
           const fallbackData = await import('../data/paddyPrices.json');
           setPricesData(fallbackData.default);
         }
-      } catch (err) {
-        console.warn('❌ LivePaddyPrices: Failed to fetch from backend, using local data:', err);
+      } catch {
         // Fallback to local data
         try {
           const fallbackData = await import('../data/paddyPrices.json');
           setPricesData(fallbackData.default);
-          console.log('✅ LivePaddyPrices: Fallback data loaded');
-        } catch (fallbackErr) {
-          console.error('💥 LivePaddyPrices: Failed to load fallback data:', fallbackErr);
+        } catch {
           setError('Failed to load price data');
           setPricesData([]);
         }
       } finally {
         setLoading(false);
-        console.log('🏁 LivePaddyPrices: Data fetch completed');
       }
     };
 
@@ -101,7 +90,6 @@ const LivePaddyPrices = () => {
     
     // Set up periodic refresh every 30 seconds to sync with database changes
     const refreshInterval = setInterval(() => {
-      console.log('🔄 LivePaddyPrices: Auto-refreshing data from database');
       fetchPricesData();
     }, 30000); // 30 seconds
     
@@ -324,7 +312,7 @@ const LivePaddyPrices = () => {
       const validPrices = paddyPrices.filter(p => p.pricePerKg && !isNaN(p.pricePerKg));
       if (validPrices.length === 0) return '0';
       const average = (validPrices.reduce((sum, p) => sum + p.pricePerKg, 0) / validPrices.length);
-      console.log('📊 Website: Calculated average from', validPrices.length, 'database prices:', average.toFixed(2));
+      // Average calculated from database prices
       return average.toFixed(2);
     } catch (error) {
       console.error('Error calculating average price:', error);
@@ -338,7 +326,7 @@ const LivePaddyPrices = () => {
       const validPrices = paddyPrices.filter(p => p.pricePerKg && !isNaN(p.pricePerKg));
       if (validPrices.length === 0) return '0';
       const highest = Math.max(...validPrices.map(p => p.pricePerKg));
-      console.log('📊 Website: Calculated highest from', validPrices.length, 'database prices:', highest.toFixed(2));
+      // Highest price calculated from database
       return highest.toFixed(2);
     } catch (error) {
       console.error('Error calculating highest price:', error);
@@ -352,7 +340,7 @@ const LivePaddyPrices = () => {
       const validPrices = paddyPrices.filter(p => p.pricePerKg && !isNaN(p.pricePerKg));
       if (validPrices.length === 0) return '0';
       const lowest = Math.min(...validPrices.map(p => p.pricePerKg));
-      console.log('📊 Website: Calculated lowest from', validPrices.length, 'database prices:', lowest.toFixed(2));
+      // Lowest price calculated from database
       return lowest.toFixed(2);
     } catch (error) {
       console.error('Error calculating lowest price:', error);

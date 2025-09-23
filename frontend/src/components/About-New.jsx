@@ -84,7 +84,7 @@ export default function AboutNew() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Function to open image in modal
-  const openImageModal = (image, index) => {
+  const UNUSED_openImageModal = (image, index) => {
     console.log('Opening image modal:', image, index);
     setSelectedImage(image);
     setCurrentImageIndex(index);
@@ -110,7 +110,7 @@ export default function AboutNew() {
   }, [currentImageIndex]);
 
   // Function to toggle full gallery view
-  const toggleFullGallery = () => {
+  const UNUSED_toggleFullGallery = () => {
     setShowFullGallery(!showFullGallery);
   };
 

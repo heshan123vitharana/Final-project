@@ -1,8 +1,6 @@
-// Import necessary components from React Router
-import { Routes, Route, Navigate } from 'react-router-dom';
-
-// Import the sidebar component for navigation
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import MillSidebar from './MillSidebar.jsx';
+import ErrorBoundary from '../components/ErrorBoundary.jsx';
 
 // Import all page components for different routes
 import MillHome from '../MillPages/MillHome.jsx';
@@ -16,6 +14,9 @@ import MillNotifications from '../MillPages/MillNotifications.jsx';
 
 // Main layout component for Mill section
 const MillLayout = ({ userData, onBackToHome }) => {
+  const location = useLocation();
+
+
   return (
     // Fixed height flex container for sidebar and main content
     <div className="flex h-screen">
@@ -24,20 +25,44 @@ const MillLayout = ({ userData, onBackToHome }) => {
 
       {/* Scrollable main content area */}
       <main className="flex-grow bg-gray-50 p-6 md:p-8 lg:p-10 overflow-y-auto h-full">
-        {/* Define all routes for Mill pages */}
-        <Routes>
-          <Route index element={<MillHome userData={userData} />} /> {/* Default home page */}
-          <Route path="home" element={<MillHome userData={userData} />} /> {/* Home page */}
-          <Route path="register" element={<MillRegistration userData={userData} />} /> {/* Registration page */}
-          <Route path="update-stock" element={<MillUpdateStock userData={userData} />} /> {/* Update stock page */}
-          <Route path="view-stock" element={<MillViewStock userData={userData} />} /> {/* View stock page */}
-          <Route path="paddy-price" element={<MillPaddyPrice userData={userData} />} /> {/* Paddy price page */}
-          <Route path="payment" element={<MillPayment userData={userData} />} /> {/* Payment page */}
-          <Route path="notifications" element={<MillNotifications userData={userData} />} /> {/* Notifications page */}
-          <Route path="profile" element={<MillProfile userData={userData} />} /> {/* Profile page */}
-          {/* Redirect any unknown routes to home */}
-          <Route path="*" element={<Navigate to="home" replace />} />
-        </Routes>
+        <ErrorBoundary>
+          <Routes>
+            <Route index element={<MillHome userData={userData} />} />
+            <Route path="home" element={<MillHome userData={userData} />} />
+            <Route path="register" element={<MillRegistration userData={userData} />} />
+            <Route path="update-stock" element={<MillUpdateStock userData={userData} />} />
+            <Route path="view-stock" element={<MillViewStock userData={userData} />} />
+            <Route path="paddy-price" element={<MillPaddyPrice userData={userData} />} />
+            <Route path="payment" element={<MillPayment userData={userData} />} />
+            <Route path="notifications" element={<MillNotifications userData={userData} />} />
+            <Route path="profile" element={<MillProfile userData={userData} />} />
+            <Route path="*" element={
+              <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h2 className="text-lg font-bold text-yellow-800 mb-2">Route Not Found</h2>
+                <p className="text-yellow-600 mb-4">
+                  The path "{location.pathname}" was not found.
+                </p>
+                <p className="text-sm text-gray-600">Available routes:</p>
+                <ul className="text-sm text-gray-600 mt-2 list-disc list-inside">
+                  <li>/mill/home</li>
+                  <li>/mill/register</li>
+                  <li>/mill/update-stock</li>
+                  <li>/mill/view-stock</li>
+                  <li>/mill/paddy-price</li>
+                  <li>/mill/payment</li>
+                  <li>/mill/notifications</li>
+                  <li>/mill/profile</li>
+                </ul>
+                <button
+                  onClick={() => window.location.href = '/mill/home'}
+                  className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  Go to Home
+                </button>
+              </div>
+            } />
+          </Routes>
+        </ErrorBoundary>
       </main>
     </div>
   );

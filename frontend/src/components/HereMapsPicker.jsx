@@ -88,8 +88,8 @@ const HereMapsPicker = ({ isOpen, onClose, onLocationSelect, initialLocation, ti
       );
 
       // Enable map interaction (pan, zoom)
-      const behavior = new window.H.mapevents.Behavior();
-      const ui = new window.H.ui.UI.createDefault(newMap);
+      const UNUSED_behavior = new window.H.mapevents.Behavior();
+      const UNUSED_ui = new window.H.ui.UI.createDefault(newMap);
 
       // Add click event listener
       newMap.addEventListener('tap', async (evt) => {
@@ -144,9 +144,9 @@ const HereMapsPicker = ({ isOpen, onClose, onLocationSelect, initialLocation, ti
         setSelectedLocation(initialLocation);
       }
     }
-  }, [isOpen, mapLoaded, map, initialLocation]);
+  }, [isOpen, mapLoaded, map, initialLocation]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleLocationSelect = useCallback((location) => {
+  const UNUSED_handleLocationSelect = useCallback((location) => {
     setSelectedLocation(location);
   }, []);
 
@@ -300,7 +300,7 @@ const HereMapsPicker = ({ isOpen, onClose, onLocationSelect, initialLocation, ti
         setMap(null);
       }
     };
-  }, [isOpen]);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null;
 

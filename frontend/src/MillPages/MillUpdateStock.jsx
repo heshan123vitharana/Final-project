@@ -1,10 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 
 // Dropdown options for paddy types and states
 const paddyTypes = ["Nadu - White", "Nadu - Red", "Samba", "Kiri Samba"];
 const paddyStates = ["Wet", "Dry"];
 
 const MillUpdateStock = ({ userData }) => {
+  // Get effective user data with fallback to session storage
+  const effectiveUserData = useMemo(() => {
+    if (userData) return userData;
+    
+    try {
+      const sessionData = sessionStorage.getItem('millOwnerData');
+      if (sessionData) {
+        return JSON.parse(sessionData);
+      }
+    } catch (error) {
+      console.error("Error parsing session data:", error);
+    }
+    
+    return null;
+  }, [userData]);
+
   // State for form fields
   const [formData, setFormData] = useState({
     farmer_id: "",
@@ -20,7 +36,7 @@ const MillUpdateStock = ({ userData }) => {
 
   // State for calculated unit price
   const [unitPrice, setUnitPrice] = useState(0);
-  // State for available prices based on user's district
+  // State for available prices based on user's mill district
   const [availablePrices, setAvailablePrices] = useState([]);
   // State for loading prices
   const [loadingPrices, setLoadingPrices] = useState(false);
@@ -33,37 +49,28 @@ const MillUpdateStock = ({ userData }) => {
   // State for loading
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Get current user data from session with fallback
-  const getCurrentUserData = () => {
+  // Get current user data from session with fallback - now using effectiveUserData
+  const getCurrentUserData = useCallback(() => {
     try {
-      // Try multiple possible session storage keys
+      // Use effectiveUserData as primary source
+      if (effectiveUserData) {
+        return effectiveUserData;
+      }
+
+      // Fallback to session storage parsing
       let user = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
 
-      // If millOwnerData doesn't have district, try userData from props
-      if (!user.district && userData?.district) {
+      // If millOwnerData doesn't have mill_district, try userData from props
+      if (!user.mill_district && userData?.mill_district) {
         user = { ...user, ...userData };
       }
 
-      // If still no district, try other session storage keys
-      if (!user.district) {
-        const authData = JSON.parse(sessionStorage.getItem('userData') || '{}');
-        if (authData.district) {
-          user = { ...user, ...authData };
-        }
-      }
-
-      // Final fallback to props
-      if (!user.district && userData) {
-        user = { ...user, ...userData };
-      }
-
-      console.log('🔍 Current user data:', user);
       return user;
     } catch (error) {
       console.error('Error getting current user data:', error);
-      return userData || {};
+      return effectiveUserData || {};
     }
-  };
+  }, [effectiveUserData, userData]);
 
   // Fetch prices from API based on filters
   const fetchPrices = async (district, variety = null, type = null) => {
@@ -82,14 +89,12 @@ const MillUpdateStock = ({ userData }) => {
         url += `&type=${encodeURIComponent(type)}`;
       }
 
-      console.log('🔍 Fetching prices from:', url);
 
       const response = await fetch(url);
       const result = await response.json();
 
       if (result.success) {
         setAvailablePrices(result.data);
-        console.log(`✅ Found ${result.data.length} price entries for district: ${district}`);
       } else {
         console.error('Price fetch failed:', result.message);
         setAvailablePrices([]);
@@ -108,20 +113,13 @@ const MillUpdateStock = ({ userData }) => {
 
     // Get current user data with comprehensive logging
     const user = getCurrentUserData();
-    console.log('🔍 Setting current user:', user);
     setCurrentUser(user);
 
-    // Fetch initial prices for user's district
-    if (user?.district) {
-      console.log('🌍 Fetching prices for district:', user.district);
-      fetchPrices(user.district);
-    } else {
-      console.warn('⚠️ No district found in user data. Available keys:', Object.keys(user || {}));
-      console.warn('📊 userData prop:', userData);
-      console.warn('💾 Session storage millOwnerData:', sessionStorage.getItem('millOwnerData'));
-      console.warn('💾 Session storage userData:', sessionStorage.getItem('userData'));
+    // Fetch initial prices for user's mill district
+    if (user?.mill_district) {
+      fetchPrices(user.mill_district);
     }
-  }, [userData]);
+  }, [userData, getCurrentUserData]);
 
   // Handle form field changes
   const handleChange = (e) => {
@@ -157,12 +155,8 @@ const MillUpdateStock = ({ userData }) => {
 
   // Re-fetch prices when paddy type or condition changes
   useEffect(() => {
-    if (currentUser?.district && (formData.paddy_type || formData.paddy_condition)) {
-      console.log('🔄 Refetching prices for:', {
-        district: currentUser.district,
-        paddyType: formData.paddy_type,
-        condition: formData.paddy_condition
-      });
+    if (currentUser?.mill_district && (formData.paddy_type || formData.paddy_condition)) {
+      // Refetching prices for current user mill district and form data
 
       // Create mapping for variety names
       const varietyMapping = {
@@ -173,11 +167,11 @@ const MillUpdateStock = ({ userData }) => {
       };
 
       const mappedVariety = varietyMapping[formData.paddy_type] || formData.paddy_type;
-      fetchPrices(currentUser.district, mappedVariety, formData.paddy_condition);
-    } else if (!currentUser?.district) {
-      console.warn('⚠️ Cannot fetch prices - no district available in currentUser:', currentUser);
+      fetchPrices(currentUser.mill_district, mappedVariety, formData.paddy_condition);
+    } else if (!currentUser?.mill_district) {
+      // Cannot fetch prices - no mill district available
     }
-  }, [formData.paddy_type, formData.paddy_condition, currentUser?.district]);
+  }, [formData.paddy_type, formData.paddy_condition, currentUser?.mill_district]);
 
   // Calculate total amount
   const totalAmount =
@@ -238,7 +232,6 @@ const MillUpdateStock = ({ userData }) => {
 
       if (response.ok) {
         setNotification("✅ Stock data successfully added!");
-        console.log("Stock Added:", result.data);
 
         // Reset form
         setFormData({
@@ -282,6 +275,27 @@ const MillUpdateStock = ({ userData }) => {
   // Handle cancel in popup
   const handleCancel = () => setShowPopup(false);
 
+  // Show loading state if no user data available
+  if (!effectiveUserData) {
+    return (
+      <div style={{ padding: '24px', textAlign: 'center' }}>
+        <div style={{
+          backgroundColor: '#fef3c7',
+          border: '1px solid #f59e0b',
+          color: '#92400e',
+          padding: '16px',
+          borderRadius: '8px'
+        }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>Loading Update Stock...</h2>
+          <p>Please wait while we load the stock update page.</p>
+          <p style={{ marginTop: '8px', fontSize: '14px' }}>
+            If this persists, please <a href="/" style={{ color: '#0066cc' }}>return to home</a> and log in again.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 bg-green-50 min-h-screen">
       {/* Notification message */}
@@ -299,6 +313,11 @@ const MillUpdateStock = ({ userData }) => {
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
         🌾 Update Paddy Stock
       </h1>
+      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-blue-800 text-sm font-medium">
+          📍 <strong>Note:</strong> Paddy prices are automatically calculated based on your mill district location for accurate regional pricing.
+        </p>
+      </div>
 
       {/* Stock update form */}
       <form
@@ -364,23 +383,23 @@ const MillUpdateStock = ({ userData }) => {
           />
         </div>
 
-        {/* User's District (Display Only) */}
+        {/* User's Mill District (Display Only) */}
         <div>
-          <label className="block text-sm font-semibold mb-1 text-green-800">Your District</label>
+          <label className="block text-sm font-semibold mb-1 text-green-800">Your Mill District</label>
           <div className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
             <span className="font-medium">
-              {currentUser?.district || userData?.district || 'District not available'}
+              {currentUser?.mill_district || userData?.mill_district || 'Mill District not available'}
             </span>
             <span className="text-sm text-gray-500 ml-2">
-              {currentUser?.district || userData?.district ?
-                '(Auto-selected from your profile)' :
-                '(Please update your profile with district information)'
+              {currentUser?.mill_district || userData?.mill_district ?
+                '(Paddy prices are based on your mill district)' :
+                '(Please update your profile with mill district information)'
               }
             </span>
           </div>
-          {!currentUser?.district && !userData?.district && (
+          {!currentUser?.mill_district && !userData?.mill_district && (
             <p className="text-xs text-red-600 mt-1">
-              ⚠️ District information is required for price calculation. Please update your profile.
+              ⚠️ Mill District information is required for accurate price calculation. Please update your profile.
             </p>
           )}
         </div>
@@ -428,7 +447,7 @@ const MillUpdateStock = ({ userData }) => {
         {/* Unit Price Selection */}
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold mb-1 text-green-800">
-            Unit Price (LKR/kg) - Based on your district: {currentUser?.district || 'Unknown'}
+            Unit Price (LKR/kg) - Based on your mill district: {currentUser?.mill_district || 'Unknown'}
           </label>
           {loadingPrices ? (
             <div className="w-full p-3 border border-green-300 rounded-lg bg-gray-50 flex items-center justify-center">
@@ -462,7 +481,7 @@ const MillUpdateStock = ({ userData }) => {
           ) : formData.paddy_type && formData.paddy_condition ? (
             <>
               <div className="mb-3 p-3 border border-orange-300 rounded-lg bg-orange-50 text-orange-800 text-center">
-                ⚠️ No prices available for {formData.paddy_type} ({formData.paddy_condition}) in {currentUser?.district || 'your district'}
+                ⚠️ No prices available for {formData.paddy_type} ({formData.paddy_condition}) in {currentUser?.mill_district || 'your mill district'}
                 <br />
                 <span className="text-sm">Please enter the unit price manually below</span>
               </div>
@@ -567,7 +586,7 @@ const MillUpdateStock = ({ userData }) => {
               <p><strong>Farmer Name:</strong> {formData.farmer_name}</p>
               <p><strong>Paddy Type:</strong> {formData.paddy_type}</p>
               <p><strong>Condition:</strong> {formData.paddy_condition}</p>
-              <p><strong>District:</strong> {currentUser?.district || 'Unknown'}</p>
+              <p><strong>Mill District:</strong> {currentUser?.mill_district || 'Unknown'}</p>
               <p><strong>Quantity:</strong> {formData.quantity} kg</p>
               {(() => {
                 if (formData.manual_price) {

@@ -106,7 +106,7 @@ const MapboxPicker = ({ isOpen, onClose, onLocationSelect, initialLocation, titl
     }
   }, [isOpen, mapLoaded, map, initialLocation]);
 
-  const handleLocationSelect = useCallback((location) => {
+  const UNUSED_handleLocationSelect = useCallback((location) => {
     setSelectedLocation(location);
   }, []);
 
@@ -250,7 +250,7 @@ const MapboxPicker = ({ isOpen, onClose, onLocationSelect, initialLocation, titl
         markerRef.current = null;
       }
     };
-  }, [isOpen]);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null;
 

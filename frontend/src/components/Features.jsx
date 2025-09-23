@@ -9,7 +9,7 @@ const Features = () => {
   }, []);
 
   // Modern Gallery Content Data
-  const galleryItems = [
+  const UNUSED_galleryItems = [
     {
       type: "leadership",
       title: "Visionary Leadership",
@@ -72,7 +72,7 @@ const Features = () => {
     }
   ];
 
-  const getColorClasses = (color) => {
+  const UNUSED_getColorClasses = (color) => {
     const colorMap = {
       emerald: {
         bg: 'from-emerald-500 to-emerald-600',

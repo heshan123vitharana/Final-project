@@ -295,7 +295,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
               {/* Enhanced Mill Owner Portal Button */}
               <button
                 onClick={() => {
-                  console.log('Mill Owner Portal button clicked');
+                  // Mill Owner Portal button clicked
                   onMillRegistrationClick();
                 }}
                 className="relative px-5 py-2 text-sm font-light text-white bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-full hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 shadow-md hover:shadow-emerald-500/50 hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105 group"

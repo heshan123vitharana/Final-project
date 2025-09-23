@@ -5,9 +5,11 @@ import ProfileCompletenessBar from '../components/ProfileCompletenessBar';
 
 const MillRegistration = () => {
   const navigate = useNavigate();
-  
+
   // Set page title on mount
-  useEffect(() => { document.title = "Dashboard | Mill Registration"; }, []);
+  useEffect(() => {
+    document.title = "Dashboard | Mill Registration";
+  }, []);
 
   // State for toggling sections
   const [showApplySection, setShowApplySection] = useState(false);
@@ -478,6 +480,7 @@ const MillRegistration = () => {
 
   return (
     <div className="p-6 bg-green-50 min-h-screen">
+
       {/* Page heading */}
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
         🏭 Mill Registration

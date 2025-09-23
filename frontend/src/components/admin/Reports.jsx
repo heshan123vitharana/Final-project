@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
   Download,
   FileText,
@@ -10,7 +10,6 @@ import {
   Package,
   RefreshCw
 } from 'lucide-react'
-import toast from 'react-hot-toast'
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState({
@@ -47,7 +46,7 @@ const Reports = () => {
   ]
 
   // Fetch real license data
-  const fetchLicenseStatistics = async () => {
+  const fetchLicenseStatistics = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -64,7 +63,7 @@ const Reports = () => {
       const data = await response.json()
       console.log('License statistics:', data)
 
-      const { overall, regional, millTypes } = data.data
+      const { overall } = data.data
 
       const processedData = {
         licenses: {
@@ -87,7 +86,6 @@ const Reports = () => {
 
     } catch (error) {
       console.error('Error fetching license statistics:', error)
-      toast.error('Failed to fetch license statistics. Using fallback data.')
       // Fallback to empty data
       setReportData({
         licenses: {
@@ -108,20 +106,10 @@ const Reports = () => {
     } finally {
       setLoading(false)
     }
-  }
-
-  // Load data when component mounts or filters change
-  useEffect(() => {
-    if (reportType === 'licenses') {
-      fetchLicenseStatistics()
-    } else {
-      // For other report types, use mock data for now
-      setReportData(mockReportData)
-    }
-  }, [reportType, dateRange, selectedRegion])
+  }, [dateRange, selectedRegion, setLoading, setReportData])
 
   // Mock report data for other report types
-  const mockReportData = {
+  const mockReportData = useMemo(() => ({
     stock: {
       summary: {
         totalStock: 20700,
@@ -186,14 +174,30 @@ const Reports = () => {
         { category: 'Rejected', value: 2, percentage: 14 }
       ]
     }
-  }
+  }), [])
+
+  // Load data when component mounts or filters change
+  useEffect(() => {
+    if (reportType === 'licenses') {
+      fetchLicenseStatistics()
+    } else {
+      // For other report types, use mock data for now
+      setReportData(mockReportData)
+    }
+  }, [reportType, dateRange, selectedRegion, fetchLicenseStatistics, mockReportData])
 
   const generatePDFReport = async () => {
     // Dynamic import to ensure autoTable plugin is loaded
     const { jsPDF } = await import('jspdf')
     await import('jspdf-autotable')
-    
+
     const doc = new jsPDF()
+
+    // Ensure autoTable is available
+    if (typeof doc.autoTable !== 'function') {
+      console.error('autoTable plugin not loaded properly')
+      return
+    }
     const currentData = reportData[reportType]
     
     // Header with PMB branding
@@ -237,9 +241,9 @@ const Reports = () => {
           ? value.toLocaleString() 
           : value
         
-        doc.setFont('helvetica', 'bold')
+        doc.setFont(undefined, 'bold')
         doc.text(`${formattedKey}:`, 14, yPosition)
-        doc.setFont('helvetica', 'normal')
+        doc.setFont(undefined, 'normal')
         doc.text(String(formattedValue), 80, yPosition)
         yPosition += 8
       })
@@ -294,14 +298,14 @@ const Reports = () => {
         let tableY = yPosition + 15
         
         // Header
-        doc.setFont('helvetica', 'bold')
+        doc.setFont(undefined, 'bold')
         doc.text('Category', 14, tableY)
         doc.text('Value', 80, tableY)
         doc.text('Percentage/Rate', 140, tableY)
         tableY += 10
-
+        
         // Data rows
-        doc.setFont('helvetica', 'normal')
+        doc.setFont(undefined, 'normal')
         tableData.forEach(row => {
           doc.text(row[0] || '', 14, tableY)
           doc.text(row[1] || '', 80, tableY)
@@ -333,19 +337,19 @@ const Reports = () => {
   const handlePreviewReport = async () => {
     try {
       setIsPreviewingPDF(true)
-
+      
       // Add a small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 300))
-
+      
       const doc = await generatePDFReport()
-
+      
       // Create blob and URL for preview
       const pdfBlob = doc.output('blob')
       const pdfUrl = URL.createObjectURL(pdfBlob)
-
+      
       // Try to open in new window
       const newWindow = window.open(pdfUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes')
-
+      
       if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
         // If popup is blocked, create a download link instead
         const link = document.createElement('a')
@@ -354,17 +358,17 @@ const Reports = () => {
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
-
+        
         // Show notification
-        toast.success('PDF preview downloaded (popup may have been blocked by your browser)')
+        alert('PDF preview downloaded (popup may have been blocked by your browser)')
       }
-
+      
       // Clean up URL after a delay
       setTimeout(() => URL.revokeObjectURL(pdfUrl), 10000)
-
+      
     } catch (error) {
       console.error('Error previewing PDF:', error)
-      toast.error('Error generating PDF preview. Please try again.')
+      alert('Error generating PDF preview. Please check console for details.')
     } finally {
       setIsPreviewingPDF(false)
     }
@@ -385,11 +389,11 @@ const Reports = () => {
         doc.save(filename)
         
         // Show success notification
-        toast.success('PDF downloaded successfully!')
+        showSuccessNotification('PDF downloaded successfully!')
         
       } catch (error) {
         console.error('Error generating PDF:', error)
-        toast.error(`Error generating PDF report: ${error.message}. Please try again.`)
+        alert(`Error generating PDF report: ${error.message}. Please try again.`)
       } finally {
         setIsGeneratingPDF(false)
       }
@@ -411,15 +415,37 @@ const Reports = () => {
           document.body.removeChild(link)
           URL.revokeObjectURL(url)
           
-          toast.success('CSV downloaded successfully!')
+          showSuccessNotification('CSV downloaded successfully!')
         }
       } catch (error) {
         console.error('Error generating CSV:', error)
-        toast.error('Error generating CSV report. Please try again.')
+        alert('Error generating CSV report. Please try again.')
       }
     }
   }
 
+  const showSuccessNotification = (message) => {
+    // Create and show success notification
+    const notification = document.createElement('div')
+    notification.innerHTML = `
+      <div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+          </svg>
+          ${message}
+        </div>
+      </div>
+    `
+    document.body.appendChild(notification)
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        document.body.removeChild(notification)
+      }
+    }, 3000)
+  }
 
   const generateCSVContent = () => {
     const data = reportData[reportType]

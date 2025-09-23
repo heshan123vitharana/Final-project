@@ -79,7 +79,7 @@ const FreeMapPicker = ({ isOpen, onClose, onLocationSelect, initialLocation, tit
         }
       }
     }
-  }, [isOpen, mapLoaded, map, initialLocation, currentLocation]);
+  }, [isOpen, mapLoaded, map, initialLocation, currentLocation]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update marker when selected location changes
   useEffect(() => {

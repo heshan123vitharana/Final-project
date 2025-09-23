@@ -105,34 +105,25 @@ const MillProfile = ({ userData }) => {
   // State for picker type (free map or simple)
   const [useSimplePicker, setUseSimplePicker] = useState(false);
 
-  // Get actual user ID from session data
   const getCurrentUserId = () => {
     try {
       const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-      return userData.id || userData.user_id || 1; // fallback to 1 for development
-    } catch (error) {
-      console.error('Error getting user ID from session:', error);
-      return 1; // fallback to 1 for development
+      return userData.id || userData.user_id || 1;
+    } catch {
+      return 1;
     }
   };
 
 
-  // Load profile photo from database (use working port 5001)
   const loadProfilePhoto = async (userId) => {
     try {
       const response = await fetch(`http://localhost:5000/api/profile/photo/${userId}`);
       if (response.ok) {
         const data = await response.json();
         return data.photoData;
-      } else if (response.status === 404) {
-        // No profile photo found, that's okay
-        return "";
-      } else {
-        console.error('Failed to load profile photo:', response.status);
-        return "";
       }
-    } catch (error) {
-      console.error('Error loading profile photo:', error);
+      return "";
+    } catch {
       return "";
     }
   };
@@ -144,20 +135,17 @@ const MillProfile = ({ userData }) => {
       const getCurrentUserData = () => {
         try {
           return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-        } catch (error) {
-          console.error('Error getting userData from session:', error);
+        } catch {
           return {};
         }
       };
 
       const currentUserData = getCurrentUserData();
-      console.log('🔄 Loading profile data for user:', currentUserData.email);
 
       // ALWAYS start with current user data to ensure profile reflects logged-in user
       let initialData = {};
 
       if (currentUserData && currentUserData.id) {
-        // Auto-populate profile with logged-in user's details
         initialData = {
           firstName: currentUserData.first_name || "",
           lastName: currentUserData.last_name || "",
@@ -179,14 +167,12 @@ const MillProfile = ({ userData }) => {
           profilePhoto: "",
           password: "",
         };
-        console.log('👤 Profile auto-populated with logged-in user details');
 
         // Load any saved profile customizations and merge with user data
         const savedProfile = sessionStorage.getItem("profileData");
         if (savedProfile) {
           try {
             const savedData = JSON.parse(savedProfile);
-            // Merge saved profile data but keep user identity fields from current user
             initialData = {
               ...savedData,
               // Always use current user's identity data
@@ -200,29 +186,22 @@ const MillProfile = ({ userData }) => {
                 new Date(currentUserData.registration_date).toISOString().split('T')[0] :
                 (currentUserData.created_at ? new Date(currentUserData.created_at).toISOString().split('T')[0] : savedData.registrationDate || ""),
             };
-            console.log('🔄 Profile data merged with saved customizations');
           } catch (error) {
             console.error('Error parsing saved profile data:', error);
           }
         }
       } else {
-        console.warn('⚠️ No user data found in session');
-        // Fallback to empty profile if no user data
         initialData = emptyProfile;
       }
 
-      // ALWAYS load fresh profile photo from database (important after login)
       try {
         const userId = getCurrentUserId();
         const photoData = await loadProfilePhoto(userId);
         if (photoData) {
           initialData.profilePhoto = photoData;
-          console.log('📸 Profile photo loaded fresh from database');
-        } else {
-          console.log('📸 No profile photo found for user');
         }
       } catch (error) {
-        console.log('⚠️ Profile photo load failed:', error);
+        console.error('Error loading profile photo:', error);
       }
 
       setFormData(initialData);
@@ -231,7 +210,7 @@ const MillProfile = ({ userData }) => {
     };
 
     loadData();
-  }, [userData]); // Depend on userData to reload when user changes
+  }, [userData?.id]);
 
   // Handle changes in profile form fields
   const handleChange = (e) => {
@@ -247,39 +226,23 @@ const MillProfile = ({ userData }) => {
 
   // Handle address selection from map
   const handleAddressSelect = (location) => {
-    console.log('🏠 Address selected from map:', location);
     setSelectedAddressLocation(location);
-
-    // Extract city and district from address
     const extractedInfo = extractLocationInfo(location.address);
 
-    setFormData(prev => {
-      const updatedData = {
-        ...prev,
-        address: location.address,
-        // Auto-fill city and district if not already set or if they seem to be extracted from address
-        city: prev.city || extractedInfo.city,
-        district: prev.district || extractedInfo.district
-      };
-      console.log('🔄 Form data updated with address:', updatedData);
-      return updatedData;
-    });
+    setFormData(prev => ({
+      ...prev,
+      address: location.address,
+      city: prev.city || extractedInfo.city,
+      district: prev.district || extractedInfo.district
+    }));
 
-    // Show success message
     showSuccessToast('📍 Address added to your profile!');
   };
 
   // Handle mill location selection from map
   const handleMillLocationSelect = (location) => {
-    console.log('🏭 Mill location selected from map:', location);
     setSelectedMillLocation(location);
-    setFormData(prev => {
-      const updatedData = { ...prev, millLocation: location.address };
-      console.log('🔄 Form data updated with mill location:', updatedData);
-      return updatedData;
-    });
-
-    // Show success message
+    setFormData(prev => ({ ...prev, millLocation: location.address }));
     showSuccessToast('🏭 Mill location added to your profile!');
   };
 
@@ -317,23 +280,13 @@ const MillProfile = ({ userData }) => {
       }
     }
 
-    console.log('📍 Extracted location info:', { city, district, from: address });
     return { city, district };
   };
 
   // Upload profile photo to database
   const uploadPhotoToDatabase = async (photoData, filename, fileSize, mimeType) => {
     try {
-      // Use actual user ID from session
       const userId = getCurrentUserId();
-      
-      console.log('Uploading photo with data:', {
-        userId: userId,
-        filename,
-        fileSize,
-        mimeType,
-        photoDataLength: photoData ? photoData.length : 0
-      });
 
       const response = await fetch('http://localhost:5000/api/profile/upload-photo', {
         method: 'POST',
@@ -350,17 +303,13 @@ const MillProfile = ({ userData }) => {
       });
 
       if (response.ok) {
-        const result = await response.json();
-        console.log('Photo uploaded successfully:', result.message);
         return true;
       } else {
         const error = await response.json();
-        console.error('Upload failed:', error.message);
         showErrorToast(error.message || 'Failed to upload photo');
         return false;
       }
-    } catch (error) {
-      console.error('Error uploading photo:', error);
+    } catch {
       showErrorToast('Failed to upload photo. Please try again.');
       return false;
     }
@@ -382,9 +331,6 @@ const MillProfile = ({ userData }) => {
         return;
       }
 
-      // Check if user is logged in
-      console.log('userData:', userData);
-      console.log('userData.id:', userData?.id);
       
       // Show loading state
       setIsLoading(true);

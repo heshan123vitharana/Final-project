@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, ResponsiveContainer
 } from 'recharts';
@@ -15,27 +16,12 @@ import toast from 'react-hot-toast';
 
 // Home page component for the Mill Dashboard
 const MillHome = ({ userData }) => {
-  // Set page title on mount and when user changes
-  useEffect(() => {
-    // Get fresh user data from session for the most up-to-date info
-    const getCurrentUserData = () => {
-      try {
-        return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-      } catch (error) {
-        console.error('Error getting current user data:', error);
-        return userData || {};
-      }
-    };
-
-    const currentUser = getCurrentUserData();
-    const userName = currentUser?.first_name || userData?.first_name || 'Mill Owner';
-    document.title = `Dashboard | Welcome ${userName}`;
-  }, [userData]);
+  const navigate = useNavigate();
 
   // State to track selected paddy type (dry/wet)
   const [selectedType, setSelectedType] = useState('dry');
 
-  // License status state
+  // State for license data
   const [licenseData, setLicenseData] = useState(null);
   const [loadingLicense, setLoadingLicense] = useState(false);
   const [loadingCertificate, setLoadingCertificate] = useState(false);
@@ -45,10 +31,36 @@ const MillHome = ({ userData }) => {
   const [profilePhoto, setProfilePhoto] = useState('');
   const [loadingPhoto, setLoadingPhoto] = useState(false);
 
-  // Stock data state
+  // Add stock data state
   const [stockData, setStockData] = useState([]);
   const [loadingStock, setLoadingStock] = useState(false);
   const [stockError, setStockError] = useState(null);
+
+  const effectiveUserData = useMemo(() => {
+    if (userData) return userData;
+
+    try {
+      const sessionData = sessionStorage.getItem('millOwnerData');
+      if (sessionData) {
+        return JSON.parse(sessionData);
+      }
+    } catch (error) {
+      console.error("Error parsing session data:", error);
+    }
+
+    return null;
+  }, [userData]);
+
+  // Get current user data (memoized) - using effectiveUserData as base
+  const currentUserData = useMemo(() => {
+    return effectiveUserData || {};
+  }, [effectiveUserData]);
+
+  // Set page title on mount and when user changes
+  useEffect(() => {
+    const userName = currentUserData?.first_name || userData?.first_name || 'Mill Owner';
+    document.title = `Dashboard | Welcome ${userName}`;
+  }, [currentUserData?.first_name, userData?.first_name]);
 
   // Process stock data for chart display
   const processStockData = (rawData, condition) => {
@@ -79,33 +91,25 @@ const MillHome = ({ userData }) => {
   // Select chart data based on selected paddy type
   const chartData = processStockData(stockData, selectedType === 'dry' ? 'Dry' : 'Wet');
 
-  // Get actual user ID from session data
   const getCurrentUserId = () => {
     try {
       const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-      return userData.id || userData.user_id || 1; // fallback to 1 for development
+      return userData.id || userData.user_id || 1;
     } catch (error) {
       console.error('Error getting user ID from session:', error);
-      return 1; // fallback to 1 for development
+      return 1;
     }
   };
 
-  // Load profile photo from database
   const loadProfilePhoto = async (userId) => {
     try {
       const response = await fetch(`http://localhost:5000/api/profile/photo/${userId}`);
       if (response.ok) {
         const data = await response.json();
         return data.photoData;
-      } else if (response.status === 404) {
-        // No profile photo found, that's okay
-        return "";
-      } else {
-        console.error('Failed to load profile photo:', response.status);
-        return "";
       }
-    } catch (error) {
-      console.error('Error loading profile photo:', error);
+      return "";
+    } catch {
       return "";
     }
   };
@@ -135,13 +139,12 @@ const MillHome = ({ userData }) => {
       if (response.ok) {
         const result = await response.json();
         setStockData(result.data || []);
-        console.log('📊 Stock data loaded successfully:', result.data);
       } else {
         const error = await response.json();
         throw new Error(error.message || 'Failed to fetch stock data');
       }
     } catch (error) {
-      console.error('⚠️ Stock data fetch failed:', error);
+      console.error('Stock data fetch failed:', error);
       setStockError(error.message);
       // Set empty data so chart shows "No data available"
       setStockData([]);
@@ -150,7 +153,6 @@ const MillHome = ({ userData }) => {
     }
   };
 
-  // Load profile photo when component mounts
   useEffect(() => {
     const fetchProfilePhoto = async () => {
       setLoadingPhoto(true);
@@ -159,12 +161,9 @@ const MillHome = ({ userData }) => {
         const photoData = await loadProfilePhoto(userId);
         if (photoData) {
           setProfilePhoto(photoData);
-          console.log('📸 Profile photo loaded for home dashboard');
-        } else {
-          console.log('📸 No profile photo found for user');
         }
       } catch (error) {
-        console.log('⚠️ Profile photo load failed:', error);
+        console.error('Error loading profile photo:', error);
       } finally {
         setLoadingPhoto(false);
       }
@@ -184,8 +183,7 @@ const MillHome = ({ userData }) => {
     const getCurrentUserData = () => {
       try {
         return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-      } catch (error) {
-        console.error('Error getting current user data:', error);
+      } catch {
         return userData || {};
       }
     };
@@ -194,35 +192,27 @@ const MillHome = ({ userData }) => {
     const userId = currentUser?.id || userData?.id;
 
     if (!userId) {
-      console.warn('No user ID available for license data fetch');
       return;
     }
 
     try {
       setLoadingLicense(true);
-      console.log('🔍 Fetching license data for user ID:', userId);
       const response = await fetch(`http://localhost:5000/api/licenses/applications/${userId}`);
 
       if (response.ok) {
         const data = await response.json();
         if (data.applications && data.applications.length > 0) {
-          // Get the most recent application
           setLicenseData(data.applications[0]);
-          console.log('✅ License data loaded successfully');
         } else {
-          console.log('📋 No license applications found for user');
           setLicenseData(null);
         }
-      } else {
-        console.error('Failed to fetch license data:', response.status);
       }
-    } catch (error) {
-      console.error('Error fetching license data:', error);
+    } catch {
       toast.error('Failed to load license status. Please try again.');
     } finally {
       setLoadingLicense(false);
     }
-  }, [userData, setLoadingLicense, setLicenseData]);
+  }, [userData]);
 
   // Load license data when component mounts
   useEffect(() => {
@@ -341,8 +331,24 @@ This is an official government document. Any unauthorized reproduction is strict
     }
   };
 
-  return (
-    <div className="p-6">
+
+  try {
+    if (!effectiveUserData) {
+      return (
+        <div className="p-6 text-center">
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg">
+            <h2 className="text-lg font-bold mb-2">Loading Dashboard...</h2>
+            <p>Please wait while we load your dashboard.</p>
+            <p className="mt-2 text-sm">
+              If this persists, please <a href="/" className="text-blue-600 underline">return to home</a> and log in again.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+    <div className="p-6 bg-gray-50 min-h-screen">
       {/* Dashboard heading with real profile */}
       <div className="flex items-center mb-6">
         <div className="mr-4 relative">
@@ -367,56 +373,23 @@ This is an official government document. Any unauthorized reproduction is strict
         </div>
         <div>
           <h1 className="text-5xl font-bold text-green-700">
-            Welcome back, {(() => {
-              // Get current user data for the most up-to-date name
-              const getCurrentUserData = () => {
-                try {
-                  return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-                } catch {
-                  return userData || {};
-                }
-              };
-              const currentUser = getCurrentUserData();
-              return currentUser?.first_name || userData?.first_name || 'Mill Owner';
-            })()}!
+            Welcome back, {currentUserData?.first_name || userData?.first_name || 'Mill Owner'}!
           </h1>
-          {(() => {
-            const getCurrentUserData = () => {
-              try {
-                return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-              } catch {
-                return userData || {};
-              }
-            };
-            const currentUser = getCurrentUserData();
-            return (currentUser?.isFirstLogin || userData?.isFirstLogin) && (
-              <p className="text-orange-600 font-medium mt-2">
-                🚀 Complete your profile to unlock all features
-              </p>
-            );
-          })()}
+          {(currentUserData?.isFirstLogin || userData?.isFirstLogin) && (
+            <p className="text-orange-600 font-medium mt-2">
+              🚀 Complete your profile to unlock all features
+            </p>
+          )}
         </div>
       </div>
 
       {/* Dashboard description */}
       <p className="text-xl text-gray-700 mb-6">
-        {(() => {
-          const getCurrentUserData = () => {
-            try {
-              return JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-            } catch {
-              return userData || {};
-            }
-          };
-          const currentUser = getCurrentUserData();
-          const businessName = currentUser?.business_name || userData?.business_name;
-
-          return businessName && (
-            <span className="block font-medium text-green-800 mb-2">
-              {businessName} Dashboard
-            </span>
-          );
-        })()}
+        {(currentUserData?.business_name || userData?.business_name) && (
+          <span className="block font-medium text-green-800 mb-2">
+            {currentUserData?.business_name || userData?.business_name} Dashboard
+          </span>
+        )}
         Use the sidebar to navigate through the system and manage mill operations effectively.
       </p>
 
@@ -506,7 +479,10 @@ This is an official government document. Any unauthorized reproduction is strict
             <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No License Application Found</h3>
             <p className="text-gray-600 mb-4">You haven't submitted a license application yet.</p>
-            <button className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+            <button
+              onClick={() => navigate('/mill/register')}
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
               <FileText className="mr-2" size={16} />
               Apply for License
             </button>
@@ -600,7 +576,7 @@ This is an official government document. Any unauthorized reproduction is strict
               <h3 className="text-lg font-medium text-gray-900 mb-2">No {selectedType} paddy stock found</h3>
               <p className="text-gray-600 mb-4">Add some stock entries to see the chart data</p>
               <button
-                onClick={() => window.location.href = '#/mill-update-stock'}
+                onClick={() => navigate('/mill/update-stock')}
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
               >
                 Add Stock Entry
@@ -791,7 +767,19 @@ This is an official government document. Any unauthorized reproduction is strict
         </div>
       )}
     </div>
-  );
+    );
+  } catch (error) {
+    console.error("MillHome rendering error:", error);
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg">
+          <h2 className="text-lg font-bold">Error in MillHome Component</h2>
+          <p>Error: {error.message}</p>
+          <p>Check console for details</p>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default MillHome;

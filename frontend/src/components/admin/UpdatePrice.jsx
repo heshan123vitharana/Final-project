@@ -146,7 +146,7 @@ const PriceManagement = () => {
       const response = await fetch('http://localhost:5000/api/prices')
       if (response.ok) {
         const data = await response.json()
-        console.log('PriceManagement: API response:', data)
+        // API response received
         const pricesData = data.data || data
         
         // Transform API data to match component expectations

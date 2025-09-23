@@ -7,7 +7,7 @@ import FreeMapPicker from './FreeMapPicker';
 import SimpleLocationPicker from './SimpleLocationPicker';
 
 // Unified advanced map picker with multiple provider options
-const AdvancedMapPicker = ({ isOpen, onClose, onLocationSelect, initialLocation, title = "Select Location" }) => {
+const AdvancedMapPicker = ({ onClose, onLocationSelect, initialLocation, title = "Select Location" }) => {
   const [selectedProvider, setSelectedProvider] = useState('mapbox'); // Default to Mapbox
   const [showProviderSelect, setShowProviderSelect] = useState(false);
 

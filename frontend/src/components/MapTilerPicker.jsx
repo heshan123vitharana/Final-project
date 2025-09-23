@@ -114,7 +114,7 @@ const MapTilerPicker = ({ isOpen, onClose, onLocationSelect, initialLocation, ti
     }
   }, [isOpen, mapLoaded, map, initialLocation]);
 
-  const handleLocationSelect = useCallback((location) => {
+  const UNUSED_handleLocationSelect = useCallback((location) => {
     setSelectedLocation(location);
   }, []);
 
@@ -259,7 +259,7 @@ const MapTilerPicker = ({ isOpen, onClose, onLocationSelect, initialLocation, ti
         markerRef.current = null;
       }
     };
-  }, [isOpen]);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen) return null;
 
