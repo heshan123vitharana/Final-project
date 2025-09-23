@@ -10,6 +10,7 @@ import {
   Package,
   RefreshCw
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 // Mock report data for other report types (moved outside component to avoid dependency warnings)
 const mockReportData = {
@@ -154,6 +155,7 @@ const Reports = () => {
 
     } catch (error) {
       console.error('Error fetching license statistics:', error)
+      toast.error('Failed to fetch license statistics. Using fallback data.')
       // Fallback to empty data
       setReportData({
         licenses: {
@@ -235,9 +237,9 @@ const Reports = () => {
           ? value.toLocaleString() 
           : value
         
-        doc.setFont(undefined, 'bold')
+        doc.setFont('helvetica', 'bold')
         doc.text(`${formattedKey}:`, 14, yPosition)
-        doc.setFont(undefined, 'normal')
+        doc.setFont('helvetica', 'normal')
         doc.text(String(formattedValue), 80, yPosition)
         yPosition += 8
       })
@@ -292,14 +294,14 @@ const Reports = () => {
         let tableY = yPosition + 15
         
         // Header
-        doc.setFont(undefined, 'bold')
+        doc.setFont('helvetica', 'bold')
         doc.text('Category', 14, tableY)
         doc.text('Value', 80, tableY)
         doc.text('Percentage/Rate', 140, tableY)
         tableY += 10
-        
+
         // Data rows
-        doc.setFont(undefined, 'normal')
+        doc.setFont('helvetica', 'normal')
         tableData.forEach(row => {
           doc.text(row[0] || '', 14, tableY)
           doc.text(row[1] || '', 80, tableY)
@@ -334,16 +336,16 @@ const Reports = () => {
       
       // Add a small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 300))
-      
+
       const doc = await generatePDFReport()
-      
+
       // Create blob and URL for preview
       const pdfBlob = doc.output('blob')
       const pdfUrl = URL.createObjectURL(pdfBlob)
-      
+
       // Try to open in new window
       const newWindow = window.open(pdfUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes')
-      
+
       if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
         // If popup is blocked, create a download link instead
         const link = document.createElement('a')
@@ -352,17 +354,17 @@ const Reports = () => {
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
-        
+
         // Show notification
-        alert('PDF preview downloaded (popup may have been blocked by your browser)')
+        toast.success('PDF preview downloaded (popup may have been blocked by your browser)')
       }
-      
+
       // Clean up URL after a delay
       setTimeout(() => URL.revokeObjectURL(pdfUrl), 10000)
-      
+
     } catch (error) {
       console.error('Error previewing PDF:', error)
-      alert('Error generating PDF preview. Please check console for details.')
+      toast.error('Error generating PDF preview. Please try again.')
     } finally {
       setIsPreviewingPDF(false)
     }
@@ -383,11 +385,11 @@ const Reports = () => {
         doc.save(filename)
         
         // Show success notification
-        showSuccessNotification('PDF downloaded successfully!')
+        toast.success('PDF downloaded successfully!')
         
       } catch (error) {
         console.error('Error generating PDF:', error)
-        alert(`Error generating PDF report: ${error.message}. Please try again.`)
+        toast.error(`Error generating PDF report: ${error.message}. Please try again.`)
       } finally {
         setIsDownloadingPDF(false)
       }
@@ -409,37 +411,15 @@ const Reports = () => {
           document.body.removeChild(link)
           URL.revokeObjectURL(url)
           
-          showSuccessNotification('CSV downloaded successfully!')
+          toast.success('CSV downloaded successfully!')
         }
       } catch (error) {
         console.error('Error generating CSV:', error)
-        alert('Error generating CSV report. Please try again.')
+        toast.error('Error generating CSV report. Please try again.')
       }
     }
   }
 
-  const showSuccessNotification = (message) => {
-    // Create and show success notification
-    const notification = document.createElement('div')
-    notification.innerHTML = `
-      <div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300">
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-          </svg>
-          ${message}
-        </div>
-      </div>
-    `
-    document.body.appendChild(notification)
-    
-    // Remove notification after 3 seconds
-    setTimeout(() => {
-      if (notification.parentNode) {
-        document.body.removeChild(notification)
-      }
-    }, 3000)
-  }
 
   const generateCSVContent = () => {
     const data = reportData[reportType]
