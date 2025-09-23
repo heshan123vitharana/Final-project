@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Download,
   FileText,
@@ -11,6 +11,74 @@ import {
   RefreshCw
 } from 'lucide-react'
 
+// Mock report data for other report types (moved outside component to avoid dependency warnings)
+const mockReportData = {
+  stock: {
+    summary: {
+      totalStock: 20700,
+      totalCapacity: 25000,
+      utilizationRate: 83,
+      activeMills: 8
+    },
+    breakdown: [
+      { category: 'Private Mills', value: 12500, percentage: 60 },
+      { category: 'Government Mills', value: 8200, percentage: 40 }
+    ]
+  },
+  production: {
+    summary: {
+      monthlyProduction: 5240,
+      dailyAverage: 169,
+      targetAchievement: 87,
+      qualityGrade: 'A+'
+    },
+    breakdown: [
+      { category: 'Premium Grade', value: 2100, percentage: 40 },
+      { category: 'Standard Grade', value: 2040, percentage: 39 },
+      { category: 'Commercial Grade', value: 1100, percentage: 21 }
+    ]
+  },
+  financial: {
+    summary: {
+      totalRevenue: 2450000,
+      totalCosts: 1890000,
+      profit: 560000,
+      profitMargin: 23
+    },
+    breakdown: [
+      { category: 'Processing Revenue', value: 1470000, percentage: 60 },
+      { category: 'Storage Revenue', value: 735000, percentage: 30 },
+      { category: 'Other Revenue', value: 245000, percentage: 10 }
+    ]
+  },
+  mills: {
+    summary: {
+      totalMills: 8,
+      activeMills: 7,
+      averageUtilization: 83,
+      topPerformer: 'Green Valley Rice Mill'
+    },
+    breakdown: [
+      { category: 'High Performance (>85%)', value: 3, percentage: 38 },
+      { category: 'Good Performance (70-85%)', value: 4, percentage: 50 },
+      { category: 'Low Performance (<70%)', value: 1, percentage: 12 }
+    ]
+  },
+  licenses: {
+    summary: {
+      totalApplications: 15,
+      approved: 8,
+      pending: 5,
+      rejected: 2
+    },
+    breakdown: [
+      { category: 'Approved', value: 8, percentage: 53 },
+      { category: 'Pending', value: 5, percentage: 33 },
+      { category: 'Rejected', value: 2, percentage: 14 }
+    ]
+  }
+}
+
 const Reports = () => {
   const [dateRange, setDateRange] = useState({
     from: '2025-01-01',
@@ -19,7 +87,8 @@ const Reports = () => {
   const [selectedRegion, setSelectedRegion] = useState('all')
   const [selectedMillType, setSelectedMillType] = useState('all')
   const [reportType, setReportType] = useState('licenses')
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
+  const [isPreviewingPDF, setIsPreviewingPDF] = useState(false)
   const [reportData, setReportData] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -45,7 +114,7 @@ const Reports = () => {
   ]
 
   // Fetch real license data
-  const fetchLicenseStatistics = async () => {
+  const fetchLicenseStatistics = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -62,7 +131,7 @@ const Reports = () => {
       const data = await response.json()
       console.log('License statistics:', data)
 
-      const { overall, regional, millTypes } = data.data
+      const { overall } = data.data
 
       const processedData = {
         licenses: {
@@ -105,7 +174,7 @@ const Reports = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [dateRange.from, dateRange.to, selectedRegion])
 
   // Load data when component mounts or filters change
   useEffect(() => {
@@ -115,75 +184,7 @@ const Reports = () => {
       // For other report types, use mock data for now
       setReportData(mockReportData)
     }
-  }, [reportType, dateRange, selectedRegion])
-
-  // Mock report data for other report types
-  const mockReportData = {
-    stock: {
-      summary: {
-        totalStock: 20700,
-        totalCapacity: 25000,
-        utilizationRate: 83,
-        activeMills: 8
-      },
-      breakdown: [
-        { category: 'Private Mills', value: 12500, percentage: 60 },
-        { category: 'Government Mills', value: 8200, percentage: 40 }
-      ]
-    },
-    production: {
-      summary: {
-        monthlyProduction: 5240,
-        dailyAverage: 169,
-        targetAchievement: 87,
-        qualityGrade: 'A+'
-      },
-      breakdown: [
-        { category: 'Premium Grade', value: 2100, percentage: 40 },
-        { category: 'Standard Grade', value: 2040, percentage: 39 },
-        { category: 'Commercial Grade', value: 1100, percentage: 21 }
-      ]
-    },
-    financial: {
-      summary: {
-        totalRevenue: 2450000,
-        totalCosts: 1890000,
-        profit: 560000,
-        profitMargin: 23
-      },
-      breakdown: [
-        { category: 'Processing Revenue', value: 1470000, percentage: 60 },
-        { category: 'Storage Revenue', value: 735000, percentage: 30 },
-        { category: 'Other Revenue', value: 245000, percentage: 10 }
-      ]
-    },
-    mills: {
-      summary: {
-        totalMills: 8,
-        activeMills: 7,
-        averageUtilization: 83,
-        topPerformer: 'Green Valley Rice Mill'
-      },
-      breakdown: [
-        { category: 'High Performance (>85%)', value: 3, percentage: 38 },
-        { category: 'Good Performance (70-85%)', value: 4, percentage: 50 },
-        { category: 'Low Performance (<70%)', value: 1, percentage: 12 }
-      ]
-    },
-    licenses: {
-      summary: {
-        totalApplications: 15,
-        approved: 8,
-        pending: 5,
-        rejected: 2
-      },
-      breakdown: [
-        { category: 'Approved', value: 8, percentage: 53 },
-        { category: 'Pending', value: 5, percentage: 33 },
-        { category: 'Rejected', value: 2, percentage: 14 }
-      ]
-    }
-  }
+  }, [reportType, dateRange, selectedRegion, fetchLicenseStatistics])
 
   const generatePDFReport = async () => {
     // Dynamic import to ensure autoTable plugin is loaded
@@ -329,7 +330,7 @@ const Reports = () => {
 
   const handlePreviewReport = async () => {
     try {
-      setIsGeneratingPDF(true)
+      setIsPreviewingPDF(true)
       
       // Add a small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 300))
@@ -363,7 +364,7 @@ const Reports = () => {
       console.error('Error previewing PDF:', error)
       alert('Error generating PDF preview. Please check console for details.')
     } finally {
-      setIsGeneratingPDF(false)
+      setIsPreviewingPDF(false)
     }
   }
 
@@ -371,7 +372,7 @@ const Reports = () => {
     const filename = `PMB_${reportType}_report_${dateRange.from}_to_${dateRange.to}.${format}`
     
     if (format === 'pdf') {
-      setIsGeneratingPDF(true)
+      setIsDownloadingPDF(true)
       try {
         // Add a small delay to show loading state
         await new Promise(resolve => setTimeout(resolve, 500))
@@ -388,7 +389,7 @@ const Reports = () => {
         console.error('Error generating PDF:', error)
         alert(`Error generating PDF report: ${error.message}. Please try again.`)
       } finally {
-        setIsGeneratingPDF(false)
+        setIsDownloadingPDF(false)
       }
     } else if (format === 'csv') {
       try {
@@ -542,10 +543,10 @@ const Reports = () => {
             <div className="space-y-2">
               <button
                 onClick={() => handleDownloadReport('pdf')}
-                disabled={isGeneratingPDF}
+                disabled={isDownloadingPDF}
                 className="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center"
               >
-                {isGeneratingPDF ? (
+                {isDownloadingPDF ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -562,10 +563,10 @@ const Reports = () => {
               </button>
               <button
                 onClick={() => handlePreviewReport()}
-                disabled={isGeneratingPDF}
+                disabled={isPreviewingPDF}
                 className="w-full bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center"
               >
-                {isGeneratingPDF ? (
+                {isPreviewingPDF ? (
                   <>
                     <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
