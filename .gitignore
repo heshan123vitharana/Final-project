@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+node_modules
+=======
 # Logs
 logs
 *.log
@@ -26,3 +29,7 @@ dist-ssr
 # Windows accidental device file names
 nul
 backend/nul
+<<<<<<< HEAD
+=======
+>>>>>>> f61ecc931645cc5af7c0d686aedc1c5fa6591fba
+>>>>>>> 3622a62b39cc398862658419dd044a70d8893139
