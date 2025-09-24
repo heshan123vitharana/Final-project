@@ -389,9 +389,65 @@ const initializeTables = async () => {
     `);
     console.log('✅ Test user ready');
 
+    // Gallery table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS gallery_images (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        image_url VARCHAR(500) NOT NULL,
+        image_data LONGTEXT,
+        category VARCHAR(100) DEFAULT 'general',
+        alt_text VARCHAR(255),
+        is_featured BOOLEAN DEFAULT FALSE,
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Gallery images table ready');
+
+    // Services table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS services (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        icon VARCHAR(100),
+        image_url VARCHAR(500),
+        category ENUM('service', 'feature') DEFAULT 'service',
+        priority INT DEFAULT 0,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Services table ready');
+
+    // Excellence/Achievements table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS excellence_items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        type ENUM('achievement', 'certification', 'award', 'milestone') NOT NULL,
+        date_achieved DATE,
+        image_url VARCHAR(500),
+        certificate_url VARCHAR(500),
+        priority INT DEFAULT 0,
+        is_featured BOOLEAN DEFAULT FALSE,
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Excellence items table ready');
+
     // Initialize stock tables
     const StockModel = require('../models/stockModel');
     await StockModel.initializeStockTables();
+
+    console.log('✅ Stock tables initialized successfully');
 
     console.log('✅ MySQL database initialized successfully');
   } catch (error) {

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery API Test</title>
+</head>
+<body>
+    <h1>Gallery API Test</h1>
+    
+    <div>
+        <h2>Upload Image</h2>
+        <input type="file" id="fileInput" accept="image/*">
+        <input type="text" id="titleInput" placeholder="Image title" value="Test Image">
+        <button onclick="uploadImage()">Upload</button>
+    </div>
+    
+    <div>
+        <h2>Fetch Images</h2>
+        <button onclick="fetchImages()">Fetch Images</button>
+        <div id="imagesContainer"></div>
+    </div>
+
+    <script>
+        async function uploadImage() {
+            const fileInput = document.getElementById('fileInput');
+            const titleInput = document.getElementById('titleInput');
+            
+            if (!fileInput.files[0]) {
+                alert('Please select a file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('title', titleInput.value);
+            formData.append('category', 'General');
+            formData.append('status', 'active');
+            formData.append('is_active', 'true');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/gallery', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log('Upload result:', result);
+                
+                if (result.success) {
+                    alert('Image uploaded successfully!');
+                    fetchImages();
+                } else {
+                    alert('Upload failed: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Upload failed: ' + error.message);
+            }
+        }
+
+        async function fetchImages() {
+            try {
+                const response = await fetch('http://localhost:5000/api/gallery');
+                const result = await response.json();
+                console.log('Fetch result:', result);
+                
+                const container = document.getElementById('imagesContainer');
+                container.innerHTML = '';
+                
+                if (result.data && result.data.length > 0) {
+                    result.data.forEach(image => {
+                        const div = document.createElement('div');
+                        div.style.margin = '10px 0';
+                        div.innerHTML = `
+                            <h3>${image.title}</h3>
+                            <p>ID: ${image.id}</p>
+                            <p>Category: ${image.category}</p>
+                            <p>Status: ${image.status}</p>
+                            <p>Active: ${image.is_active}</p>
+                            ${image.image_url ? `<img src="${image.image_url}" style="max-width: 200px; max-height: 200px;">` : 'No image URL'}
+                        `;
+                        container.appendChild(div);
+                    });
+                } else {
+                    container.innerHTML = '<p>No images found</p>';
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('Fetch failed: ' + error.message);
+            }
+        }
+
+        // Fetch images on page load
+        fetchImages();
+    </script>
+</body>
+</html>

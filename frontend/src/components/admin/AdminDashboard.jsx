@@ -1,19 +1,23 @@
 import { useState } from 'react'
-import { 
-  FileText, 
-  BarChart3, 
-  Map, 
-  FileBarChart, 
-  DollarSign, 
-  Menu, 
+import {
+  FileText,
+  BarChart3,
+  Map,
+  FileBarChart,
+  DollarSign,
+  Menu,
   X,
-  LogOut 
+  LogOut,
+  Images,
+  Award
 } from 'lucide-react'
 import LicenseRequestManagement from './LicenseRequestManagement'
 import StockDashboard from './StockDashboard'
 import MillMap from './MillMap'
 import Reports from './Reports'
 import PriceManagement from './UpdatePrice'
+import ImageGalleryManager from './ImageGalleryManager'
+import ServicesExcellenceManager from './ServicesExcellenceManager'
 import rainbowNature from '../../assets/beautiful-rainbow-nature.jpg'
 import pmbLogo from '../../assets/logo-p.png'
 
@@ -22,7 +26,7 @@ const AdminDashboard = ({ onLogout }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const navigationItems = [
-     {
+    {
       id: 'stock-dashboard',
       label: 'Live Stock Dashboard',
       icon: BarChart3,
@@ -34,7 +38,6 @@ const AdminDashboard = ({ onLogout }) => {
       icon: FileText,
       component: LicenseRequestManagement
     },
-   
     {
       id: 'mill-map',
       label: 'Mill Map',
@@ -52,6 +55,18 @@ const AdminDashboard = ({ onLogout }) => {
       label: 'Update Price',
       icon: DollarSign,
       component: PriceManagement
+    },
+    {
+      id: 'image-gallery',
+      label: 'Image Gallery',
+      icon: Images,
+      component: ImageGalleryManager
+    },
+    {
+      id: 'services-excellence',
+      label: 'Services & Excellence',
+      icon: Award,
+      component: ServicesExcellenceManager
     }
   ]
 

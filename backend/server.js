@@ -8,8 +8,14 @@ const profileRoutes = require('./routes/profileRoutes');
 const licenseRoutes = require('./routes/licenseRoutes');
 const completenessRoutes = require('./routes/completenessRoutes');
 const enhancedRoutes = require('./routes/enhancedRoutes');
+const galleryRoutes = require('./routes/galleryRoutes');
+const servicesExcellenceRoutes = require('./routes/servicesExcellenceRoutes');
+const path = require('path');
 
 const app = express();
+
+// Database connection
+const db = require('./database');
 const PORT = process.env.PORT || 5000;
 
 // Enhanced CORS middleware to fix cross-origin issues
@@ -51,6 +57,15 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Database middleware - attach db to request
+app.use((req, res, next) => {
+    req.db = db;
+    next();
+});
+
 // Request logging middleware
 app.use((req, _res, next) => {
     console.log(`📝 ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
@@ -80,6 +95,10 @@ app.use('/api/completeness', completenessRoutes);
 console.log('✅ Completeness routes registered');
 app.use('/api/enhanced', enhancedRoutes);
 console.log('✅ Enhanced features routes registered');
+app.use('/api/gallery', galleryRoutes);
+console.log('✅ Gallery routes registered');
+app.use('/api/services-excellence', servicesExcellenceRoutes);
+console.log('✅ Services & Excellence routes registered');
 
 // 404 handler for undefined routes (must be after all other routes)
 app.use((req, res, _next) => {
