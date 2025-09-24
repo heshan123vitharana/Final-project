@@ -78,6 +78,16 @@ app.get('/', (_req, res) => {
     res.json({ message: 'Paddy Management System API' });
 });
 
+// Health check endpoint
+app.get('/health', (_req, res) => {
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        port: PORT,
+        uptime: process.uptime()
+    });
+});
+
 // Routes
 console.log('📍 Registering routes...');
 app.use('/api/admin', adminRoutes);
@@ -122,6 +132,8 @@ app.use((err, _req, res, _next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server running on port ${PORT}`);
+    console.log(`✅ Server accessible at http://localhost:${PORT}`);
+    console.log(`✅ Categories API available at http://localhost:${PORT}/api/categories`);
 });
