@@ -9,6 +9,7 @@ const licenseRoutes = require('./routes/licenseRoutes');
 const completenessRoutes = require('./routes/completenessRoutes');
 const enhancedRoutes = require('./routes/enhancedRoutes');
 const galleryRoutes = require('./routes/galleryRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 const servicesExcellenceRoutes = require('./routes/servicesExcellenceRoutes');
 const path = require('path');
 
@@ -97,6 +98,8 @@ app.use('/api/enhanced', enhancedRoutes);
 console.log('✅ Enhanced features routes registered');
 app.use('/api/gallery', galleryRoutes);
 console.log('✅ Gallery routes registered');
+app.use('/api/categories', categoryRoutes);
+console.log('✅ Category routes registered');
 app.use('/api/services-excellence', servicesExcellenceRoutes);
 console.log('✅ Services & Excellence routes registered');
 

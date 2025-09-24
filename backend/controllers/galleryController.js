@@ -25,27 +25,32 @@ const upload = multer({
 // Get all gallery images
 const getAllImages = async (req, res) => {
   try {
-    const { category, status, featured } = req.query;
+    const { category_id, status, featured } = req.query;
 
-    let query = 'SELECT * FROM gallery_images WHERE 1=1';
+    let query = `
+      SELECT gi.*, gc.name as category_name, gc.slug as category_slug
+      FROM gallery_images gi
+      LEFT JOIN gallery_categories gc ON gi.category_id = gc.id
+      WHERE 1=1
+    `;
     const params = [];
 
-    if (category) {
-      query += ' AND category = ?';
-      params.push(category);
+    if (category_id) {
+      query += ' AND gi.category_id = ?';
+      params.push(category_id);
     }
 
     if (status) {
-      query += ' AND status = ?';
+      query += ' AND gi.status = ?';
       params.push(status);
     }
 
     if (featured !== undefined) {
-      query += ' AND is_featured = ?';
+      query += ' AND gi.is_featured = ?';
       params.push(featured === 'true' ? 1 : 0);
     }
 
-    query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY gi.created_at DESC';
 
     console.log('Gallery query:', query);
     const [rows] = await req.db.execute(query, params);
@@ -99,7 +104,7 @@ const getImageById = async (req, res) => {
 // Add new image
 const addImage = async (req, res) => {
   try {
-    const { title, description, category, is_active, status } = req.body;
+    const { title, description, category_id, is_active, status } = req.body;
 
     if (!req.file) {
       return res.status(400).json({
@@ -124,15 +129,24 @@ const addImage = async (req, res) => {
     const fileName = `${Date.now()}-${req.file.originalname}`;
     const filePath = `/uploads/gallery/${fileName}`;
 
+    // If category_id not provided, use the default "General" category
+    let finalCategoryId = category_id;
+    if (!finalCategoryId) {
+      const [generalCategory] = await req.db.execute(
+        'SELECT id FROM gallery_categories WHERE slug = "general" LIMIT 1'
+      );
+      finalCategoryId = generalCategory.length > 0 ? generalCategory[0].id : null;
+    }
+
     const [result] = await req.db.execute(`
       INSERT INTO gallery_images (
-        title, description, category, file_name, file_path,
+        title, description, category_id, file_name, file_path,
         file_size, mime_type, image_url, is_active, status
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       title,
       description || null,
-      category || 'General',
+      finalCategoryId,
       fileName,
       filePath,
       req.file.size,

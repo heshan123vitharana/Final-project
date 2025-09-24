@@ -9,7 +9,8 @@ import {
   X,
   LogOut,
   Images,
-  Award
+  Award,
+  Folder
 } from 'lucide-react'
 import LicenseRequestManagement from './LicenseRequestManagement'
 import StockDashboard from './StockDashboard'
@@ -17,6 +18,7 @@ import MillMap from './MillMap'
 import Reports from './Reports'
 import PriceManagement from './UpdatePrice'
 import ImageGalleryManager from './ImageGalleryManager'
+import CategoryManager from './CategoryManager'
 import ServicesExcellenceManager from './ServicesExcellenceManager'
 import rainbowNature from '../../assets/beautiful-rainbow-nature.jpg'
 import pmbLogo from '../../assets/logo-p.png'
@@ -61,6 +63,12 @@ const AdminDashboard = ({ onLogout }) => {
       label: 'Image Gallery',
       icon: Images,
       component: ImageGalleryManager
+    },
+    {
+      id: 'category-management',
+      label: 'Category Management',
+      icon: Folder,
+      component: CategoryManager
     },
     {
       id: 'services-excellence',

@@ -18,38 +18,47 @@ import toast from 'react-hot-toast'
 
 const ImageGalleryManager = () => {
   const [images, setImages] = useState([])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
   const [selectedImage, setSelectedImage] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingImage, setEditingImage] = useState(null)
   const [viewMode, setViewMode] = useState('grid')
   const [uploadingFiles, setUploadingFiles] = useState([])
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('')
 
   // Form states for editing/adding
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: '',
+    category_id: '',
     isActive: true
   })
 
-  const categories = [
-    'Mill Operations',
-    'Rice Production',
-    'Quality Control',
-    'Storage Facilities',
-    'Equipment',
-    'Events',
-    'Awards',
-    'General'
-  ]
+  // Fetch categories
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/categories?active=true')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data.data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
 
   // Fetch all images
   const fetchImages = async () => {
     console.log('🔍 Fetching images...');
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:5000/api/gallery')
+      let url = 'http://localhost:5000/api/gallery'
+      if (selectedCategoryFilter) {
+        url += `?category_id=${selectedCategoryFilter}`
+      }
+      
+      const response = await fetch(url)
 
       if (!response.ok) {
         throw new Error('Failed to fetch images')
@@ -66,17 +75,28 @@ const ImageGalleryManager = () => {
     }
   }
 
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  useEffect(() => {
+    fetchImages()
+  }, [selectedCategoryFilter])
+
   // Upload new images
   const handleFileUpload = async (files) => {
     const newFiles = Array.from(files)
     setUploadingFiles(newFiles.map(file => ({ file, progress: 0, id: Date.now() + Math.random() })))
+
+    // Get default category (General)
+    const defaultCategory = categories.find(cat => cat.slug === 'general') || categories[0]
 
     for (const file of newFiles) {
       try {
         const formData = new FormData()
         formData.append('image', file)
         formData.append('title', file.name.split('.')[0])
-        formData.append('category', 'General')
+        formData.append('category_id', defaultCategory?.id || '')
         formData.append('status', 'active')
         formData.append('is_active', 'true')
 
@@ -152,7 +172,7 @@ const ImageGalleryManager = () => {
       const backendData = {
         title: updateData.title.trim(),
         description: updateData.description?.trim() || null,
-        category: updateData.category || 'General',
+        category_id: updateData.category_id || null,
         is_active: Boolean(updateData.isActive),
         status: updateData.isActive ? 'active' : 'inactive'
       };
@@ -225,7 +245,7 @@ const ImageGalleryManager = () => {
       setFormData({
         title: image.title || '',
         description: image.description || '',
-        category: image.category || '',
+        category_id: image.category_id || '',
         isActive: image.is_active !== 0 // Convert database 0/1 to boolean
       })
     }
@@ -235,7 +255,7 @@ const ImageGalleryManager = () => {
     setIsModalOpen(false)
     setSelectedImage(null)
     setEditingImage(null)
-    setFormData({ title: '', description: '', category: '', isActive: true })
+    setFormData({ title: '', description: '', category_id: '', isActive: true })
   }
 
   if (loading) {
@@ -254,6 +274,22 @@ const ImageGalleryManager = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-800">Image Gallery Management</h2>
           <div className="flex items-center space-x-4">
+            {/* Category Filter */}
+            <div className="min-w-[200px]">
+              <select
+                value={selectedCategoryFilter}
+                onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="">All Categories</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* View Mode Toggle */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
@@ -357,7 +393,7 @@ const ImageGalleryManager = () => {
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-600">Categories</p>
               <p className="text-2xl font-bold text-gray-800">
-                {new Set(images.map(img => img.category)).size}
+                {categories.length}
               </p>
             </div>
           </div>
@@ -393,8 +429,8 @@ const ImageGalleryManager = () => {
                     </div>
                   </div>
 
-                  {image.category && (
-                    <p className="text-sm text-gray-600 mb-2">{image.category}</p>
+                  {image.category_name && (
+                    <p className="text-sm text-gray-600 mb-2">{image.category_name}</p>
                   )}
 
                   <div className="flex justify-between items-center">
@@ -491,13 +527,13 @@ const ImageGalleryManager = () => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                         <select
-                          value={formData.category}
-                          onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                          value={formData.category_id}
+                          onChange={(e) => setFormData(prev => ({ ...prev, category_id: e.target.value }))}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         >
                           <option value="">Select Category</option>
                           {categories.map(category => (
-                            <option key={category} value={category}>{category}</option>
+                            <option key={category.id} value={category.id}>{category.name}</option>
                           ))}
                         </select>
                       </div>
