@@ -41,45 +41,6 @@ const positions = [
   },
 ];
 
-const galleryImages = [
-  {
-    src: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80',
-    alt: 'Green field',
-    badge: 'HD',
-    premium: true,
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=400&q=80',
-    alt: 'Meeting',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=400&q=80',
-    alt: 'Meeting',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80',
-    alt: 'Green field',
-    badge: 'HD',
-    premium: true,
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80',
-    alt: 'Student',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80',
-    alt: 'Flowers',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80',
-    alt: 'Flowers',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80',
-    alt: 'Student',
-  },
-];
-
 export default function AboutNew() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showFullGallery, setShowFullGallery] = useState(false);
@@ -252,7 +213,14 @@ export default function AboutNew() {
             ) : (
               // Dynamic gallery images
               galleryImages.map((image, index) => (
-                <div key={image.id} className="relative group rounded-lg overflow-hidden cursor-pointer transform transition-transform hover:scale-105">
+                <div 
+                  key={image.id} 
+                  className="relative group rounded-lg overflow-hidden cursor-pointer transform transition-transform hover:scale-105"
+                  onClick={() => {
+                    setSelectedImage(image);
+                    setCurrentImageIndex(index);
+                  }}
+                >
                   <OptimizedImage
                     src={image.image_url}
                     alt={image.title || `Gallery image ${index + 1}`}
@@ -266,63 +234,11 @@ export default function AboutNew() {
                         {image.category}
                       </span>
                     )}
-                    <button
-                      onClick={() => {
-                        setSelectedImage(image);
-                        setCurrentImageIndex(index);
-                      }}
-                      className="flex items-center gap-1 text-sm text-white/90 hover:text-white transition-colors"
-                    >
-                      View Details
-                      <svg width="16" height="16" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8.125 1.625H11.375V4.875" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M5.41602 7.58333L11.3743 1.625" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M9.75 7.04167V10.2917C9.75 10.579 9.63586 10.8545 9.4327 11.0577C9.22953 11.2609 8.95398 11.375 8.66667 11.375H2.70833C2.42102 11.375 2.14547 11.2609 1.9423 11.0577C1.73914 10.8545 1.625 10.579 1.625 10.2917V4.33333C1.625 4.04602 1.73914 3.77047 1.9423 3.5673C2.14547 3.36414 2.42102 3.25 2.70833 3.25H5.95833" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
                   </div>
                 </div>
               ))
             )}
           </div>
-
-          {/* Category Overview Section */}
-          {hasImages && (
-            <div className="mt-16 text-center">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Categories Represented</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-                {[
-                  'Mill Operations',
-                  'Rice Production',
-                  'Quality Control',
-                  'Storage Facilities',
-                  'Equipment',
-                  'Events',
-                  'Awards',
-                  'General'
-                ].map((category) => {
-                  const categoryImages = galleryImages.filter(img => img.category === category);
-                  const hasImages = categoryImages.length > 0;
-
-                  return (
-                    <div key={category} className={`p-4 rounded-lg border-2 transition-all ${
-                      hasImages
-                        ? 'border-green-200 bg-green-50 text-green-800'
-                        : 'border-gray-200 bg-gray-50 text-gray-500'
-                    }`}>
-                      <div className="text-lg mb-1">
-                        {hasImages ? '✓' : '○'}
-                      </div>
-                      <div className="font-medium text-sm">{category}</div>
-                      <div className="text-xs mt-1">
-                        {hasImages ? `${categoryImages.length} image${categoryImages.length > 1 ? 's' : ''}` : 'No images'}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
