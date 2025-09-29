@@ -70,7 +70,6 @@ const ImageGalleryManager = () => {
     description: '',
     type: 'service',
     icon: '',
-    image: null,
     features: [''],
     priority: 1,
     isActive: true
@@ -168,6 +167,8 @@ const ImageGalleryManager = () => {
       }
 
       const data = await response.json()
+      
+      console.log('📥 Received services & excellence data:', data.data?.length || 0, 'items')
       setServices(data.data || [])
     } catch (error) {
       console.error('Error fetching services:', error)
@@ -205,7 +206,8 @@ const ImageGalleryManager = () => {
     for (const fileObj of newFiles) {
       try {
         const formData = new FormData()
-        formData.append('image', fileObj.file)
+        formData.append('image', fileObj)
+        formData.append('title', fileObj.name || 'Untitled Image')
 
         const response = await fetch('http://localhost:5000/api/gallery', {
           method: 'POST',
@@ -214,18 +216,19 @@ const ImageGalleryManager = () => {
 
         if (response.ok) {
           // Update progress to 100%
-          setUploadingFiles(prev => prev.map(f => 
-            f.file === fileObj.file ? { ...f, progress: 100 } : f
+          setUploadingFiles(prev => prev.map(f =>
+            f.file === fileObj ? { ...f, progress: 100 } : f
           ))
-          
-          toast.success(`${fileObj.file.name} uploaded successfully`)
+
+          toast.success(`${fileObj.name} uploaded successfully`)
           fetchImages()
         } else {
-          throw new Error('Upload failed')
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Upload failed')
         }
       } catch (error) {
         console.error('Upload error:', error)
-        toast.error(`Failed to upload ${fileObj.file.name}`)
+        toast.error(`Failed to upload ${fileObj.name}: ${error.message}`)
       }
     }
 
@@ -297,9 +300,17 @@ const ImageGalleryManager = () => {
 
   const handleServiceInputChange = (e) => {
     const { name, value, type, checked } = e.target
+
+    let processedValue = value
+    if (type === 'checkbox') {
+      processedValue = checked
+    } else if (type === 'number') {
+      processedValue = parseInt(value) || 0
+    }
+
     setServiceFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: processedValue
     }))
   }
 
@@ -328,16 +339,20 @@ const ImageGalleryManager = () => {
     e.preventDefault()
 
     try {
-      const submitData = new FormData()
-      Object.keys(serviceFormData).forEach(key => {
-        if (key === 'features') {
-          submitData.append(key, JSON.stringify(serviceFormData[key].filter(f => f.trim())))
-        } else if (key === 'image' && serviceFormData[key]) {
-          submitData.append(key, serviceFormData[key])
-        } else {
-          submitData.append(key, serviceFormData[key])
-        }
-      })
+      const submitData = {
+        title: serviceFormData.title,
+        description: serviceFormData.description,
+        type: serviceFormData.type,
+        icon: serviceFormData.icon,
+        features: serviceFormData.features.filter(feature => feature.trim() !== ''), // Remove empty features
+        priority: serviceFormData.priority || 1,
+        isActive: serviceFormData.isActive
+      }
+
+      // Add source_table for updates
+      if (editingService && editingService.source_table) {
+        submitData.source_table = editingService.source_table
+      }
 
       const url = editingService 
         ? `http://localhost:5000/api/services-excellence/${editingService.id}`
@@ -347,20 +362,29 @@ const ImageGalleryManager = () => {
 
       const response = await fetch(url, {
         method,
-        body: submitData
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(submitData)
       })
 
       if (!response.ok) {
         throw new Error(`Failed to ${editingService ? 'update' : 'create'} item`)
       }
 
-      const result = await response.json()
+      const _responseData = await response.json()
       
       if (editingService) {
-        setServices(prev => prev.map(s => s.id === editingService.id ? result.data : s))
+        // Update the item in state
+        setServices(prev => prev.map(s => 
+          s.id === editingService.id 
+            ? { ...s, ...submitData }
+            : s
+        ))
         toast.success('Item updated successfully')
       } else {
-        setServices(prev => [...prev, result.data])
+        // Add new item to state
+        await fetchServices() // Refresh the list to get the new item with all fields
         toast.success('Item created successfully')
       }
       
@@ -371,11 +395,13 @@ const ImageGalleryManager = () => {
     }
   }
 
-  const handleDeleteService = async (id) => {
+  const handleDeleteService = async (service) => {
     if (!confirm('Are you sure you want to delete this item?')) return
 
     try {
-      const response = await fetch(`http://localhost:5000/api/services-excellence/${id}`, {
+      const url = `http://localhost:5000/api/services-excellence/${service.id}?source_table=${service.source_table || 'services'}`
+      
+      const response = await fetch(url, {
         method: 'DELETE'
       })
 
@@ -383,7 +409,7 @@ const ImageGalleryManager = () => {
         throw new Error('Failed to delete item')
       }
 
-      setServices(prev => prev.filter(s => s.id !== id))
+      setServices(prev => prev.filter(s => s.id !== service.id))
       toast.success('Item deleted successfully')
     } catch (error) {
       console.error('Delete error:', error)
@@ -399,7 +425,6 @@ const ImageGalleryManager = () => {
       description: '',
       type: 'service',
       icon: '',
-      image: null,
       features: [''],
       priority: 1,
       isActive: true
@@ -414,7 +439,6 @@ const ImageGalleryManager = () => {
         description: service.description || '',
         type: service.type || 'service',
         icon: service.icon || '',
-        image: null,
         features: service.features || [''],
         priority: service.priority || 1,
         isActive: service.is_active !== undefined ? service.is_active : true
@@ -431,7 +455,6 @@ const ImageGalleryManager = () => {
       description: '',
       type: 'service',
       icon: '',
-      image: null,
       features: [''],
       priority: 1,
       isActive: true
@@ -474,7 +497,7 @@ const ImageGalleryManager = () => {
         throw new Error('Failed to save category')
       }
 
-      const result = await response.json()
+      const _result = await response.json()
       
       if (editingCategory) {
         toast.success('Category updated successfully')
@@ -1321,7 +1344,7 @@ const ImageGalleryManager = () => {
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleDeleteService(service.id)}
+                      onClick={() => handleDeleteService(service)}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Delete Item"
                     >
@@ -1359,11 +1382,12 @@ const ImageGalleryManager = () => {
                     <input
                       type="text"
                       name="title"
-                      value={serviceFormData.title}
+                      value={serviceFormData.title || ''}
                       onChange={handleServiceInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       placeholder="Enter title"
                       required
+                      autoComplete="off"
                     />
                   </div>
 
@@ -1389,15 +1413,17 @@ const ImageGalleryManager = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
+                    Description *
                   </label>
                   <textarea
                     name="description"
-                    value={serviceFormData.description}
+                    value={serviceFormData.description || ''}
                     onChange={handleServiceInputChange}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     placeholder="Enter description"
+                    required
+                    autoComplete="off"
                   />
                 </div>
 
@@ -1428,10 +1454,11 @@ const ImageGalleryManager = () => {
                     <input
                       type="number"
                       name="priority"
-                      value={serviceFormData.priority}
+                      value={serviceFormData.priority || 1}
                       onChange={handleServiceInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       min="1"
+                      autoComplete="off"
                     />
                   </div>
                 </div>
@@ -1444,10 +1471,11 @@ const ImageGalleryManager = () => {
                     <div key={index} className="flex items-center space-x-2 mb-2">
                       <input
                         type="text"
-                        value={feature}
+                        value={feature || ''}
                         onChange={(e) => handleFeatureChange(index, e.target.value)}
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         placeholder={`Feature ${index + 1}`}
+                        autoComplete="off"
                       />
                       {serviceFormData.features.length > 1 && (
                         <button
@@ -1470,17 +1498,6 @@ const ImageGalleryManager = () => {
                   </button>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Image
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setServiceFormData(prev => ({ ...prev, image: e.target.files[0] }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                </div>
 
                 <div className="flex items-center">
                   <input
