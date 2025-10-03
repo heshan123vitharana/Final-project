@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import logoP from '../assets/logo-p.png';
 import LanguageSelector from './LanguageSelector';
+import pmbLogo from '../assets/logo-p.png';
 
 const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistrationClick = () => {}, onAdminClick = () => {} }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -200,22 +200,35 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
       {/* AWS-style Main Header */}
       <div className={`container mx-auto px-4 ${isScrolled ? 'py-0' : 'py-0.5'}`}>
         <div className="flex items-center justify-between">
-          {/* AWS-style Logo Section */}
-          <div className="flex items-center space-x-3">
-            <div className={`flex items-center justify-center ${isScrolled ? 'w-14 h-14' : 'w-16 h-16'}`}>
-              <img 
-                src={logoP} 
-                alt="PMB Logo" 
-                className={`object-contain ${isScrolled ? 'w-12 h-12' : 'w-14 h-14'}`}
-              />
-            </div>
-            <div className="leading-tight">
-              <h1 className="text-lg font-bold text-gray-900 leading-none">
-                Paddy Marketing Board
-              </h1>
-              <p className="text-xs text-gray-600 mt-0.5">Ministry of Agriculture - Sri Lanka</p>
-            </div>
-          </div>
+          {/* Clean Logo Section */}
+          <button 
+            onClick={() => handleNavClick('home')}
+            className="flex items-center cursor-pointer"
+            title="Paddy Marketing Board - Go to Home"
+          >
+            <img
+              src="/paddy-marketing-board-logo.png"
+              alt="Paddy Marketing Board"
+              className={`object-contain ${isScrolled ? 'h-8 w-auto' : 'h-12 w-auto'} max-w-full`}
+              onError={(e) => {
+                console.warn('New PMB logo not found, trying fallback');
+                // Try the asset logo first
+                if (e.target.src.includes('paddy-marketing-board-logo.png')) {
+                  e.target.src = pmbLogo;
+                } else if (e.target.src === pmbLogo) {
+                  // Final fallback to SVG
+                  e.target.src = '/logo.svg';
+                } else {
+                  // Last resort: show PMB text
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = '<div class="text-emerald-800 font-bold text-xl">PMB</div>';
+                }
+              }}
+              onLoad={() => {
+                console.log('✅ PMB Official Logo loaded successfully');
+              }}
+            />
+          </button>
 
           {/* AWS-style Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-1">
