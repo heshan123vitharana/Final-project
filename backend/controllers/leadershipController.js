@@ -49,7 +49,7 @@ const getAllLeadership = async (req, res) => {
       params.push(is_active === 'true' ? 1 : 0);
     }
 
-    query += ' ORDER BY order_position ASC, created_at DESC';
+    query += ' ORDER BY order_index ASC, created_at DESC';
     console.log('🔍 Leadership API: Executing query:', query, 'with params:', params);
 
     const [rows] = await req.db.execute(query, params);
@@ -116,7 +116,7 @@ const addLeadership = async (req, res) => {
       email, 
       linkedin, 
       twitter, 
-      order_position, 
+      order_index, 
       is_active 
     } = req.body;
 
@@ -145,7 +145,7 @@ const addLeadership = async (req, res) => {
       email || null,
       linkedin || null,
       twitter || null,
-      parseInt(order_position) || 1,
+      parseInt(order_index) || 1,
       is_active !== undefined ? (is_active === '1' || is_active === 'true' ? 1 : 0) : 1
     ]);
 
@@ -184,7 +184,7 @@ const updateLeadership = async (req, res) => {
       email, 
       linkedin, 
       twitter, 
-      order_position, 
+      order_index, 
       is_active 
     } = req.body;
 
@@ -232,7 +232,7 @@ const updateLeadership = async (req, res) => {
       email !== undefined ? email : existing[0].email,
       linkedin !== undefined ? linkedin : existing[0].linkedin_url,
       twitter !== undefined ? twitter : existing[0].twitter_url,
-      order_position !== undefined ? parseInt(order_position) : existing[0].order_index,
+      order_index !== undefined ? parseInt(order_index) : existing[0].order_index,
       finalIsActive,
       id
     ]);

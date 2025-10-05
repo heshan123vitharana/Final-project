@@ -157,7 +157,7 @@ export default function AboutNew() {
                 const description = leader.bio || leader.description || leader.summary || '';
 
                 return (
-                  <div key={leader.id} className="group text-center">
+                  <div key={`leader-${leader.id}`} className="group text-center">
                     <div className="mb-8">
                       <div className="relative mx-auto mb-6 w-48 h-48">
                         {imageSrc ? (
