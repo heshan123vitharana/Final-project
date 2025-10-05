@@ -49,7 +49,7 @@ const getAllLeadership = async (req, res) => {
       params.push(is_active === 'true' ? 1 : 0);
     }
 
-    query += ' ORDER BY order_index ASC, created_at DESC';
+    query += ' ORDER BY order_position ASC, created_at DESC';
     console.log('🔍 Leadership API: Executing query:', query, 'with params:', params);
 
     const [rows] = await req.db.execute(query, params);
@@ -103,6 +103,9 @@ const getLeadershipById = async (req, res) => {
 
 // Add new leadership member
 const addLeadership = async (req, res) => {
+  console.log('Leadership API: Received request to add member.');
+  console.log('Request Body:', req.body);
+  console.log('Request File:', req.file);
   try {
     await ensureUploadDir();
     
@@ -132,7 +135,7 @@ const addLeadership = async (req, res) => {
     const [result] = await req.db.execute(`
       INSERT INTO leadership (
         name, position, bio, image_url, email, 
-        linkedin_url, twitter_url, order_index, is_active
+                linkedin_url, twitter_url, order_index, is_active
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       name,
@@ -143,7 +146,7 @@ const addLeadership = async (req, res) => {
       linkedin || null,
       twitter || null,
       parseInt(order_position) || 1,
-      is_active !== undefined ? (is_active === 'true' ? 1 : 0) : 1
+      is_active !== undefined ? (is_active === '1' || is_active === 'true' ? 1 : 0) : 1
     ]);
 
     res.status(201).json({
@@ -168,6 +171,10 @@ const addLeadership = async (req, res) => {
 
 // Update leadership member
 const updateLeadership = async (req, res) => {
+  console.log('Leadership API: Received request to update member');
+  console.log('Request Body:', req.body);
+  console.log('Request File:', req.file);
+  console.log('is_active value:', req.body.is_active, 'Type:', typeof req.body.is_active);
   try {
     const { id } = req.params;
     const { 
@@ -208,6 +215,9 @@ const updateLeadership = async (req, res) => {
       image_url = `/uploads/leadership/${req.file.filename}`;
     }
 
+    const finalIsActive = is_active !== undefined ? (is_active === '1' || is_active === 'true' || is_active === true ? 1 : 0) : existing[0].is_active;
+    console.log('Updating with is_active:', finalIsActive);
+
     await req.db.execute(`
       UPDATE leadership SET
         name = ?, position = ?, bio = ?, image_url = ?,
@@ -223,13 +233,20 @@ const updateLeadership = async (req, res) => {
       linkedin !== undefined ? linkedin : existing[0].linkedin_url,
       twitter !== undefined ? twitter : existing[0].twitter_url,
       order_position !== undefined ? parseInt(order_position) : existing[0].order_index,
-      is_active !== undefined ? (is_active === 'true' ? 1 : 0) : existing[0].is_active,
+      finalIsActive,
       id
     ]);
 
+    console.log('✅ Leadership member updated successfully in database');
+
+    // Fetch the updated record to confirm
+    const [updated] = await req.db.execute('SELECT * FROM leadership WHERE id = ?', [id]);
+    console.log('Updated record:', updated[0]);
+
     res.json({
       success: true,
-      message: 'Leadership member updated successfully'
+      message: 'Leadership member updated successfully',
+      data: updated[0]
     });
   } catch (error) {
     console.error('Error updating leadership member:', error);

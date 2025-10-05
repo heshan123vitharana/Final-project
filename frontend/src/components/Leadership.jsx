@@ -20,6 +20,14 @@ const Leadership = () => {
       }
 
       const data = await response.json()
+      console.log('Leadership Page: Fetched leaders:', data.data)
+      console.log('Leadership Page: Number of leaders:', data.data?.length)
+      console.log('Leadership Page: Leaders details:', data.data?.map(l => ({
+        id: l.id, 
+        name: l.name, 
+        is_active: l.is_active,
+        order_index: l.order_index
+      })))
       setLeaders(data.data || [])
     } catch (error) {
       console.error('Error fetching leadership:', error)
