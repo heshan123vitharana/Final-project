@@ -159,12 +159,12 @@ export default function AboutNew() {
                 return (
                   <div key={`leader-${leader.id}`} className="group text-center">
                     <div className="mb-8">
-                      <div className="relative mx-auto mb-6 w-48 h-48">
+                      <div className="relative mx-auto mb-6 w-48 h-48 overflow-hidden rounded-full">
                         {imageSrc ? (
                           <OptimizedImage
                             src={imageSrc}
                             alt={leader.name}
-                            className="w-full h-full rounded-full object-cover grayscale transition-all duration-500 group-hover:grayscale-0"
+                            className="w-full h-full object-cover object-center grayscale transition-all duration-500 group-hover:grayscale-0 group-hover:scale-110"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center rounded-full bg-gray-100">
