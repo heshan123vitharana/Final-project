@@ -18,9 +18,22 @@ import {
   Star,
   ArrowUp,
   ArrowDown,
+  Users,
   EyeOff
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+const createEmptyLeadershipForm = () => ({
+  name: '',
+  position: '',
+  bio: '',
+  image: null,
+  twitter: '',
+  linkedin: '',
+  email: '',
+  order_position: '1',
+  is_active: true
+})
 
 const ImageGalleryManager = () => {
   // Active tab state
@@ -29,7 +42,10 @@ const ImageGalleryManager = () => {
   // Images state
   const [images, setImages] = useState([])
   const [categories, setCategories] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [galleryLoading, setGalleryLoading] = useState(false)
+  const [categoryLoading, setCategoryLoading] = useState(false)
+  const [servicesLoading, setServicesLoading] = useState(false)
+  const [leadershipLoading, setLeadershipLoading] = useState(false)
   const [selectedImage, setSelectedImage] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingImage, setEditingImage] = useState(null)
@@ -46,6 +62,11 @@ const ImageGalleryManager = () => {
   const [editingService, setEditingService] = useState(null)
   const [serviceModalOpen, setServiceModalOpen] = useState(false)
   const [serviceType, setServiceType] = useState('services')
+
+  // Leadership state
+  const [leadership, setLeadership] = useState([])
+  const [editingLeader, setEditingLeader] = useState(null)
+  const [leaderModalOpen, setLeaderModalOpen] = useState(false)
 
   // Form states for images
   const [formData, setFormData] = useState({
@@ -75,10 +96,14 @@ const ImageGalleryManager = () => {
     isActive: true
   })
 
+  // Form states for leadership
+  const [leadershipFormData, setLeadershipFormData] = useState(() => createEmptyLeadershipForm())
+
   const tabs = [
     { id: 'images', label: 'Image Gallery', icon: ImageIcon },
     { id: 'categories', label: 'Categories', icon: Folder },
-    { id: 'services', label: 'Services & Excellence', icon: Award }
+    { id: 'services', label: 'Services & Excellence', icon: Award },
+    { id: 'leadership', label: 'Leadership', icon: Users }
   ]
 
   const serviceTypes = [
@@ -112,7 +137,7 @@ const ImageGalleryManager = () => {
   // Fetch all categories with counts (for category management)
   const fetchCategoriesWithCounts = useCallback(async () => {
     try {
-      setLoading(true)
+      setCategoryLoading(true)
       const response = await fetch('http://localhost:5000/api/categories/with-counts')
       
       if (!response.ok) {
@@ -125,7 +150,7 @@ const ImageGalleryManager = () => {
       console.error('Error fetching categories:', error)
       toast.error('Failed to load categories')
     } finally {
-      setLoading(false)
+      setCategoryLoading(false)
     }
   }, [])
 
@@ -133,7 +158,7 @@ const ImageGalleryManager = () => {
   const fetchImages = useCallback(async () => {
     console.log('🔍 Fetching images...')
     try {
-      setLoading(true)
+      setGalleryLoading(true)
       let url = 'http://localhost:5000/api/gallery'
       if (selectedCategoryFilter) {
         url += `?category_id=${selectedCategoryFilter}`
@@ -152,14 +177,14 @@ const ImageGalleryManager = () => {
       console.error('Error fetching images:', error)
       toast.error('Failed to load images')
     } finally {
-      setLoading(false)
+      setGalleryLoading(false)
     }
   }, [selectedCategoryFilter])
 
   // Fetch services and excellence
   const fetchServices = useCallback(async () => {
     try {
-      setLoading(true)
+      setServicesLoading(true)
       const response = await fetch('http://localhost:5000/api/services-excellence')
 
       if (!response.ok) {
@@ -174,7 +199,28 @@ const ImageGalleryManager = () => {
       console.error('Error fetching services:', error)
       toast.error('Failed to load services and excellence data')
     } finally {
-      setLoading(false)
+      setServicesLoading(false)
+    }
+  }, [])
+
+  const fetchLeadership = useCallback(async () => {
+    try {
+      setLeadershipLoading(true)
+      const response = await fetch('http://localhost:5000/api/leadership')
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch leadership')
+      }
+
+      const data = await response.json()
+      
+      console.log('📥 Received leadership data:', data.data?.length || 0, 'items')
+      setLeadership(data.data || [])
+    } catch (error) {
+      console.error('Error fetching leadership:', error)
+      toast.error('Failed to load leadership data')
+    } finally {
+      setLeadershipLoading(false)
     }
   }, [])
 
@@ -188,8 +234,10 @@ const ImageGalleryManager = () => {
       fetchCategoriesWithCounts()
     } else if (activeTab === 'services') {
       fetchServices()
+    } else if (activeTab === 'leadership') {
+      fetchLeadership()
     }
-  }, [activeTab, fetchCategories, fetchImages, fetchCategoriesWithCounts, fetchServices])
+  }, [activeTab, fetchCategories, fetchImages, fetchCategoriesWithCounts, fetchServices, fetchLeadership])
 
   useEffect(() => {
     if (activeTab === 'images') {
@@ -462,6 +510,128 @@ const ImageGalleryManager = () => {
     setEditingService(null)
   }
 
+  // ================ LEADERSHIP MANAGEMENT FUNCTIONS ================
+
+  const handleLeadershipSubmit = async (e) => {
+    e.preventDefault()
+    
+    try {
+      const name = (leadershipFormData.name || '').trim()
+      const position = (leadershipFormData.position || '').trim()
+
+      if (!name || !position) {
+        toast.error('Name and position are required')
+        return
+      }
+
+      const orderPositionValue = parseInt(leadershipFormData.order_position, 10)
+      const normalizedOrderPosition = Number.isNaN(orderPositionValue) || orderPositionValue < 1
+        ? 1
+        : orderPositionValue
+
+      const formData = new FormData()
+      
+      // Add text fields
+      formData.append('name', name)
+      formData.append('position', position)
+      formData.append('bio', (leadershipFormData.bio || '').trim())
+      formData.append('twitter', (leadershipFormData.twitter || '').trim())
+      formData.append('linkedin', (leadershipFormData.linkedin || '').trim())
+      formData.append('email', (leadershipFormData.email || '').trim())
+      formData.append('order_position', normalizedOrderPosition.toString())
+      formData.append('is_active', leadershipFormData.is_active.toString())
+      
+      // Add image if selected
+      if (leadershipFormData.image instanceof File) {
+        formData.append('image', leadershipFormData.image)
+      }
+      
+      const url = editingLeader 
+        ? `http://localhost:5000/api/leadership/${editingLeader.id}`
+        : 'http://localhost:5000/api/leadership'
+      
+      const method = editingLeader ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
+        body: formData
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${editingLeader ? 'update' : 'create'} leadership member`)
+      }
+
+      const _responseData = await response.json()
+      
+      if (editingLeader) {
+        toast.success('Leadership member updated successfully')
+      } else {
+        toast.success('Leadership member created successfully')
+      }
+      
+      await fetchLeadership() // Refresh the list
+      closeLeadershipModal()
+    } catch (error) {
+      console.error('Leadership operation error:', error)
+      toast.error(error.message || `Failed to ${editingLeader ? 'update' : 'create'} leadership member`)
+    }
+  }
+
+  const handleDeleteLeadership = async (leader) => {
+    if (!confirm('Are you sure you want to delete this leadership member?')) return
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/leadership/${leader.id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete leadership member')
+      }
+
+      setLeadership(prev => prev.filter(l => l.id !== leader.id))
+      toast.success('Leadership member deleted successfully')
+    } catch (error) {
+      console.error('Delete error:', error)
+      toast.error('Failed to delete leadership member')
+    }
+  }
+
+  const closeLeadershipModal = () => {
+    setLeaderModalOpen(false)
+    setEditingLeader(null)
+    setLeadershipFormData(createEmptyLeadershipForm())
+  }
+
+  const openLeadershipModal = (leader = null) => {
+    setEditingLeader(leader)
+    setLeaderModalOpen(true)
+  }
+
+  useEffect(() => {
+    if (!leaderModalOpen) return
+
+    if (editingLeader) {
+      setLeadershipFormData({
+        name: editingLeader.name || '',
+        position: editingLeader.position || '',
+        bio: editingLeader.bio || '',
+        image: null,
+        twitter: editingLeader.twitter_url || '',
+        linkedin: editingLeader.linkedin_url || '',
+        email: editingLeader.email || '',
+        order_position:
+          editingLeader.order_index !== undefined && editingLeader.order_index !== null
+            ? String(editingLeader.order_index)
+            : '1',
+        is_active:
+          editingLeader.is_active !== undefined ? Boolean(editingLeader.is_active) : true
+      })
+    } else {
+      setLeadershipFormData(createEmptyLeadershipForm())
+    }
+  }, [leaderModalOpen, editingLeader])
+
   // ================ CATEGORY MANAGEMENT FUNCTIONS ================
   
   const handleCategoryInputChange = (field, value) => {
@@ -599,6 +769,7 @@ const ImageGalleryManager = () => {
           {activeTab === 'images' && <ImageGalleryContent />}
           {activeTab === 'categories' && <CategoryManagementContent />}
           {activeTab === 'services' && <ServicesExcellenceContent />}
+          {activeTab === 'leadership' && <LeadershipContent />}
         </div>
       </div>
     </div>
@@ -606,7 +777,7 @@ const ImageGalleryManager = () => {
 
   // ================ IMAGE GALLERY CONTENT ================
   function ImageGalleryContent() {
-    if (loading) {
+  if (galleryLoading) {
       return (
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="animate-spin h-8 w-8 text-green-600" />
@@ -1038,7 +1209,7 @@ const ImageGalleryManager = () => {
 
   // ================ CATEGORY MANAGEMENT CONTENT ================
   function CategoryManagementContent() {
-    if (loading) {
+  if (categoryLoading) {
       return (
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="animate-spin h-8 w-8 text-green-600" />
@@ -1235,7 +1406,7 @@ const ImageGalleryManager = () => {
 
   // ================ SERVICES & EXCELLENCE CONTENT ================
   function ServicesExcellenceContent() {
-    if (loading) {
+  if (servicesLoading) {
       return (
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="animate-spin h-8 w-8 text-green-600" />
@@ -1527,6 +1698,313 @@ const ImageGalleryManager = () => {
                   >
                     <Save className="h-4 w-4" />
                     <span>{editingService ? 'Update' : 'Create'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ================ LEADERSHIP CONTENT ================
+  function LeadershipContent() {
+  if (leadershipLoading && !leaderModalOpen) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="animate-spin h-8 w-8 text-green-600" />
+          <span className="ml-2 text-gray-600">Loading leadership...</span>
+        </div>
+      )
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <h3 className="text-lg font-semibold text-gray-800">Leadership Team</h3>
+            <span className="text-sm text-gray-500">
+              {leadership.length} member{leadership.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <button
+            onClick={() => openLeadershipModal()}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors inline-flex items-center space-x-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Member</span>
+          </button>
+        </div>
+
+        {/* Leadership Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {leadership.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-gray-500">
+              <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-lg font-medium">No leadership members found</p>
+              <p className="text-sm">Add leadership members to showcase your team</p>
+            </div>
+          ) : (
+            leadership
+              .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
+              .map(leader => (
+                <div key={leader.id} className="bg-white border rounded-lg p-6 hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center space-x-3">
+                      {leader.image_url && (
+                        <img
+                          src={`http://localhost:5000${leader.image_url}`}
+                          alt={leader.name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      )}
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{leader.name}</h3>
+                        <p className="text-sm text-green-600 font-medium">{leader.position}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {leader.is_active ? (
+                        <CheckCircle className="h-5 w-5 text-green-600" title="Active" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-red-600" title="Inactive" />
+                      )}
+                    </div>
+                  </div>
+
+                  {leader.bio && (
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                      {leader.bio}
+                    </p>
+                  )}
+
+                  {/* Social Links */}
+                  <div className="flex items-center space-x-3 mb-4">
+                    {leader.email && (
+                      <a
+                        href={`mailto:${leader.email}`}
+                        className="text-gray-400 hover:text-green-600 transition-colors"
+                        title="Email"
+                      >
+                        📧
+                      </a>
+                    )}
+                    {leader.linkedin_url && (
+                      <a
+                        href={leader.linkedin_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-blue-600 transition-colors"
+                        title="LinkedIn"
+                      >
+                        💼
+                      </a>
+                    )}
+                    {leader.twitter_url && (
+                      <a
+                        href={leader.twitter_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-blue-400 transition-colors"
+                        title="Twitter"
+                      >
+                        🐦
+                      </a>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-center mt-4">
+                    <div className="text-sm text-gray-500">
+                      Order: {leader.order_index || 1}
+                    </div>
+                    <div className="flex space-x-1">
+                      <button
+                        onClick={() => openLeadershipModal(leader)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit Member"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLeadership(leader)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete Member"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+          )}
+        </div>
+
+        {/* Leadership Modal */}
+        {leaderModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center p-6 border-b">
+                <h3 className="text-lg font-semibold">
+                  {editingLeader ? 'Edit Leadership Member' : 'Add Leadership Member'}
+                </h3>
+                <button
+                  onClick={closeLeadershipModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleLeadershipSubmit} className="p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={leadershipFormData.name}
+                      onChange={(e) => setLeadershipFormData(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Position *
+                    </label>
+                    <input
+                      type="text"
+                      value={leadershipFormData.position}
+                      onChange={(e) => setLeadershipFormData(prev => ({ ...prev, position: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Biography
+                  </label>
+                  <textarea
+                    value={leadershipFormData.bio}
+                    onChange={(e) => setLeadershipFormData(prev => ({ ...prev, bio: e.target.value }))}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Brief biography or description..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Profile Image
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setLeadershipFormData(prev => ({ ...prev, image: e.target.files[0] }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  {editingLeader && editingLeader.image_url && (
+                    <div className="mt-2">
+                      <img
+                        src={`http://localhost:5000${editingLeader.image_url}`}
+                        alt="Current"
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">Current image</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={leadershipFormData.email}
+                      onChange={(e) => setLeadershipFormData(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="email@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      LinkedIn URL
+                    </label>
+                    <input
+                      type="url"
+                      value={leadershipFormData.linkedin}
+                      onChange={(e) => setLeadershipFormData(prev => ({ ...prev, linkedin: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="https://linkedin.com/in/..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Twitter URL
+                    </label>
+                    <input
+                      type="url"
+                      value={leadershipFormData.twitter}
+                      onChange={(e) => setLeadershipFormData(prev => ({ ...prev, twitter: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="https://twitter.com/..."
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Display Order
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={leadershipFormData.order_position}
+                      onChange={(e) => setLeadershipFormData(prev => ({ ...prev, order_position: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={leadershipFormData.is_active ? 'active' : 'inactive'}
+                      onChange={(e) => setLeadershipFormData(prev => ({ ...prev, is_active: e.target.value === 'active' }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-6 border-t">
+                  <button
+                    type="button"
+                    onClick={closeLeadershipModal}
+                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    <span>{editingLeader ? 'Update' : 'Create'}</span>
                   </button>
                 </div>
               </form>

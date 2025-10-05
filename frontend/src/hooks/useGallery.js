@@ -198,7 +198,6 @@ export const useGallery = (options = {}) => {
 // Optimized hook specifically for "Our Latest Creations" section
 export const useLatestCreations = (count = 8) => {
   const {
-    images,
     loading,
     error,
     getRepresentativeImages,

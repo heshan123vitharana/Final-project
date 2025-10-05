@@ -1,53 +1,48 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { User } from 'lucide-react';
 import { useLatestCreations } from '../hooks/useGallery';
 import OptimizedImage from './OptimizedImage';
 
-const positions = [
-  {
-    title: 'Chairman',
-    name: 'Mr. S. Perera',
-    description: 'Leads the Paddy Marketing Board, oversees strategic direction and ensures quality standards.',
-    image: 'https://swabhaceylon.com/wp-content/uploads/2021/01/chairman.jpg',
-  },
-  {
-    title: 'General Manager',
-    name: 'Ms. R. Silva',
-    description: 'Manages daily operations, logistics, and staff coordination for all collection centers.',
-    image: 'https://malibangroup-2024.sgp1.digitaloceanspaces.com/theme/images-min/board-of-directors/chairman-2024.jpg',
-  },
-  {
-    title: 'Finance Officer',
-    name: 'Mr. D. Fernando',
-    description: 'Handles financial planning, budgeting, and payment processing for farmers and mill owners.',
-    image: 'https://malibangroup-2024.sgp1.digitaloceanspaces.com/theme/images-min/board-of-directors/dr_2.png',
-  },
-  {
-    title: 'Quality Control Manager',
-    name: 'Mr. T. Jayasinghe',
-    description: 'Ensures paddy quality, supervises laboratory testing, and maintains compliance.',
-    image: 'https://adaderanaenglish.s3.amazonaws.com/1655113239-ceb-chairman-ferdinando.jpg',
-  },
-  {
-    title: 'IT Administrator',
-    name: 'Mr. K. Wickramasinghe',
-    description: 'Maintains the digital platform, data security, and technical support for users.',
-    image: 'https://media.licdn.com/dms/image/v2/C5603AQHy-7htuDDksQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1636862599329?e=2147483647&v=beta&t=QP7tqlHohvUIVqOUjZrGIJs1PTHQQE7weEjg-t15Zeo',
-  },
-  {
-    title: 'Operations Manager',
-    name: 'Mr. N. Gunawardena',
-    description: 'Coordinates logistics, supply chain, and field operations for the board.',
-    image: 'https://media.licdn.com/dms/image/v2/D5603AQFSkZU6BGm_bQ/profile-displayphoto-shrink_200_200/B56Zb4yYRUHwAY-/0/1747930680721?e=2147483647&v=beta&t=UGmMMdlGdI5XZbuL3VF8Mphz5HdGod1kVq_J8dYI__I',
-  },
-];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function AboutNew() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [showFullGallery, setShowFullGallery] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [leaders, setLeaders] = useState([]);
+  const [leadersLoading, setLeadersLoading] = useState(true);
+  const [leadersError, setLeadersError] = useState(null);
+
+  const fetchLeadership = useCallback(async () => {
+    try {
+      setLeadersLoading(true);
+      setLeadersError(null);
+
+      const response = await fetch(`${API_BASE_URL}/api/leadership?is_active=true`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch leadership team');
+      }
+
+      const data = await response.json();
+      setLeaders(data.data || []);
+    } catch (error) {
+      console.error('Error fetching leadership team:', error);
+      setLeaders([]);
+      setLeadersError(error.message || 'Unable to load leadership team');
+    } finally {
+      setLeadersLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLeadership();
+  }, [fetchLeadership]);
 
   // Use the custom hook for dynamic gallery data
   const { images: galleryImages, loading: galleryLoading, error: galleryError, hasImages, refresh } = useLatestCreations(8);
+
+  const sortedLeaders = [...leaders].sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
 
   // Function to open image in modal
   const UNUSED_openImageModal = (image, index) => {
@@ -118,60 +113,97 @@ export default function AboutNew() {
     <section className="py-20 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto px-6">
         {/* Apple-style Leadership Section */}
-        <div className="relative">
+  <div id="leadership" className="relative">
           {/* Clean Header */}
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-light text-gray-900 mb-6 leading-tight tracking-tight">
-              Leadership
+              Our Leadership Team
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed font-light">
-              Meet the people who guide Sri Lanka's agricultural future with vision, expertise, and commitment to excellence.
+              Meet the dedicated professionals leading Sri Lanka's paddy marketing initiatives.
             </p>
+            {leadersError && (
+              <div className="mt-6 inline-flex flex-col items-center justify-center gap-3 rounded-xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-600">
+                <span>{leadersError}</span>
+                <button
+                  onClick={fetchLeadership}
+                  className="rounded-lg bg-red-100 px-4 py-2 font-medium text-red-700 transition hover:bg-red-200"
+                >
+                  Try again
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Apple-style Leadership Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-16">
-            {positions.map((pos, idx) => (
-              <div key={idx} className="group text-center">
-                {/* Clean Profile Image */}
-                <div className="mb-8">
-                  <div className="relative mx-auto w-48 h-48 mb-6">
-                    <img 
-                      src={pos.image} 
-                      alt={pos.name} 
-                      className="w-full h-full object-cover rounded-full grayscale hover:grayscale-0 transition-all duration-500" 
-                    />
+            {leadersLoading ? (
+              Array.from({ length: 6 }).map((_, index) => (
+                <div key={`leader-skeleton-${index}`}
+                  className="group text-center animate-pulse">
+                  <div className="mb-8">
+                    <div className="relative mx-auto w-48 h-48 mb-6 rounded-full bg-gray-200" />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="mx-auto h-6 w-40 rounded-full bg-gray-200" />
+                    <div className="mx-auto h-4 w-32 rounded-full bg-gray-200" />
+                    <div className="mx-auto h-4 w-52 rounded-full bg-gray-200" />
                   </div>
                 </div>
-                
-                {/* Minimal Content */}
-                <div>
-                  <h3 className="text-2xl font-light text-gray-900 mb-2">
-                    {pos.name}
-                  </h3>
-                  <div className="text-lg text-gray-500 mb-4 font-light">
-                    {pos.title}
+              ))
+            ) : sortedLeaders.length > 0 ? (
+              sortedLeaders.map((leader) => {
+                const imageSrc = leader.image_url ? `${API_BASE_URL}${leader.image_url}` : null;
+                const description = leader.bio || leader.description || leader.summary || '';
+
+                return (
+                  <div key={leader.id} className="group text-center">
+                    <div className="mb-8">
+                      <div className="relative mx-auto mb-6 w-48 h-48">
+                        {imageSrc ? (
+                          <OptimizedImage
+                            src={imageSrc}
+                            alt={leader.name}
+                            className="w-full h-full rounded-full object-cover grayscale transition-all duration-500 group-hover:grayscale-0"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center rounded-full bg-gray-100">
+                            <User className="h-16 w-16 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-2xl font-medium text-gray-900 mb-2">
+                        {leader.name}
+                      </h3>
+                      <div className="text-lg text-gray-500 mb-4 font-normal">
+                        {leader.position}
+                      </div>
+                      {description ? (
+                        <p className="text-gray-600 leading-relaxed text-base font-light max-w-xs mx-auto">
+                          {description}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
-                  <p className="text-gray-600 leading-relaxed text-base font-light max-w-xs mx-auto">
-                    {pos.description}
-                  </p>
-                </div>
+                );
+              })
+            ) : (
+              <div className="col-span-full text-center text-gray-500">
+                No leadership members available at the moment.
               </div>
-            ))}
+            )}
           </div>
         </div>
         {/* Modern Gallery Section */}
         <div className="relative mt-32">
-          <style>{`
-            @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
-
-            * {
-              font-family: 'Poppins', sans-serif;
-            }
-          `}</style>
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-semibold text-center mx-auto">Our Latest Creations</h1>
-            <p className="text-sm text-slate-500 text-center mt-2 max-w-lg mx-auto">
+            <h1 className="text-4xl md:text-5xl font-light text-gray-900 leading-tight tracking-tight text-center mx-auto">
+              Our Latest Creations
+            </h1>
+            <p className="text-xl text-gray-600 leading-relaxed font-light text-center mt-4 max-w-2xl mx-auto">
               A visual collection showcasing our agricultural excellence across all categories - from mill operations to quality control.
             </p>
             {galleryError && (

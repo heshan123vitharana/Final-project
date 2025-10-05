@@ -31,6 +31,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
         { name: 'Support', description: '24/7 farmer support services', icon: '🤝' }
       ]
     },
+    { name: 'Leadership', id: 'leadership' },
     { 
       name: 'Resources', 
       id: 'resources',
@@ -115,6 +116,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
           'platform-features-section': ['platform-features-section', 'about'],
           'collection-centers': ['collection-centers'],
           'live-paddy-prices': ['live-paddy-prices'],
+          'leadership': ['leadership'],
           'contact': ['contact']
         };
         

@@ -443,6 +443,28 @@ const initializeTables = async () => {
     `);
     console.log('✅ Excellence items table ready');
 
+    // Leadership table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS leadership (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        position VARCHAR(255) NOT NULL,
+        department VARCHAR(255),
+        bio TEXT,
+        image_url VARCHAR(500),
+        email VARCHAR(255),
+        phone VARCHAR(50),
+        linkedin_url VARCHAR(500),
+        twitter_url VARCHAR(500),
+        order_index INT DEFAULT 0,
+        is_active BOOLEAN DEFAULT TRUE,
+        is_featured BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Leadership table ready');
+
     // Initialize stock tables
     const StockModel = require('../models/stockModel');
     await StockModel.initializeStockTables();

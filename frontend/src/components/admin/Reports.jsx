@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Download,
   FileText,
@@ -12,6 +12,94 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+const REGIONS = [
+  'All Regions',
+  'Western Province',
+  'Central Province',
+  'Southern Province',
+  'Northern Province',
+  'Eastern Province',
+  'North Western Province',
+  'North Central Province',
+  'Uva Province',
+  'Sabaragamuwa Province'
+]
+
+const REPORT_TYPES = [
+  { id: 'licenses', name: 'License Status Report', icon: FileText },
+  { id: 'stock', name: 'Stock Levels Report', icon: Package },
+  { id: 'production', name: 'Production Report', icon: BarChart3 },
+  { id: 'financial', name: 'Financial Report', icon: TrendingUp },
+  { id: 'mills', name: 'Mill Performance Report', icon: Users }
+]
+
+const MOCK_REPORT_DATA = {
+  stock: {
+    summary: {
+      totalStock: 20700,
+      totalCapacity: 25000,
+      utilizationRate: 83,
+      activeMills: 8
+    },
+    breakdown: [
+      { category: 'Private Mills', value: 12500, percentage: 60 },
+      { category: 'Government Mills', value: 8200, percentage: 40 }
+    ]
+  },
+  production: {
+    summary: {
+      monthlyProduction: 5240,
+      dailyAverage: 169,
+      targetAchievement: 87,
+      qualityGrade: 'A+'
+    },
+    breakdown: [
+      { category: 'Premium Grade', value: 2100, percentage: 40 },
+      { category: 'Standard Grade', value: 2040, percentage: 39 },
+      { category: 'Commercial Grade', value: 1100, percentage: 21 }
+    ]
+  },
+  financial: {
+    summary: {
+      totalRevenue: 2450000,
+      totalCosts: 1890000,
+      profit: 560000,
+      profitMargin: 23
+    },
+    breakdown: [
+      { category: 'Processing Revenue', value: 1470000, percentage: 60 },
+      { category: 'Storage Revenue', value: 735000, percentage: 30 },
+      { category: 'Other Revenue', value: 245000, percentage: 10 }
+    ]
+  },
+  mills: {
+    summary: {
+      totalMills: 8,
+      activeMills: 7,
+      averageUtilization: 83,
+      topPerformer: 'Green Valley Rice Mill'
+    },
+    breakdown: [
+      { category: 'High Performance (>85%)', value: 3, percentage: 38 },
+      { category: 'Good Performance (70-85%)', value: 4, percentage: 50 },
+      { category: 'Low Performance (<70%)', value: 1, percentage: 12 }
+    ]
+  },
+  licenses: {
+    summary: {
+      totalApplications: 15,
+      approved: 8,
+      pending: 5,
+      rejected: 2
+    },
+    breakdown: [
+      { category: 'Approved', value: 8, percentage: 53 },
+      { category: 'Pending', value: 5, percentage: 33 },
+      { category: 'Rejected', value: 2, percentage: 14 }
+    ]
+  }
+};
+
 const Reports = () => {
   const [dateRange, setDateRange] = useState({
     from: '2025-01-01',
@@ -20,35 +108,13 @@ const Reports = () => {
   const [selectedRegion, setSelectedRegion] = useState('all')
   const [selectedMillType, setSelectedMillType] = useState('all')
   const [reportType, setReportType] = useState('licenses')
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [isPreviewingPDF, setIsPreviewingPDF] = useState(false)
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
   const [reportData, setReportData] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const regions = [
-    'All Regions',
-    'Western Province',
-    'Central Province',
-    'Southern Province',
-    'Northern Province',
-    'Eastern Province',
-    'North Western Province',
-    'North Central Province',
-    'Uva Province',
-    'Sabaragamuwa Province'
-  ]
-
-  const reportTypes = [
-    { id: 'licenses', name: 'License Status Report', icon: FileText },
-    { id: 'stock', name: 'Stock Levels Report', icon: Package },
-    { id: 'production', name: 'Production Report', icon: BarChart3 },
-    { id: 'financial', name: 'Financial Report', icon: TrendingUp },
-    { id: 'mills', name: 'Mill Performance Report', icon: Users }
-  ]
-
   // Fetch real license data
-  const fetchLicenseStatistics = async () => {
+  const fetchLicenseStatistics = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -65,7 +131,11 @@ const Reports = () => {
       const data = await response.json()
       console.log('License statistics:', data)
 
-      const { overall, regional, millTypes } = data.data
+      const { overall } = data.data || {}
+
+      if (!overall) {
+        throw new Error('Statistics payload missing overall summary')
+      }
 
       const processedData = {
         licenses: {
@@ -109,7 +179,7 @@ const Reports = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [dateRange, selectedRegion])
 
   // Load data when component mounts or filters change
   useEffect(() => {
@@ -117,77 +187,9 @@ const Reports = () => {
       fetchLicenseStatistics()
     } else {
       // For other report types, use mock data for now
-      setReportData(mockReportData)
+      setReportData(MOCK_REPORT_DATA)
     }
-  }, [reportType, dateRange, selectedRegion])
-
-  // Mock report data for other report types
-  const mockReportData = {
-    stock: {
-      summary: {
-        totalStock: 20700,
-        totalCapacity: 25000,
-        utilizationRate: 83,
-        activeMills: 8
-      },
-      breakdown: [
-        { category: 'Private Mills', value: 12500, percentage: 60 },
-        { category: 'Government Mills', value: 8200, percentage: 40 }
-      ]
-    },
-    production: {
-      summary: {
-        monthlyProduction: 5240,
-        dailyAverage: 169,
-        targetAchievement: 87,
-        qualityGrade: 'A+'
-      },
-      breakdown: [
-        { category: 'Premium Grade', value: 2100, percentage: 40 },
-        { category: 'Standard Grade', value: 2040, percentage: 39 },
-        { category: 'Commercial Grade', value: 1100, percentage: 21 }
-      ]
-    },
-    financial: {
-      summary: {
-        totalRevenue: 2450000,
-        totalCosts: 1890000,
-        profit: 560000,
-        profitMargin: 23
-      },
-      breakdown: [
-        { category: 'Processing Revenue', value: 1470000, percentage: 60 },
-        { category: 'Storage Revenue', value: 735000, percentage: 30 },
-        { category: 'Other Revenue', value: 245000, percentage: 10 }
-      ]
-    },
-    mills: {
-      summary: {
-        totalMills: 8,
-        activeMills: 7,
-        averageUtilization: 83,
-        topPerformer: 'Green Valley Rice Mill'
-      },
-      breakdown: [
-        { category: 'High Performance (>85%)', value: 3, percentage: 38 },
-        { category: 'Good Performance (70-85%)', value: 4, percentage: 50 },
-        { category: 'Low Performance (<70%)', value: 1, percentage: 12 }
-      ]
-    },
-    licenses: {
-      summary: {
-        totalApplications: 15,
-        approved: 8,
-        pending: 5,
-        rejected: 2
-      },
-      breakdown: [
-        { category: 'Approved', value: 8, percentage: 53 },
-        { category: 'Pending', value: 5, percentage: 33 },
-        { category: 'Rejected', value: 2, percentage: 14 }
-      ]
-    }
-  }
+  }, [reportType, fetchLicenseStatistics])
 
   const generatePDFReport = async () => {
     try {
@@ -229,7 +231,7 @@ const Reports = () => {
     
     // Report details
     doc.setFontSize(12)
-    const reportName = reportTypes.find(r => r.id === reportType)?.name || reportType
+  const reportName = REPORT_TYPES.find(r => r.id === reportType)?.name || reportType
     doc.text(`Report: ${reportName}`, 14, 50)
     doc.text(`Period: ${dateRange.from} to ${dateRange.to}`, 14, 60)
     doc.text(`Region: ${selectedRegion.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`, 14, 70)
@@ -470,29 +472,6 @@ const Reports = () => {
     }
   }
 
-  const showSuccessNotification = (message) => {
-    // Create and show success notification
-    const notification = document.createElement('div')
-    notification.innerHTML = `
-      <div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300">
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-          </svg>
-          ${message}
-        </div>
-      </div>
-    `
-    document.body.appendChild(notification)
-    
-    // Remove notification after 3 seconds
-    setTimeout(() => {
-      if (notification.parentNode) {
-        document.body.removeChild(notification)
-      }
-    }, 3000)
-  }
-
   const generateCSVContent = () => {
     const data = reportData[reportType]
 
@@ -579,11 +558,17 @@ const Reports = () => {
               onChange={(e) => setSelectedRegion(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              {regions.map(region => (
-                <option key={region} value={region.toLowerCase().replace(/\s+/g, '-')}>
-                  {region}
-                </option>
-              ))}
+              {REGIONS.map(region => {
+                const value = region === 'All Regions'
+                  ? 'all'
+                  : region.toLowerCase().replace(/\s+/g, '-')
+
+                return (
+                  <option key={region} value={value}>
+                    {region}
+                  </option>
+                )
+              })}
             </select>
           </div>
 
@@ -665,7 +650,7 @@ const Reports = () => {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Report Types</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {reportTypes.map((type) => {
+          {REPORT_TYPES.map((type) => {
             const IconComponent = type.icon
             return (
               <button
@@ -689,7 +674,7 @@ const Reports = () => {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-gray-800">
-            {reportTypes.find(t => t.id === reportType)?.name} Preview
+            {REPORT_TYPES.find(t => t.id === reportType)?.name} Preview
           </h3>
           <div className="text-sm text-gray-600">
             Period: {new Date(dateRange.from).toLocaleDateString()} - {new Date(dateRange.to).toLocaleDateString()}
