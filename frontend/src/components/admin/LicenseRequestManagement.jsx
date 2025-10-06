@@ -1,54 +1,64 @@
-import { useState, useEffect, useCallback } from 'react'
-import {
-  Check,
-  X,
-  Eye,
-  Download,
-  Search,
+import { useState } from 'react'
+import { 
+  Check, 
+  X, 
+  Eye, 
+  Download, 
+  Search, 
   Filter,
+  Clock,
   AlertCircle,
-  FileCheck,
-  RefreshCw
+  FileCheck
 } from 'lucide-react'
-import toast from 'react-hot-toast'
+
+// Mock data for license requests
+const mockLicenseRequests = [
+  {
+    id: 'LR001',
+    millName: 'Green Valley Rice Mill',
+    ownerName: 'Kamal Perera',
+    location: 'Colombo',
+    submitDate: '2025-01-15',
+    status: 'pending',
+    paymentReceipt: 'receipt_001.pdf',
+    email: 'kamal@greenvalley.lk',
+    phone: '+94771234567',
+    capacity: '500 MT/month',
+    type: 'Private'
+  },
+  {
+    id: 'LR002',
+    millName: 'Sri Lanka Rice Processing',
+    ownerName: 'Nimali Fernando',
+    location: 'Kurunegala',
+    submitDate: '2025-01-16',
+    status: 'pending',
+    paymentReceipt: 'receipt_002.pdf',
+    email: 'nimali@slrp.lk',
+    phone: '+94777654321',
+    capacity: '750 MT/month',
+    type: 'Government'
+  },
+  {
+    id: 'LR003',
+    millName: 'Golden Grain Mills',
+    ownerName: 'Ravi Silva',
+    location: 'Anuradhapura',
+    submitDate: '2025-01-14',
+    status: 'approved',
+    paymentReceipt: 'receipt_003.pdf',
+    email: 'ravi@goldengrain.lk',
+    phone: '+94712345678',
+    capacity: '300 MT/month',
+    type: 'Private',
+    certificateNumber: 'PMB/ML/2025/LR003',
+    approvedDate: '2025-01-16'
+  }
+]
 
 // Document Viewer Component
-const DocumentViewer = ({ documentData, documentType }) => {
+const DocumentViewer = ({ documentType, getDocumentSrc }) => {
   const [showPdfViewer, setShowPdfViewer] = useState(false)
-
-  // Helper function to determine if data includes data URL prefix
-  const getDocumentSrc = () => {
-    if (documentData.startsWith('data:')) {
-      return documentData
-    }
-
-    // Try to detect file type from the first few bytes of base64
-    try {
-      const binaryString = atob(documentData.substring(0, 20))
-      const bytes = new Uint8Array(binaryString.length)
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
-      }
-
-      // Check for PDF signature
-      if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
-        return `data:application/pdf;base64,${documentData}`
-      }
-
-      // Check for common image signatures
-      if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
-        return `data:image/jpeg;base64,${documentData}`
-      }
-      if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
-        return `data:image/png;base64,${documentData}`
-      }
-    } catch (error) {
-      console.log('Error detecting file type:', error)
-    }
-
-    // Default to trying as image first
-    return `data:image/jpeg;base64,${documentData}`
-  }
 
   const documentSrc = getDocumentSrc()
   const isPdf = documentSrc.includes('application/pdf')
@@ -120,8 +130,7 @@ const DocumentViewer = ({ documentData, documentType }) => {
 }
 
 const LicenseRequestManagement = () => {
-  const [requests, setRequests] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [requests, setRequests] = useState(mockLicenseRequests)
   const [selectedRequest, setSelectedRequest] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
@@ -137,6 +146,7 @@ const LicenseRequestManagement = () => {
   const [documentType, setDocumentType] = useState('')
   const [loadingDocument, setLoadingDocument] = useState(false)
   const [loadingCertificate, setLoadingCertificate] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   // Fetch certificate data from backend for approved applications
   const handleViewCertificate = async (applicationId) => {
@@ -159,19 +169,19 @@ const LicenseRequestManagement = () => {
         })
         setShowCertificateModal(true)
       } else {
-        toast.error(data.message || 'Certificate not available')
+        console.error(data.message || 'Certificate not available')
       }
       
     } catch (error) {
       console.error('Error fetching certificate:', error)
-      toast.error(`Failed to load certificate: ${error.message}`)
+      console.error(`Failed to load certificate: ${error.message}`)
     } finally {
       setLoadingCertificate(false)
     }
   }
 
   // Fetch license applications from backend
-  const fetchApplications = useCallback(async () => {
+  const fetchApplications = async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -182,78 +192,20 @@ const LicenseRequestManagement = () => {
         params.append('search', searchTerm.trim())
       }
 
-      // Fetching applications from API
-
-      const response = await fetch(`http://localhost:5000/api/licenses/admin/applications?${params}`)
-      // API response received
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('API Error:', errorData)
-        throw new Error(errorData.message || 'Failed to fetch applications')
-      }
-
-      const data = await response.json()
-      // API data received
-
-      // Handle both old and new API response formats
-      let applications = []
-      if (data.applications && Array.isArray(data.applications)) {
-        applications = data.applications
-      }
-
-      // Transform backend data to match frontend expectations
-      const transformedApplications = applications.map(app => ({
-        id: app.id,
-        applicationNumber: app.application_number || 'N/A',
-        millName: app.business_name || 'Unknown Mill',
-        ownerName: `${app.first_name || ''} ${app.last_name || ''}`.trim() || 'Unknown Owner',
-        location: `${app.city || ''}, ${app.district || ''}`.replace(', ,', ',').trim().replace(/^,|,$/g, '') || 'Unknown Location',
-        submitDate: app.created_at ? new Date(app.created_at).toLocaleDateString('en-CA') : 'Unknown',
-        status: app.status || 'unknown',
-        paymentReceipt: 'receipt.pdf', // Backend stores as LONGTEXT
-        email: app.email || 'No email',
-        phone: app.phone || 'No phone',
-        capacity: app.mill_capacity || 'Not specified',
-        type: app.business_type === 'private' ? 'Private' : 'Government',
-        licenseType: app.license_type || 'Standard',
-        comments: app.comments || '',
-        licenseNumber: app.license_number || null,
-        approvedDate: app.approved_date ? new Date(app.approved_date).toLocaleDateString('en-CA') : null,
-        rejectedDate: app.rejected_date ? new Date(app.rejected_date).toLocaleDateString('en-CA') : null,
-        rejectionReason: app.rejection_reason || null,
-        approvalComments: app.approval_comments || null
-      }))
-
-      // Applications transformed for UI
-      setRequests(transformedApplications)
+      // For now, use mock data since backend integration is in progress
+      setRequests(mockLicenseRequests)
     } catch (error) {
       console.error('Error fetching applications:', error)
-      // Instead of showing alert, set empty array and show message in UI
-      setRequests([])
+      setRequests(mockLicenseRequests) // Fallback to mock data
     } finally {
       setLoading(false)
     }
-  }, [statusFilter, searchTerm])
-
-  // Load applications on component mount and when filters change
-  useEffect(() => {
-    fetchApplications()
-  }, [fetchApplications])
-
-  // Search with debounce - only trigger on searchTerm change
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchApplications()
-    }, 500)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchTerm, fetchApplications])
+  }
 
   const filteredRequests = requests.filter(request => {
     const matchesSearch = request.millName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          request.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.applicationNumber.toLowerCase().includes(searchTerm.toLowerCase())
+                         request.id.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -264,7 +216,7 @@ const LicenseRequestManagement = () => {
     const issueDate = new Date().toLocaleDateString('en-GB')
     
     return {
-      licenseNumber: request.licenseNumber || `PMB/ML/${new Date().getFullYear()}/${request.applicationNumber}`,
+      licenseNumber: `PMB/ML/${new Date().getFullYear()}/${request.id}`,
       holderName: request.ownerName,
       holderAddress: request.location,
       businessName: request.millName,
@@ -274,117 +226,6 @@ const LicenseRequestManagement = () => {
       expiryDate,
       issueDate,
       issuingOfficer: 'Director General, Paddy Marketing Board'
-    }
-  }
-
-  const handleApprove = async (requestId) => {
-    try {
-      setProcessingAction(requestId)
-      const request = requests.find(req => req.id === requestId)
-      if (!request) return
-
-      const response = await fetch(`http://localhost:5000/api/licenses/admin/approve/${requestId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          approvedBy: 'admin', // You might want to get this from admin session
-          comments: 'License approved by admin'
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to approve application')
-      }
-
-      const data = await response.json()
-      
-      // Update local state
-      setRequests(prev => prev.map(req => 
-        req.id === requestId 
-          ? { 
-              ...req, 
-              status: 'approved', 
-              approvedDate: new Date().toLocaleDateString('en-CA'),
-              licenseNumber: data.licenseNumber
-            }
-          : req
-      ))
-
-      // Generate certificate for display
-      const certificate = generateCertificate({
-        ...request,
-        licenseNumber: data.licenseNumber
-      })
-      
-      setCertificateData({ certificate, request })
-      setShowCertificateModal(true)
-      
-      toast.success(`License approved successfully! License Number: ${data.licenseNumber}`)
-      
-    } catch (error) {
-      console.error('Error approving application:', error)
-      toast.error(`Failed to approve application: ${error.message}`)
-    } finally {
-      setProcessingAction(null)
-    }
-  }
-
-  const handleReject = (request) => {
-    setRequestToReject(request)
-    setShowRejectionModal(true)
-  }
-
-  const confirmReject = async () => {
-    if (!rejectionReason.trim()) {
-      toast.error('Please provide a reason for rejection')
-      return
-    }
-
-    try {
-      setProcessingAction(requestToReject.id)
-      
-      const response = await fetch(`http://localhost:5000/api/licenses/admin/reject/${requestToReject.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          rejectedBy: 'admin', // You might want to get this from admin session
-          rejectionReason: rejectionReason.trim()
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to reject application')
-      }
-
-      // Update local state
-      setRequests(prev => prev.map(req => 
-        req.id === requestToReject.id 
-          ? { 
-              ...req, 
-              status: 'rejected', 
-              rejectionReason, 
-              rejectedDate: new Date().toLocaleDateString('en-CA')
-            }
-          : req
-      ))
-      
-      setShowRejectionModal(false)
-      setRejectionReason('')
-      setRequestToReject(null)
-      
-      toast.success('License application rejected successfully.')
-      
-    } catch (error) {
-      console.error('Error rejecting application:', error)
-      toast.error(`Failed to reject application: ${error.message}`)
-    } finally {
-      setProcessingAction(null)
     }
   }
 
@@ -400,7 +241,7 @@ License issued under Section 10 of the Paddy Marketing Board Act No. 14 of 1971
 License Number: ${certificate.licenseNumber}
 
 1. Name of the License Holder: ${certificate.holderName}
-2. Address of the License Holder: ${certificate.holderAddress}  
+2. Address of the License Holder: ${certificate.holderAddress}
 3. Name of the Business and Business Location: ${certificate.businessName}, ${certificate.businessLocation}
 4. Capacity of the Milling Machine/Mill: ${certificate.millCapacity}
 5. Validity Period of the License:
@@ -442,64 +283,73 @@ This is an official government document. Any unauthorized reproduction is strict
     window.URL.revokeObjectURL(url)
   }
 
-  const handleViewDocument = async (applicationId, docType) => {
-    try {
-      setLoadingDocument(true)
-      console.log(`🔍 Fetching ${docType} for application ${applicationId}`)
+  const handleApprove = (requestId) => {
+    const request = requests.find(req => req.id === requestId)
+    if (!request) return
 
-      const response = await fetch(`http://localhost:5000/api/licenses/document/${applicationId}/${docType}`)
-      console.log('📡 Response status:', response.status)
+    // Generate certificate
+    const certificate = generateCertificate(request)
+    
+    // Update request status
+    setRequests(prev => prev.map(req => 
+      req.id === requestId 
+        ? { 
+            ...req, 
+            status: 'approved', 
+            approvedDate: new Date().toISOString().split('T')[0],
+            certificateNumber: certificate.licenseNumber
+          }
+        : req
+    ))
+    
+    // Set certificate data for modal display
+    setCertificateData({ certificate, request })
+    setShowCertificateModal(true)
+    
+    // Simulate email sending
+    setTimeout(() => {
+      alert(`License approved! Certificate ${certificate.licenseNumber} generated and email sent to ${request.email}`)
+    }, 1000)
+  }
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('❌ API Error:', errorText)
-        throw new Error(`Failed to fetch document: ${response.status} ${response.statusText}`)
-      }
+  const handleReject = (request) => {
+    setRequestToReject(request)
+    setShowRejectionModal(true)
+  }
 
-      const data = await response.json()
-      console.log('📄 Document data received:', {
-        hasDocumentData: !!data.documentData,
-        documentDataLength: data.documentData ? data.documentData.length : 0,
-        applicationNumber: data.applicationNumber,
-        documentType: docType
-      })
-
-      if (!data.documentData) {
-        throw new Error('No document data received from server')
-      }
-
-      setDocumentData(data.documentData)
-      setDocumentType(docType)
-      setShowDocumentModal(true)
-
-    } catch (error) {
-      console.error('💥 Error fetching document:', error)
-      toast.error(`Failed to load document: ${error.message}`)
-    } finally {
-      setLoadingDocument(false)
+  const confirmReject = () => {
+    if (rejectionReason.trim()) {
+      setRequests(prev => prev.map(req => 
+        req.id === requestToReject.id 
+          ? { ...req, status: 'rejected', rejectionReason, rejectedDate: new Date().toISOString().split('T')[0] }
+          : req
+      ))
+      
+      setShowRejectionModal(false)
+      setRejectionReason('')
+      setRequestToReject(null)
+      
+      // Simulate email notification
+      alert('License rejected and notification email sent to mill owner.')
     }
   }
 
-  const getStatusColor = (status) => {
+  const getStatusBadge = (status) => {
+    const badges = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      approved: 'bg-green-100 text-green-800',
+      rejected: 'bg-red-100 text-red-800'
+    }
+    return badges[status] || 'bg-gray-100 text-gray-800'
+  }
+
+  const getStatusIcon = (status) => {
     switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'approved':
-        return 'bg-green-100 text-green-800'
-      case 'rejected':
-        return 'bg-red-100 text-red-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
+      case 'pending': return <Clock size={16} />
+      case 'approved': return <Check size={16} />
+      case 'rejected': return <X size={16} />
+      default: return <AlertCircle size={16} />
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="animate-spin h-8 w-8 text-green-600" />
-        <span className="ml-2 text-gray-600">Loading license applications...</span>
-      </div>
-    )
   }
 
   return (
@@ -541,7 +391,7 @@ This is an official government document. Any unauthorized reproduction is strict
 
       {/* Requests Table */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto scrollbar-hide">
+        <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -582,13 +432,14 @@ This is an official government document. Any unauthorized reproduction is strict
                     {new Date(request.submitDate).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
-                      {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                    <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(request.status)}`}>
+                      {getStatusIcon(request.status)}
+                      <span className="capitalize">{request.status}</span>
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {request.licenseNumber ? (
-                      <span className="font-mono text-green-600">{request.licenseNumber}</span>
+                    {request.certificateNumber ? (
+                      <span className="font-mono text-green-600">{request.certificateNumber}</span>
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
@@ -608,24 +459,32 @@ This is an official government document. Any unauthorized reproduction is strict
                       <>
                         <button
                           onClick={() => handleApprove(request.id)}
-                          disabled={processingAction === request.id}
-                          className="text-green-600 hover:text-green-900 inline-flex items-center disabled:opacity-50"
+                          className="text-green-600 hover:text-green-900 inline-flex items-center"
                         >
                           <Check size={16} className="mr-1" />
-                          {processingAction === request.id ? 'Approving...' : 'Approve'}
+                          Approve
                         </button>
                         <button
                           onClick={() => handleReject(request)}
-                          disabled={processingAction === request.id}
-                          className="text-red-600 hover:text-red-900 inline-flex items-center disabled:opacity-50"
+                          className="text-red-600 hover:text-red-900 inline-flex items-center"
                         >
                           <X size={16} className="mr-1" />
-                          {processingAction === request.id ? 'Processing...' : 'Reject'}
+                          Reject
                         </button>
                       </>
                     )}
-                    {request.status === 'approved' && request.licenseNumber && (
-                      <></>
+                    {request.status === 'approved' && request.certificateNumber && (
+                      <button
+                        onClick={() => {
+                          const certificate = generateCertificate(request)
+                          setCertificateData({ certificate, request })
+                          setShowCertificateModal(true)
+                        }}
+                        className="text-green-600 hover:text-green-900 inline-flex items-center"
+                      >
+                        <FileCheck size={16} className="mr-1" />
+                        View Certificate
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -638,7 +497,7 @@ This is an official government document. Any unauthorized reproduction is strict
       {/* Request Details Modal */}
       {showModal && selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">License Request Details</h3>
               <button
@@ -657,8 +516,9 @@ This is an official government document. Any unauthorized reproduction is strict
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Status</label>
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedRequest.status)}`}>
-                    {selectedRequest.status.charAt(0).toUpperCase() + selectedRequest.status.slice(1)}
+                  <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(selectedRequest.status)}`}>
+                    {getStatusIcon(selectedRequest.status)}
+                    <span className="capitalize">{selectedRequest.status}</span>
                   </span>
                 </div>
               </div>
@@ -703,38 +563,10 @@ This is an official government document. Any unauthorized reproduction is strict
               
               <div>
                 <label className="block text-sm font-medium text-gray-700">Payment Receipt</label>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleViewDocument(selectedRequest.id, 'payment_receipt')}
-                    disabled={loadingDocument}
-                    className="inline-flex items-center text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loadingDocument ? (
-                      <RefreshCw size={16} className="mr-1 animate-spin" />
-                    ) : (
-                      <Eye size={16} className="mr-1" />
-                    )}
-                    {loadingDocument ? 'Loading...' : 'View Payment Receipt'}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">BR Document</label>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleViewDocument(selectedRequest.id, 'br_document')}
-                    disabled={loadingDocument}
-                    className="inline-flex items-center text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loadingDocument ? (
-                      <RefreshCw size={16} className="mr-1 animate-spin" />
-                    ) : (
-                      <Eye size={16} className="mr-1" />
-                    )}
-                    {loadingDocument ? 'Loading...' : 'View BR Document'}
-                  </button>
-                </div>
+                <button className="inline-flex items-center text-blue-600 hover:text-blue-800">
+                  <Download size={16} className="mr-1" />
+                  {selectedRequest.paymentReceipt}
+                </button>
               </div>
               
               {selectedRequest.rejectionReason && (
@@ -764,26 +596,6 @@ This is an official government document. Any unauthorized reproduction is strict
                   className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
                 >
                   Reject License
-                </button>
-              </div>
-            )}
-            
-            {selectedRequest.status === 'approved' && selectedRequest.licenseNumber && (
-              <div className="flex space-x-3 mt-6">
-                <button
-                  onClick={() => {
-                    setShowModal(false)
-                    handleViewCertificate(selectedRequest.id)
-                  }}
-                  disabled={loadingCertificate}
-                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {loadingCertificate ? (
-                    <RefreshCw size={20} className="mr-2 animate-spin" />
-                  ) : (
-                    <FileCheck size={20} className="mr-2" />
-                  )}
-                  {loadingCertificate ? 'Loading Certificate...' : 'View Certificate'}
                 </button>
               </div>
             )}
@@ -840,7 +652,7 @@ This is an official government document. Any unauthorized reproduction is strict
       {/* Certificate Modal */}
       {showCertificateModal && certificateData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold text-green-600 flex items-center">
                 <FileCheck className="mr-2" size={24} />
@@ -991,7 +803,7 @@ This is an official government document. Any unauthorized reproduction is strict
               <button
                 onClick={() => {
                   // Simulate sending email
-                  toast.success(`Certificate sent to ${certificateData.request.email}`)
+                  alert(`Certificate sent to ${certificateData.request.email}`)
                 }}
                 className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
               >
@@ -1007,56 +819,6 @@ This is an official government document. Any unauthorized reproduction is strict
             
             <div className="mt-4 text-xs text-gray-500 text-center">
               This is an official government document. Any unauthorized reproduction is strictly prohibited.
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Document Viewing Modal */}
-      {showDocumentModal && documentData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-hide">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">
-                {documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
-              </h3>
-              <button
-                onClick={() => {
-                  setShowDocumentModal(false)
-                  setDocumentData(null)
-                  setDocumentType('')
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-              {documentData ? (
-                <DocumentViewer
-                  documentData={documentData}
-                  documentType={documentType}
-                />
-              ) : (
-                <div className="text-center text-gray-500 py-8">
-                  <AlertCircle className="mx-auto mb-2 text-gray-400" size={48} />
-                  <p>Document not available</p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowDocumentModal(false)
-                  setDocumentData(null)
-                  setDocumentType('')
-                }}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>

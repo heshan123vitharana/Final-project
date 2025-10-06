@@ -13,7 +13,7 @@ import MillProfile from '../MillPages/MillProfile.jsx';
 import MillNotifications from '../MillPages/MillNotifications.jsx';
 
 // Main layout component for Mill section
-const MillLayout = ({ userData, onBackToHome }) => {
+const MillLayout = ({ userData, onLogout, onBackToHome }) => {
   const location = useLocation();
 
 
@@ -21,7 +21,7 @@ const MillLayout = ({ userData, onBackToHome }) => {
     // Fixed height flex container for sidebar and main content
     <div className="flex h-screen">
       {/* Fixed sidebar navigation */}
-      <MillSidebar userData={userData} onBackToHome={onBackToHome} />
+      <MillSidebar userData={userData} onBackToHome={onLogout || onBackToHome} />
 
       {/* Scrollable main content area */}
       <main className="flex-grow bg-gray-50 p-6 md:p-8 lg:p-10 overflow-y-auto h-full">

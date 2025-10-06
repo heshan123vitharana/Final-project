@@ -1,30 +1,29 @@
 import { useState } from 'react'
-import {
-  FileText,
-  BarChart3,
-  Map,
-  FileBarChart,
-  DollarSign,
-  Menu,
+import { 
+  FileText, 
+  BarChart3, 
+  Map, 
+  FileBarChart, 
+  DollarSign, 
+  Menu, 
   X,
-  LogOut,
-  Images
+  LogOut 
 } from 'lucide-react'
 import LicenseRequestManagement from './LicenseRequestManagement'
 import StockDashboard from './StockDashboard'
 import MillMap from './MillMap'
 import Reports from './Reports'
 import PriceManagement from './UpdatePrice'
-import ImageGalleryManager from './ImageGalleryManager'
 import rainbowNature from '../../assets/beautiful-rainbow-nature.jpg'
 import pmbLogo from '../../assets/logo-p.png'
+import { handleLogoutSuccess } from '../../utils/validation'
 
 const AdminDashboard = ({ onLogout }) => {
   const [activeSection, setActiveSection] = useState('license-requests')
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const navigationItems = [
-    {
+     {
       id: 'stock-dashboard',
       label: 'Live Stock Dashboard',
       icon: BarChart3,
@@ -36,6 +35,7 @@ const AdminDashboard = ({ onLogout }) => {
       icon: FileText,
       component: LicenseRequestManagement
     },
+   
     {
       id: 'mill-map',
       label: 'Mill Map',
@@ -53,12 +53,6 @@ const AdminDashboard = ({ onLogout }) => {
       label: 'Update Price',
       icon: DollarSign,
       component: PriceManagement
-    },
-    {
-      id: 'image-gallery',
-      label: 'Gallery Management',
-      icon: Images,
-      component: ImageGalleryManager
     }
   ]
 
@@ -114,7 +108,7 @@ const AdminDashboard = ({ onLogout }) => {
           </div>
 
           {/* Navigation - takes up remaining space */}
-          <nav className="flex-1 mt-8 overflow-y-auto scrollbar-hide">
+          <nav className="flex-1 mt-8 overflow-y-auto">
             {navigationItems.map((item) => {
               const IconComponent = item.icon
               return (
@@ -138,9 +132,20 @@ const AdminDashboard = ({ onLogout }) => {
           <div className="p-4 flex-shrink-0">
             <button
               onClick={() => {
-                console.log('Logout button clicked');
+                console.log('Admin logout button clicked');
+                
+                // Clear admin session data
+                sessionStorage.removeItem('adminData');
+                localStorage.removeItem('adminData');
+                
+                // Show logout success toast
+                handleLogoutSuccess('Admin');
+                
+                // Call logout handler
                 if (onLogout) {
-                  onLogout();
+                  setTimeout(() => {
+                    onLogout();
+                  }, 500); // Small delay to show toast
                 }
               }}
               className={`w-full flex items-center text-left bg-red-600 bg-opacity-70 hover:bg-red-700 hover:bg-opacity-80 transition-colors rounded text-white font-medium backdrop-blur-sm shadow-lg ${
@@ -185,7 +190,7 @@ const AdminDashboard = ({ onLogout }) => {
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-6 overflow-y-auto scrollbar-hide" style={{ height: 'calc(100vh - 73px)' }}>
+        <main className="flex-1 p-6 overflow-y-auto" style={{ height: 'calc(100vh - 73px)' }}>
           {ActiveComponent && <ActiveComponent />}
         </main>
       </div>

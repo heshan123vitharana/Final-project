@@ -7,8 +7,6 @@ const adminNav = [
   { label: "Price Management", key: "price" },
   { label: "Stock Dashboard", key: "stock" },
   { label: "Reports", key: "reports" },
-  { label: "Image Gallery", key: "gallery" },
-  { label: "Category Management", key: "categories" },
 ];
 
 export default function Sidebar({ active, onSelect, onLogout }) {

@@ -230,7 +230,7 @@ const MillMap = () => {
             Mill Directory ({filteredMills.length})
           </h3>
           
-          <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-hide">
+          <div className="space-y-3 max-h-96 overflow-y-auto">
             {filteredMills.map((mill) => (
               <div
                 key={mill.id}
@@ -271,7 +271,7 @@ const MillMap = () => {
       {/* Mill Details Modal */}
       {showModal && selectedMill && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto scrollbar-hide">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-800">Mill Details</h3>
               <button

@@ -1,11 +1,11 @@
 const Footer = () => {
   return (
-    <footer className="relative gov-footer text-white overflow-hidden">
+    <footer className="relative bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800 text-white overflow-hidden">
       {/* Professional Background Elements */}
       <div className="absolute inset-0">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-emerald-600/5 via-transparent to-green-600/10"></div>
-        <div className="absolute top-10 right-10 w-64 h-64 bg-emerald-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10"></div>
-        <div className="absolute bottom-10 left-10 w-64 h-64 bg-green-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-gray-800/20 via-transparent to-slate-800/30"></div>
+        <div className="absolute top-10 right-10 w-64 h-64 bg-gray-700 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+        <div className="absolute bottom-10 left-10 w-64 h-64 bg-slate-700 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
       </div>
       
       {/* Professional Main Footer */}

@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import rainbowNature from '../assets/beautiful-rainbow-nature.jpg';
 import pmbLogo from '../assets/logo-p.png';
+import { handleLogoutSuccess } from '../utils/validation';
 
 // Sidebar component for navigation
 const MillSidebar = ({ onBackToHome }) => {
@@ -202,8 +203,18 @@ const MillSidebar = ({ onBackToHome }) => {
         <div className="p-4 flex-shrink-0">
           <button
             onClick={() => {
+              // Clear session data
+              sessionStorage.removeItem('millOwnerData');
+              localStorage.removeItem('millOwnerData');
+              
+              // Show logout success toast
+              handleLogoutSuccess('Mill Owner');
+              
+              // Navigate back to home
               if (onBackToHome) {
-                onBackToHome();
+                setTimeout(() => {
+                  onBackToHome();
+                }, 500); // Small delay to show toast
               }
             }}
             className={`group relative w-full flex items-center text-left bg-red-600 bg-opacity-70 hover:bg-red-700 hover:bg-opacity-80 transition-colors rounded text-white font-medium backdrop-blur-sm shadow-lg ${
