@@ -51,7 +51,7 @@ const ImageGalleryManager = () => {
   const [services, setServices] = useState([])
   const [editingService, setEditingService] = useState(null)
   const [serviceModalOpen, setServiceModalOpen] = useState(false)
-  const [serviceType, setServiceType] = useState('services')
+  const [serviceType, setServiceType] = useState('all')
 
   // Leadership state
   const [leadership, setLeadership] = useState([])
@@ -1498,7 +1498,7 @@ const ImageGalleryManager = () => {
               onChange={(e) => setServiceType(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              <option value="services">All Types</option>
+              <option value="all">All Types</option>
               {serviceTypes.map(type => (
                 <option key={type.value} value={type.value}>
                   {type.icon} {type.label}
