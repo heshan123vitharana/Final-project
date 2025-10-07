@@ -65,6 +65,125 @@ const adminLogin = async (req, res) => {
     }
 };
 
+const getReport = async (req, res) => {
+    try {
+        const { reportType, from, to, region } = req.query;
+
+        // Basic validation
+        if (!reportType || !from || !to) {
+            return res.status(400).json({ message: 'Missing required query parameters: reportType, from, to' });
+        }
+
+        let query = '';
+        const params = [from, to];
+
+        switch (reportType) {
+            case 'licenses':
+                query = `
+                    SELECT 
+                        status, 
+                        COUNT(*) as value,
+                        (SELECT COUNT(*) FROM licenses WHERE application_date BETWEEN ? AND ?) as total
+                    FROM licenses 
+                    WHERE application_date BETWEEN ? AND ?
+                `;
+                params.push(from, to, from, to);
+
+                if (region && region !== 'All Regions') {
+                    query += ' AND district = ?';
+                    params.push(region.replace(' Province', ''));
+                }
+                query += ' GROUP BY status';
+                break;
+            
+            case 'stock':
+                query = `
+                    SELECT 
+                        s.paddy_type as category, 
+                        SUM(s.quantity) as value,
+                        (SELECT SUM(quantity) FROM stock WHERE last_updated BETWEEN ? AND ?) as total
+                    FROM stock s
+                    WHERE s.last_updated BETWEEN ? AND ?
+                `;
+                params.push(from, to, from, to);
+                // Region filtering for stock would require joins, simplified for now
+                query += ' GROUP BY s.paddy_type';
+                break;
+
+            default: {
+                // Return mock data for other report types for now
+                console.log(`No specific query for report type: ${reportType}. Returning mock data.`);
+                const mockData = getMockDataForReport(reportType);
+                if (mockData) {
+                    return res.status(200).json(mockData);
+                }
+                return res.status(404).json({ message: 'Report type not found' });
+            }
+        }
+
+        const [rows] = await db.execute(query, params);
+
+        if (rows.length === 0) {
+            return res.status(200).json({ summary: {}, breakdown: [] });
+        }
+
+        const total = rows[0].total || rows.reduce((sum, row) => sum + row.value, 0);
+
+        const breakdown = rows.map(row => ({
+            category: row.status || row.category,
+            value: row.value,
+            percentage: total > 0 ? ((row.value / total) * 100).toFixed(2) : 0
+        }));
+
+        const summary = breakdown.reduce((acc, item) => {
+            acc[item.category.toLowerCase()] = item.value;
+            return acc;
+        }, { totalApplications: total });
+        
+        res.status(200).json({ summary, breakdown });
+
+    } catch (error) {
+        console.error('Error in getReport:', error);
+        res.status(500).json({
+            message: 'Failed to generate report',
+            error: error.message
+        });
+    }
+};
+
+// Helper for mock data
+const getMockDataForReport = (reportType) => {
+    const mockReportData = {
+        production: {
+          summary: { monthlyProduction: 5240, dailyAverage: 169, targetAchievement: 87, qualityGrade: 'A+' },
+          breakdown: [
+            { category: 'Premium Grade', value: 2100, percentage: 40 },
+            { category: 'Standard Grade', value: 2040, percentage: 39 },
+            { category: 'Commercial Grade', value: 1100, percentage: 21 }
+          ]
+        },
+        financial: {
+          summary: { totalRevenue: 2450000, totalCosts: 1890000, profit: 560000, profitMargin: 23 },
+          breakdown: [
+            { category: 'Processing Revenue', value: 1470000, percentage: 60 },
+            { category: 'Storage Revenue', value: 735000, percentage: 30 },
+            { category: 'Other Revenue', value: 245000, percentage: 10 }
+          ]
+        },
+        mills: {
+          summary: { totalMills: 8, activeMills: 7, averageUtilization: 83, topPerformer: 'Green Valley Rice Mill' },
+          breakdown: [
+            { category: 'High Performance (>85%)', value: 3, percentage: 38 },
+            { category: 'Good Performance (70-85%)', value: 4, percentage: 50 },
+            { category: 'Low Performance (<70%)', value: 1, percentage: 12 }
+          ]
+        }
+    };
+    return mockReportData[reportType];
+};
+
+
 module.exports = {
-    adminLogin
+    adminLogin,
+    getReport
 };

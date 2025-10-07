@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Download,
   FileText,
@@ -10,6 +10,49 @@ import {
   Package
 } from 'lucide-react'
 
+// Mock report data for fallback - moved outside component to prevent re-creation on re-renders
+const mockReportData = {
+  stock: {
+    summary: { totalStock: 20700, totalCapacity: 25000, utilizationRate: 83, activeMills: 8 },
+    breakdown: [
+      { category: 'Private Mills', value: 12500, percentage: 60 },
+      { category: 'Government Mills', value: 8200, percentage: 40 }
+    ]
+  },
+  production: {
+    summary: { monthlyProduction: 5240, dailyAverage: 169, targetAchievement: 87, qualityGrade: 'A+' },
+    breakdown: [
+      { category: 'Premium Grade', value: 2100, percentage: 40 },
+      { category: 'Standard Grade', value: 2040, percentage: 39 },
+      { category: 'Commercial Grade', value: 1100, percentage: 21 }
+    ]
+  },
+  financial: {
+    summary: { totalRevenue: 2450000, totalCosts: 1890000, profit: 560000, profitMargin: 23 },
+    breakdown: [
+      { category: 'Processing Revenue', value: 1470000, percentage: 60 },
+      { category: 'Storage Revenue', value: 735000, percentage: 30 },
+      { category: 'Other Revenue', value: 245000, percentage: 10 }
+    ]
+  },
+  mills: {
+    summary: { totalMills: 8, activeMills: 7, averageUtilization: 83, topPerformer: 'Green Valley Rice Mill' },
+    breakdown: [
+      { category: 'High Performance (>85%)', value: 3, percentage: 38 },
+      { category: 'Good Performance (70-85%)', value: 4, percentage: 50 },
+      { category: 'Low Performance (<70%)', value: 1, percentage: 12 }
+    ]
+  },
+  licenses: {
+    summary: { totalApplications: 15, approved: 8, pending: 5, rejected: 2 },
+    breakdown: [
+      { category: 'Approved', value: 8, percentage: 53 },
+      { category: 'Pending', value: 5, percentage: 33 },
+      { category: 'Rejected', value: 2, percentage: 14 }
+    ]
+  }
+};
+
 const Reports = () => {
   const [dateRange, setDateRange] = useState({
     from: '2025-01-01',
@@ -19,9 +62,7 @@ const Reports = () => {
   const [selectedMillType, setSelectedMillType] = useState('all')
   const [reportType, setReportType] = useState('licenses')
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
-  const [isPreviewingPDF, setIsPreviewingPDF] = useState(false)
-  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
-  const [reportData, setReportData] = useState(null)
+  const [reportData, setReportData] = useState(mockReportData)
   const [loading, setLoading] = useState(false)
 
   const regions = [
@@ -45,83 +86,46 @@ const Reports = () => {
     { id: 'licenses', name: 'License Status Report', icon: FileText }
   ]
 
-  // Mock report data for fallback
-  const mockReportData = {
-    stock: {
-      summary: {
-        totalStock: 20700,
-        totalCapacity: 25000,
-        utilizationRate: 83,
-        activeMills: 8
-      },
-      breakdown: [
-        { category: 'Private Mills', value: 12500, percentage: 60 },
-        { category: 'Government Mills', value: 8200, percentage: 40 }
-      ]
-    },
-    production: {
-      summary: {
-        monthlyProduction: 5240,
-        dailyAverage: 169,
-        targetAchievement: 87,
-        qualityGrade: 'A+'
-      },
-      breakdown: [
-        { category: 'Premium Grade', value: 2100, percentage: 40 },
-        { category: 'Standard Grade', value: 2040, percentage: 39 },
-        { category: 'Commercial Grade', value: 1100, percentage: 21 }
-      ]
-    },
-    financial: {
-      summary: {
-        totalRevenue: 2450000,
-        totalCosts: 1890000,
-        profit: 560000,
-        profitMargin: 23
-      },
-      breakdown: [
-        { category: 'Processing Revenue', value: 1470000, percentage: 60 },
-        { category: 'Storage Revenue', value: 735000, percentage: 30 },
-        { category: 'Other Revenue', value: 245000, percentage: 10 }
-      ]
-    },
-    mills: {
-      summary: {
-        totalMills: 8,
-        activeMills: 7,
-        averageUtilization: 83,
-        topPerformer: 'Green Valley Rice Mill'
-      },
-      breakdown: [
-        { category: 'High Performance (>85%)', value: 3, percentage: 38 },
-        { category: 'Good Performance (70-85%)', value: 4, percentage: 50 },
-        { category: 'Low Performance (<70%)', value: 1, percentage: 12 }
-      ]
-    },
-    licenses: {
-      summary: {
-        totalApplications: 15,
-        approved: 8,
-        pending: 5,
-        rejected: 2
-      },
-      breakdown: [
-        { category: 'Approved', value: 8, percentage: 53 },
-        { category: 'Pending', value: 5, percentage: 33 },
-        { category: 'Rejected', value: 2, percentage: 14 }
-      ]
+  const handleGenerateReport = useCallback(async () => {
+    setLoading(true);
+    try {
+        const params = new URLSearchParams({
+            reportType: reportType,
+            from: dateRange.from,
+            to: dateRange.to,
+            region: selectedRegion
+        });
+
+        const response = await fetch(`http://localhost:5000/api/admin/reports?${params.toString()}`);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch report data: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        // Update only the specific report type, preserving others
+        setReportData(prevData => ({
+            ...prevData,
+            [reportType]: data
+        }));
+
+    } catch (error) {
+        console.error('Error generating report:', error);
+        // On error, revert to mock data for that specific report type
+        setReportData(prevData => ({
+            ...prevData,
+            [reportType]: mockReportData[reportType]
+        }));
+    } finally {
+        setLoading(false);
     }
-  }
+  }, [reportType, dateRange.from, dateRange.to, selectedRegion]);
 
-  // Initialize reportData with mock data
   useEffect(() => {
-    setReportData(mockReportData)
-  }, [])
-
-  // Get current report data
-  const getCurrentReportData = () => {
-    return reportData || mockReportData
-  }
+    // Fetch data when report criteria change
+    handleGenerateReport();
+  }, [handleGenerateReport]);
 
   const generatePDFReport = async () => {
     // Dynamic import to ensure autoTable plugin is loaded
@@ -135,7 +139,7 @@ const Reports = () => {
       console.error('autoTable plugin not loaded properly')
       return
     }
-    const currentData = reportData[reportType]
+    const currentData = (reportData && reportData[reportType]) ? reportData[reportType] : { summary: {}, breakdown: [] };
     
     // Header with PMB branding
     doc.setFillColor(34, 197, 94) // Green color
@@ -385,7 +389,7 @@ const Reports = () => {
   }
 
   const generateCSVContent = () => {
-    const data = reportData[reportType]
+    const data = (reportData && reportData[reportType]) ? reportData[reportType] : { summary: {}, breakdown: [] };
     let csv = 'Report Type,Date Range,Region,Mill Type\n'
     csv += `${reportType},${dateRange.from} to ${dateRange.to},${selectedRegion},${selectedMillType}\n\n`
     
@@ -403,7 +407,16 @@ const Reports = () => {
     return csv
   }
 
-  const currentReportData = reportData[reportType]
+  const currentReportData = (reportData && reportData[reportType]) ? reportData[reportType] : { summary: {}, breakdown: [] };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-10 h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+        <p className="ml-4 text-gray-600">Loading Report Data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
