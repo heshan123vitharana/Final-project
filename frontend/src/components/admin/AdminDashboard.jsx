@@ -7,13 +7,15 @@ import {
   DollarSign, 
   Menu, 
   X,
-  LogOut 
-} from 'lucide-react'
+  LogOut,
+  Image as GalleryIcon 
+} from 'lucide-react';
 import LicenseRequestManagement from './LicenseRequestManagement'
 import StockDashboard from './StockDashboard'
 import MillMap from './MillMap'
 import Reports from './Reports'
 import PriceManagement from './UpdatePrice'
+import ImageGalleryManager from './ImageGalleryManager';
 import rainbowNature from '../../assets/beautiful-rainbow-nature.jpg'
 import pmbLogo from '../../assets/logo-p.png'
 import { handleLogoutSuccess } from '../../utils/validation'
@@ -28,6 +30,12 @@ const AdminDashboard = ({ onLogout }) => {
       label: 'Live Stock Dashboard',
       icon: BarChart3,
       component: StockDashboard
+    },
+    {
+      id: 'gallery-management',
+      label: 'Gallery Management',
+      icon: GalleryIcon,
+      component: ImageGalleryManager
     },
     {
       id: 'license-requests',
