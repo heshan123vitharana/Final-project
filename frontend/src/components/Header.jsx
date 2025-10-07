@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import LanguageSelector from './LanguageSelector';
 import pmbLogo from '../assets/logo-p.png';
 
@@ -155,187 +156,170 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
 
   // Removed handleAdminClick and onAdminClick as Admin button is no longer used
 
+  const handleDropdownToggle = (id) => {
+    setActiveDropdown(activeDropdown === id ? null : id);
+  };
+
   return (
-    <header className={`fixed w-full z-50 top-0 transition-all duration-300 ${
-      isScrolled ? 'bg-gradient-to-r from-emerald-400 via-green-400 to-teal-400 shadow-lg border-b border-emerald-200' : 'bg-gradient-to-r from-emerald-100/95 via-green-50/95 to-teal-50/95 backdrop-blur-md border-b border-emerald-100'
-    }`}>
-      {/* AWS-style Top Info Bar */}
-      <div className={`${isScrolled ? 'bg-gradient-to-r from-slate-800 via-emerald-800 to-teal-800' : 'bg-gradient-to-r from-slate-900 via-emerald-900 to-teal-900'} text-white ${isScrolled ? 'py-0.5' : 'py-1'} border-b ${isScrolled ? 'border-emerald-700' : 'border-slate-800'}`} role="banner" aria-label="Official Sri Lanka government site bar">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-4 text-[11px] sm:text-xs md:text-sm text-center">
-          <div className="flex items-center gap-2 md:gap-3">
-            <img
-              src="/flag.png"
-              alt="Sri Lanka Flag"
-              className="h-4 w-auto select-none"
-              draggable="false"
-            />
-            <span className="font-semibold tracking-tight whitespace-nowrap hidden md:inline">An Official Website of the Government of Sri Lanka</span>
-            <span className="font-semibold tracking-tight md:hidden">Official Sri Lanka Government Website</span>
-          </div>
-          <span className="hidden md:inline text-slate-600">|</span>
-          <span className="flex items-center font-medium tracking-tight" aria-live="polite">
-            {currentTime}
-            <span className="ml-2 flex items-center text-[10px] text-emerald-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1" />LIVE
-            </span>
-          </span>
-          <span className="hidden md:inline text-slate-600">|</span>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center whitespace-nowrap">
-              <span className="mr-1 sm:mr-2">📞</span>
-              Hotline: +94 11 234 5678
-            </span>
-            <button
-              title="Admin Login"
-              onClick={onAdminClick}
-              className="hidden sm:flex items-center px-2 py-1 rounded hover:bg-slate-800 transition-colors"
-            >
-              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17 8V7a5 5 0 0 0-10 0v1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2zm-8-1a3 3 0 0 1 6 0v1h-6zm9 12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zm-6-3a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v2a1 1 0 0 1-1 1z"/>
-              </svg>
-              Admin
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* AWS-style Main Header */}
-      <div className={`container mx-auto px-4 ${isScrolled ? 'py-0' : 'py-0.5'}`}>
-        <div className="flex items-center justify-between">
-          {/* Clean Logo Section */}
-          <button 
-            onClick={() => handleNavClick('home')}
-            className="flex items-center cursor-pointer"
-            title="Paddy Marketing Board - Go to Home"
-          >
-            <img
-              src="/paddy-marketing-board-logo.png"
-              alt="Paddy Marketing Board"
-              className={`object-contain ${isScrolled ? 'h-8 w-auto' : 'h-12 w-auto'} max-w-full`}
-              onError={(e) => {
-                console.warn('New PMB logo not found, trying fallback');
-                // Try the asset logo first
-                if (e.target.src.includes('paddy-marketing-board-logo.png')) {
-                  e.target.src = pmbLogo;
-                } else if (e.target.src === pmbLogo) {
-                  // Final fallback to SVG
-                  e.target.src = '/logo.svg';
-                } else {
-                  // Last resort: show PMB text
-                  e.target.style.display = 'none';
-                  e.target.parentElement.innerHTML = '<div class="text-emerald-800 font-bold text-xl">PMB</div>';
-                }
-              }}
-              onLoad={() => {
-                console.log('✅ PMB Official Logo loaded successfully');
-              }}
-            />
-          </button>
-
-          {/* AWS-style Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
-            <nav className="flex items-center space-x-1">
-              {navigationItems.map((item) => (
-                <div key={item.name} className="relative dropdown-container">
-                  {item.hasDropdown ? (
-                    <>
-                      <button
-                        onClick={() => setActiveDropdown(activeDropdown === item.id ? null : item.id)}
-                        className={`px-3 py-1 text-sm font-medium transition-colors duration-200 flex items-center space-x-1 hover:bg-gray-50 ${
-                          activeDropdown === item.id ? 'bg-gray-50 text-orange-600' : 'text-gray-700 hover:text-gray-900'
-                        }`}
-                      >
-                        <span>{item.name}</span>
-                        <svg className={`w-4 h-4 transition-transform ${activeDropdown === item.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                      
-                      {/* AWS-style Dropdown Menu */}
-                      {activeDropdown === item.id && (
-                        <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-                          <div className="p-4 space-y-2">
-                            {item.items.map((subItem, index) => (
-                              <button
-                                key={index}
-                                onClick={() => {
-                                  if (subItem.name === 'Mill Registration') {
-                                    onMillRegistrationClick();
-                                  } else if (subItem.name === 'Collection Centers') {
-                                    handleNavClick('collection-centers');
-                                  } else if (subItem.name === 'Price Information') {
-                                    handleNavClick('live-paddy-prices');
-                                  } else if (subItem.name === 'Contact Support') {
-                                    handleNavClick('contact');
-                                  }
-                                  setActiveDropdown(null);
-                                }}
-                                className="w-full text-left p-3 rounded-md hover:bg-gray-50 transition-colors group"
-                              >
-                                <div className="flex items-start space-x-3">
-                                  <span className="text-lg mt-0.5">{subItem.icon}</span>
-                                  <div>
-                                    <div className="font-medium text-gray-900 group-hover:text-orange-600 transition-colors">
-                                      {subItem.name}
-                                    </div>
-                                    <div className="text-sm text-gray-600 mt-0.5">
-                                      {subItem.description}
-                                    </div>
-                                  </div>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => handleNavClick(item.id)}
-                      className={`px-3 py-1 text-sm font-medium transition-colors duration-200 hover:bg-gray-50 ${
-                        currentPage === item.id ? 'text-orange-600 bg-gray-50' : 'text-gray-700 hover:text-gray-900'
-                      }`}
-                    >
-                      {item.name}
-                    </button>
-                  )}
-                </div>
-              ))}
-            </nav>
-            {/* Enhanced Action Section */}
-            <div className="flex items-center space-x-4 ml-8">
-              {/* Language Selector */}
-              <LanguageSelector />
-              
-              {/* Enhanced Mill Owner Portal Button */}
-              <button
-                onClick={() => {
-                  // Mill Owner Portal button clicked
-                  onMillRegistrationClick();
-                }}
-                className="relative px-4 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-md hover:bg-emerald-200 hover:text-emerald-800 transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50"
-              >
-                <span className="relative z-10">Mill Portal</span>
-              </button>
+    <>
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap');
+          .time-display {
+            font-family: 'Roboto Mono', monospace;
+          }
+        `}
+      </style>
+      <header className={`fixed top-0 left-0 w-full z-30 transition-all duration-300 ${isScrolled ? 'shadow-lg' : ''}`}>
+        {/* Top bar for time and language */}
+        <div className="bg-gray-800 text-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-center items-center h-10">
+            <div className="time-display text-xs font-medium tracking-wider text-emerald-300">
+              {currentTime}
             </div>
           </div>
-
-          {/* AWS-style Mobile Menu Button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="lg:hidden p-2 rounded-md hover:bg-gray-50 transition-colors"
-          >
-            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {isMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
         </div>
 
-        {/* AWS-style Mobile Menu */}
+        {/* Main navigation bar */}
+        <nav className={`bg-white/80 backdrop-blur-lg transition-all duration-300 ${isScrolled ? 'shadow-md' : ''}`}>
+          <div className={`container mx-auto px-4 sm:px-6 lg:px-8 py-2 flex justify-between items-center`}>
+            {/* Logo section */}
+            <div className="flex-shrink-0">
+              <button 
+                onClick={() => handleNavClick('home')}
+                className="flex items-center cursor-pointer"
+                title="Paddy Marketing Board - Go to Home"
+              >
+                <img
+                  src="/paddy-marketing-board-logo.png"
+                  alt="Paddy Marketing Board"
+                  className={`object-contain ${isScrolled ? 'h-8 w-auto' : 'h-12 w-auto'} max-w-full`}
+                  onError={(e) => {
+                    console.warn('New PMB logo not found, trying fallback');
+                    // Try the asset logo first
+                    if (e.target.src.includes('paddy-marketing-board-logo.png')) {
+                      e.target.src = pmbLogo;
+                    } else if (e.target.src === pmbLogo) {
+                      // Final fallback to SVG
+                      e.target.src = '/logo.svg';
+                    } else {
+                      // Last resort: show PMB text
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = '<div class="text-emerald-800 font-bold text-xl">PMB</div>';
+                    }
+                  }}
+                  onLoad={() => {
+                    console.log('✅ PMB Official Logo loaded successfully');
+                  }}
+                />
+              </button>
+            </div>
+
+            {/* Desktop navigation */}
+            <div className="hidden lg:flex items-center space-x-1">
+              <nav className="flex items-center space-x-1">
+                {navigationItems.map((item) => (
+                  <div key={item.name} className="relative dropdown-container">
+                    {item.hasDropdown ? (
+                      <>
+                        <button
+                          onClick={() => setActiveDropdown(activeDropdown === item.id ? null : item.id)}
+                          className={`px-3 py-1 text-sm font-medium transition-colors duration-200 flex items-center space-x-1 hover:bg-gray-50 ${
+                            activeDropdown === item.id ? 'bg-gray-50 text-orange-600' : 'text-gray-700 hover:text-gray-900'
+                          }`}
+                        >
+                          <span>{item.name}</span>
+                          <svg className={`w-4 h-4 transition-transform ${activeDropdown === item.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        
+                        {/* AWS-style Dropdown Menu */}
+                        {activeDropdown === item.id && (
+                          <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                            <div className="p-4 space-y-2">
+                              {item.items.map((subItem, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => {
+                                    if (subItem.name === 'Mill Registration') {
+                                      onMillRegistrationClick();
+                                    } else if (subItem.name === 'Collection Centers') {
+                                      handleNavClick('collection-centers');
+                                    } else if (subItem.name === 'Price Information') {
+                                      handleNavClick('live-paddy-prices');
+                                    } else if (subItem.name === 'Contact Support') {
+                                      handleNavClick('contact');
+                                    }
+                                    setActiveDropdown(null);
+                                  }}
+                                  className="w-full text-left p-3 rounded-md hover:bg-gray-50 transition-colors group"
+                                >
+                                  <div className="flex items-start space-x-3">
+                                    <span className="text-lg mt-0.5">{subItem.icon}</span>
+                                    <div>
+                                      <div className="font-medium text-gray-900 group-hover:text-orange-600 transition-colors">
+                                        {subItem.name}
+                                      </div>
+                                      <div className="text-sm text-gray-600 mt-0.5">
+                                        {subItem.description}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleNavClick(item.id)}
+                        className={`px-3 py-1 text-sm font-medium transition-colors duration-200 hover:bg-gray-50 ${
+                          currentPage === item.id ? 'text-orange-600 bg-gray-50' : 'text-gray-700 hover:text-gray-900'
+                        }`}
+                      >
+                        {item.name}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </nav>
+              {/* Enhanced Action Section */}
+              <div className="flex items-center space-x-4 ml-8">
+                {/* Language Selector */}
+                <LanguageSelector />
+                
+                {/* Enhanced Mill Owner Portal Button */}
+                <button
+                  onClick={() => {
+                    // Mill Owner Portal button clicked
+                    onMillRegistrationClick();
+                  }}
+                  className="relative px-4 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-md hover:bg-emerald-200 hover:text-emerald-800 transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50"
+                >
+                  <span className="relative z-10">Mill Portal</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="lg:hidden p-2 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </nav>
+
+        {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="lg:hidden border-t border-gray-200 bg-white">
             <div className="container mx-auto px-4 py-4">
@@ -443,12 +427,28 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
                     <span className="text-xs text-gray-600">Contact</span>
                   </button>
                 </div>
+                
+                {/* Admin Login Button - Mobile */}
+                <div className="border-t pt-4 mt-2 space-y-2">
+                  <button
+                    onClick={onMillRegistrationClick}
+                    className="w-full bg-orange-500 text-white font-semibold px-4 py-2 rounded-md hover:bg-orange-600 transition-all"
+                  >
+                    Mill Registration
+                  </button>
+                  <button
+                    onClick={onAdminClick}
+                    className="w-full bg-gray-200 text-gray-700 font-semibold px-4 py-2 rounded-md hover:bg-gray-300 transition-all"
+                  >
+                    Admin Login
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )}
-      </div>
-    </header>
+      </header>
+    </>
   );
 };
 
