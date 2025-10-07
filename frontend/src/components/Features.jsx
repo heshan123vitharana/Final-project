@@ -7,6 +7,7 @@ const Features = () => {
   const [servicesData, setServicesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   // Removed unused state variables: activeFeature, setActiveFeature, hoveredFeature, setHoveredFeature
 
   // Fetch services and excellence data from API
@@ -409,7 +410,10 @@ const Features = () => {
             <button className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105">
               Explore All Services
             </button>
-            <button className="px-6 py-3 bg-transparent border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white font-semibold rounded-lg transition-all duration-300 flex items-center gap-2">
+            <button 
+              onClick={() => setIsVideoModalOpen(true)}
+              className="px-6 py-3 bg-transparent border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white font-semibold rounded-lg transition-all duration-300 flex items-center gap-2"
+            >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
               </svg>
@@ -509,6 +513,44 @@ const Features = () => {
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {isVideoModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+            onClick={() => setIsVideoModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 50 }}
+              className="bg-black rounded-lg shadow-2xl overflow-hidden w-full max-w-3xl relative"
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal
+            >
+              <div className="relative" style={{ paddingTop: '56.25%' }}> {/* 16:9 Aspect Ratio */}
+                <iframe
+                  className="absolute top-0 left-0 w-full h-full"
+                  src="https://www.youtube.com/embed/BTbW6nSHEUw?autoplay=1&rel=0"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+              </div>
+              <button
+                onClick={() => setIsVideoModalOpen(false)}
+                className="absolute -top-4 -right-4 bg-white text-gray-800 rounded-full w-10 h-10 flex items-center justify-center text-2xl font-bold hover:bg-gray-200 transition-colors shadow-lg"
+                aria-label="Close video"
+              >
+                &times;
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* The modal is no longer needed for this animation style */}
       </section>
