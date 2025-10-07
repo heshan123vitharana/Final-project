@@ -14,6 +14,7 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import ResetPassword from './components/ResetPassword';
 import MillLayout from './MillComponents/MillLayout';
 import ToastProvider from './components/ToastProvider';
+import ScrollToTopButton from './components/ScrollToTopButton';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="/mill/*" element={<MillPage />} />
           <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
+        <ScrollToTopButton />
       </ToastProvider>
     </Router>
   );
