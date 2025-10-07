@@ -42,7 +42,7 @@ const LanguageSelector = () => {
       {/* Language Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center space-x-2 px-4 py-2 text-sm font-semibold text-gray-700 hover:text-green-600 transition-colors duration-200 bg-white/90 hover:bg-white rounded-full border border-gray-200 hover:border-green-300 shadow-sm hover:shadow-md min-w-[70px]"
+        className="flex items-center justify-center space-x-2 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-md hover:bg-emerald-200 hover:text-emerald-800 transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
