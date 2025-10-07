@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Features = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [servicesData, setServicesData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState(null);
   // Removed unused state variables: activeFeature, setActiveFeature, hoveredFeature, setHoveredFeature
 
   // Fetch services and excellence data from API
@@ -236,8 +238,11 @@ const Features = () => {
     return iconMap[iconType.toLowerCase()] || iconMap['default'];
   };
 
+  // This variable is no longer needed for the accordion-style animation
+  // const selectedService = selectedId && servicesData.find(s => (s.id || s.title) === selectedId);
+
   // Get background color for service cards
-  const getServiceBgColor = (service) => {
+  const UNUSED_getServiceBgColor = (service) => {
     const colors = [
       'bg-violet-100', 'bg-green-100', 'bg-orange-100',
       'bg-blue-100', 'bg-emerald-100', 'bg-teal-100'
@@ -398,6 +403,19 @@ const Features = () => {
           <p className="text-lg text-gray-600 leading-relaxed font-normal mt-4 max-w-2xl mx-auto">
             Discover our commitment to quality, innovation, and support for Sri Lanka's agricultural sector.
           </p>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap justify-center gap-4 pt-6">
+            <button className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105">
+              Explore All Services
+            </button>
+            <button className="px-6 py-3 bg-transparent border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white font-semibold rounded-lg transition-all duration-300 flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+              </svg>
+              Watch Overview
+            </button>
+          </div>
         </div>
 
         {/* Services List */}
@@ -413,43 +431,85 @@ const Features = () => {
                   <p>No services available at the moment.</p>
                 </div>
               ) : (
-                servicesData.slice(0, 4).map((service, index) => (
-                  <div 
-                    key={service.id || index} 
-                    className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-300 transition-all duration-300 group"
-                  >
-                    <div className="flex items-center gap-5 flex-grow">
-                      {/* Numbered Icon */}
-                      <div className="relative flex-shrink-0">
-                        <div className="w-12 h-12 bg-emerald-50 flex items-center justify-center rounded-full border-2 border-white ring-2 ring-gray-100 group-hover:ring-emerald-200 transition-all duration-300">
-                          {getServiceIcon(service)}
+                servicesData.slice(0, 4).map((service, index) => {
+                  const cardId = service.id || service.title;
+                  const isSelected = selectedId === cardId;
+
+                  return (
+                    <motion.div 
+                      key={cardId} 
+                      layout
+                      onClick={() => setSelectedId(isSelected ? null : cardId)}
+                      className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-300 transition-all duration-300 group cursor-pointer overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-5 flex-grow">
+                          {/* Numbered Icon */}
+                          <div className="relative flex-shrink-0">
+                            <div className="w-12 h-12 bg-emerald-50 flex items-center justify-center rounded-full border-2 border-white ring-2 ring-gray-100 group-hover:ring-emerald-200 transition-all duration-300">
+                              {getServiceIcon(service)}
+                            </div>
+                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-600 text-white text-xs font-bold flex items-center justify-center rounded-full border-2 border-white">
+                              {String(index + 1).padStart(2, '0')}
+                            </div>
+                          </div>
+
+                          {/* Title and Description */}
+                          <div className="flex-grow">
+                            <h3 className="text-lg font-bold text-gray-800">{service.title}</h3>
+                            <p className="text-gray-600 text-sm">{service.description}</p>
+                          </div>
                         </div>
-                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-600 text-white text-xs font-bold flex items-center justify-center rounded-full border-2 border-white">
-                          {String(index + 1).padStart(2, '0')}
+
+                        {/* Category Tag */}
+                        <div className="flex-shrink-0 ml-4">
+                          <div className="bg-emerald-100 border border-emerald-200 rounded-lg px-4 py-2 text-center">
+                            <div className="text-xs text-emerald-700 font-medium uppercase tracking-wider">Category</div>
+                            <div className="text-emerald-800 font-semibold text-sm capitalize">{service.type || 'General'}</div>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Title and Description */}
-                      <div className="flex-grow">
-                        <h3 className="text-lg font-bold text-gray-800">{service.title}</h3>
-                        <p className="text-gray-600 text-sm">{service.description}</p>
-                      </div>
-                    </div>
-
-                    {/* Category Tag */}
-                    <div className="flex-shrink-0 ml-4">
-                      <div className="bg-emerald-100 border border-emerald-200 rounded-lg px-4 py-2 text-center">
-                        <div className="text-xs text-emerald-700 font-medium uppercase tracking-wider">Category</div>
-                        <div className="text-emerald-800 font-semibold text-sm capitalize">{service.type || 'General'}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))
+                      <AnimatePresence>
+                        {isSelected && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto', transition: { duration: 0.4, ease: "easeInOut" } }}
+                            exit={{ opacity: 0, height: 0, transition: { duration: 0.3, ease: "easeInOut" } }}
+                            className="px-6 pb-6"
+                          >
+                            <div className="border-t border-gray-200 pt-4">
+                              <p className="text-gray-700 leading-relaxed mb-4">{service.description}</p>
+                              
+                              {service.features && service.features.length > 0 && (
+                                <div>
+                                  <h4 className="text-md font-semibold text-emerald-800 mb-3">Key Features</h4>
+                                  <ul className="space-y-2">
+                                    {service.features.map((feature, idx) => (
+                                      <li key={idx} className="flex items-center gap-3 text-gray-600">
+                                        <div className="w-5 h-5 flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                                        </div>
+                                        <span>{feature}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  )
+                })
               )}
             </div>
           )}
         </div>
       </div>
+
+      {/* The modal is no longer needed for this animation style */}
       </section>
     </>
   );
