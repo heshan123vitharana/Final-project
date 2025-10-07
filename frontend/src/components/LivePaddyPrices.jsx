@@ -391,9 +391,6 @@ const LivePaddyPrices = () => {
           <>
             {/* Header Section */}
             <div className={`text-center mb-16 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-              <div className="inline-flex items-center bg-emerald-500/20 backdrop-blur-sm rounded-full px-6 py-3 mb-6">
-            <span className="text-emerald-200 font-semibold">💰 Live Market Prices</span>
-          </div>
           <h1 className="text-4xl md:text-5xl font-light text-white mb-6 leading-tight tracking-tight">
             Live Paddy Prices
           </h1>
