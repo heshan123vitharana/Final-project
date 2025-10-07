@@ -250,43 +250,49 @@ const ImageGalleryManager = () => {
   // ================ IMAGE FUNCTIONS ================
 
   const handleFileUpload = async (files) => {
-    const newFiles = Array.from(files)
-    setUploadingFiles(newFiles.map(file => ({ file, progress: 0, id: Date.now() + Math.random() })))
+    const newFiles = Array.from(files);
+    const uploadPromises = newFiles.map(file => {
+      const fileId = Date.now() + Math.random();
+      setUploadingFiles(prev => [...prev, { file, progress: 0, id: fileId }]);
+      
+      return (async () => {
+        try {
+          const formData = new FormData();
+          formData.append('image', file);
+          formData.append('title', file.name || 'Untitled Image');
 
-    for (const fileObj of newFiles) {
-      try {
-        const formData = new FormData()
-        formData.append('image', fileObj)
-        formData.append('title', fileObj.name || 'Untitled Image')
+          const response = await fetch('http://localhost:5000/api/gallery', {
+            method: 'POST',
+            body: formData
+          });
 
-        const response = await fetch('http://localhost:5000/api/gallery', {
-          method: 'POST',
-          body: formData
-        })
-
-        if (response.ok) {
-          // Update progress to 100%
-          setUploadingFiles(prev => prev.map(f =>
-            f.file === fileObj ? { ...f, progress: 100 } : f
-          ))
-
-          toast.success(`${fileObj.name} uploaded successfully`)
-          fetchImages()
-        } else {
-          const errorData = await response.json()
-          throw new Error(errorData.message || 'Upload failed')
+          if (response.ok) {
+            setUploadingFiles(prev => prev.map(f =>
+              f.id === fileId ? { ...f, progress: 100 } : f
+            ));
+            toast.success(`${file.name} uploaded successfully`);
+            return { success: true };
+          } else {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Upload failed');
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          toast.error(`Failed to upload ${file.name}: ${error.message}`);
+          setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
+          return { success: false };
         }
-      } catch (error) {
-        console.error('Upload error:', error)
-        toast.error(`Failed to upload ${fileObj.name}: ${error.message}`)
-      }
-    }
+      })();
+    });
 
-    // Clear upload files after 2 seconds
+    await Promise.all(uploadPromises);
+
+    fetchImages();
+
     setTimeout(() => {
-      setUploadingFiles([])
-    }, 2000)
-  }
+      setUploadingFiles([]);
+    }, 2000);
+  };
 
   const handleDeleteImage = async (id) => {
     if (!confirm('Are you sure you want to delete this image?')) return
