@@ -407,9 +407,42 @@ const Features = () => {
 
         {/* Dynamic Services Layout */}
         <div className="flex flex-col lg:flex-row items-start justify-between gap-12">
-          {/* Left Side - Image */}
+          {/* Left Side - Minimized Images */}
           <div className="lg:w-1/2 flex justify-center">
-            <img className="max-w-full w-full max-w-lg" src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/features/group-image-1.png" alt="Services Excellence" />
+            <div className="w-full max-w-sm">
+              {/* Compact Grid Container */}
+              <div className="grid grid-cols-1 gap-4">
+                {/* Primary Image - Paddy Fields */}
+                <div className="group relative overflow-hidden">
+                  <div className="aspect-[16/9] rounded-lg bg-gray-100 overflow-hidden border border-gray-200/50">
+                    <img 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                      src="https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=400&h=225&fit=crop&auto=format&q=80" 
+                      alt="Paddy Rice Fields - Premium Quality Cultivation" 
+                    />
+                  </div>
+                  {/* Minimal Caption */}
+                  <div className="mt-2 px-1">
+                    <p className="text-xs font-medium text-gray-600">Paddy Cultivation</p>
+                  </div>
+                </div>
+
+                {/* Secondary Image - Farmers */}
+                <div className="group relative overflow-hidden">
+                  <div className="aspect-[16/9] rounded-lg bg-gray-100 overflow-hidden border border-gray-200/50">
+                    <img 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                      src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=400&h=225&fit=crop&auto=format&q=80" 
+                      alt="Sri Lankan Farmers - Community Partnership" 
+                    />
+                  </div>
+                  {/* Minimal Caption */}
+                  <div className="mt-2 px-1">
+                    <p className="text-xs font-medium text-gray-600">Farmer Community</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Right Side - Services */}
