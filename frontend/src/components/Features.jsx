@@ -373,137 +373,82 @@ const Features = () => {
           font-family: 'Poppins', sans-serif;
         }
       `}</style>
-      <section id="features" className="relative min-h-screen gov-section-bg overflow-hidden py-24">
-      {/* Very Light Background Elements */}
-      <div className="absolute inset-0">
-        {/* Ultra light gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/20 via-white/80 to-emerald-50/15"></div>
-        
-        {/* Very subtle floating elements */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-100/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-emerald-100/8 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gray-100/5 rounded-full blur-3xl animate-pulse delay-2000" style={{ animationDuration: '8s' }}></div>
-        
-        {/* Almost invisible grid pattern */}
-        <div className="absolute inset-0 opacity-[0.008]">
+      <section id="features" className="relative min-h-screen overflow-hidden bg-white">
+      {/* Clean White Background with Subtle Elements */}
+      <div className="absolute inset-0 bg-white">
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-5">
           <div className="w-full h-full" style={{
-            backgroundImage: `linear-gradient(rgba(16, 185, 129, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 185, 129, 0.05) 1px, transparent 1px)`,
-            backgroundSize: '100px 100px'
+            backgroundImage: `linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)`,
+            backgroundSize: '50px 50px'
           }}></div>
         </div>
+
+        {/* Floating subtle elements */}
+        <div className="absolute top-20 right-20 w-32 h-32 bg-emerald-100/30 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-32 left-16 w-48 h-48 bg-amber-100/30 rounded-full blur-2xl"></div>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
-        {/* Government Excellence Header */}
-        <div className={`text-center mb-16 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          <h1 className="text-4xl md:text-5xl font-light text-gray-900 mb-6 leading-tight tracking-tight">
-            Services & Excellence
+      <div className="relative z-10 max-w-5xl mx-auto px-6 py-16">
+        {/* Header */}
+        <div className={`text-center mb-12 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+          <h1 className="text-4xl md:text-5xl font-light text-gray-900 leading-tight">
+            Services & <span className="text-emerald-600 font-semibold">Excellence</span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed font-light">
-            Discover our commitment to serving Sri Lankan farmers and citizens through professional government 
-            services, quality assurance, and agricultural excellence backed by decades of expertise.
+          <p className="text-lg text-gray-600 leading-relaxed font-normal mt-4 max-w-2xl mx-auto">
+            Discover our commitment to quality, innovation, and support for Sri Lanka's agricultural sector.
           </p>
         </div>
 
-        {/* Dynamic Services Layout */}
-        <div className="flex flex-col lg:flex-row items-start justify-between gap-12">
-          {/* Left Side - Minimized Images */}
-          <div className="lg:w-1/2 flex justify-center">
-            <div className="w-full max-w-sm">
-              {/* Compact Grid Container */}
-              <div className="grid grid-cols-1 gap-4">
-                {/* Primary Image - Paddy Fields */}
-                <div className="group relative overflow-hidden">
-                  <div className="aspect-[16/9] rounded-lg bg-gray-100 overflow-hidden border border-gray-200/50">
-                    <img 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                      src="https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=400&h=225&fit=crop&auto=format&q=80" 
-                      alt="Paddy Rice Fields - Premium Quality Cultivation" 
-                    />
-                  </div>
-                  {/* Minimal Caption */}
-                  <div className="mt-2 px-1">
-                    <p className="text-xs font-medium text-gray-600">Paddy Cultivation</p>
-                  </div>
-                </div>
-
-                {/* Secondary Image - Farmers */}
-                <div className="group relative overflow-hidden">
-                  <div className="aspect-[16/9] rounded-lg bg-gray-100 overflow-hidden border border-gray-200/50">
-                    <img 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                      src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=400&h=225&fit=crop&auto=format&q=80" 
-                      alt="Sri Lankan Farmers - Community Partnership" 
-                    />
-                  </div>
-                  {/* Minimal Caption */}
-                  <div className="mt-2 px-1">
-                    <p className="text-xs font-medium text-gray-600">Farmer Community</p>
-                  </div>
-                </div>
-              </div>
+        {/* Services List */}
+        <div className="mt-12">
+          {loading ? (
+            <div className="flex justify-center items-center p-6">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600"></div>
             </div>
-          </div>
-
-          {/* Right Side - Services */}
-          <div className="lg:w-1/2 w-full">
-            {loading ? (
-              <div className="flex justify-center items-center p-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-              </div>
-            ) : (
-              <div className="space-y-8">
-                {servicesData.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>No services available at the moment.</p>
-                  </div>
-                ) : (
-                  servicesData.slice(0, 6).map((service, index) => (
-                    <div key={service.id || index} className="flex items-start gap-6 w-full">
-                      {/* Icon Container */}
-                      <div className={`flex-shrink-0 p-4 w-16 h-16 ${getServiceBgColor(service)} rounded-full flex items-center justify-center`}>
-                        {getServiceIcon(service)}
-                      </div>
-
-                      {/* Content Container */}
-                      <div className="flex-grow space-y-2 min-w-0">
-                        <h3 className="text-lg font-semibold text-slate-800 leading-tight">{service.title}</h3>
-                        <p className="text-sm text-slate-600 leading-relaxed line-clamp-3">{service.description}</p>
-
-                        {/* Features Display */}
-                        {service.features && service.features.length > 0 && (
-                          <div className="mt-3">
-                            <ul className="space-y-1">
-                              {service.features.slice(0, 3).map((feature, idx) => (
-                                <li key={idx} className="flex items-center gap-2 text-xs text-slate-500">
-                                  <div className="w-1 h-1 bg-green-500 rounded-full flex-shrink-0"></div>
-                                  <span className="line-clamp-1">{feature}</span>
-                                </li>
-                              ))}
-                              {service.features.length > 3 && (
-                                <li className="text-xs text-slate-400">
-                                  +{service.features.length - 3} more features
-                                </li>
-                              )}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Type Badge */}
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="inline-block px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-                            {service.type || 'service'}
-                          </span>
+          ) : (
+            <div className="space-y-4">
+              {servicesData.length === 0 ? (
+                <div className="text-center py-6 text-gray-600 bg-gray-50 rounded-lg">
+                  <p>No services available at the moment.</p>
+                </div>
+              ) : (
+                servicesData.slice(0, 4).map((service, index) => (
+                  <div 
+                    key={service.id || index} 
+                    className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-300 transition-all duration-300 group"
+                  >
+                    <div className="flex items-center gap-5 flex-grow">
+                      {/* Numbered Icon */}
+                      <div className="relative flex-shrink-0">
+                        <div className="w-12 h-12 bg-emerald-50 flex items-center justify-center rounded-full border-2 border-white ring-2 ring-gray-100 group-hover:ring-emerald-200 transition-all duration-300">
+                          {getServiceIcon(service)}
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-emerald-600 text-white text-xs font-bold flex items-center justify-center rounded-full border-2 border-white">
+                          {String(index + 1).padStart(2, '0')}
                         </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-        </div>
 
+                      {/* Title and Description */}
+                      <div className="flex-grow">
+                        <h3 className="text-lg font-bold text-gray-800">{service.title}</h3>
+                        <p className="text-gray-600 text-sm">{service.description}</p>
+                      </div>
+                    </div>
+
+                    {/* Category Tag */}
+                    <div className="flex-shrink-0 ml-4">
+                      <div className="bg-emerald-100 border border-emerald-200 rounded-lg px-4 py-2 text-center">
+                        <div className="text-xs text-emerald-700 font-medium uppercase tracking-wider">Category</div>
+                        <div className="text-emerald-800 font-semibold text-sm capitalize">{service.type || 'General'}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
       </div>
       </section>
     </>
