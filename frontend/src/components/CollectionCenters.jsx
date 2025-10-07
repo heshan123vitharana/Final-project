@@ -136,16 +136,6 @@ const CollectionCenters = () => {
     setShowAllCenters(true);
   };
 
-  // Get capacity color
-  const getCapacityColor = (capacity) => {
-    switch (capacity) {
-      case 'Large': return 'bg-green-500';
-      case 'Medium': return 'bg-yellow-500';
-      case 'Small': return 'bg-blue-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
   // Get status color
   const getStatusColor = (status) => {
     switch (status) {
@@ -153,6 +143,16 @@ const CollectionCenters = () => {
       case 'Under Maintenance': return 'bg-orange-500';
       case 'Inactive': return 'bg-red-500';
       default: return 'bg-gray-500';
+    }
+  };
+
+  // Get status border color
+  const getStatusBorderColor = (status) => {
+    switch (status) {
+      case 'Active': return 'border-green-400';
+      case 'Under Maintenance': return 'border-orange-400';
+      case 'Inactive': return 'border-red-400';
+      default: return 'border-gray-400';
     }
   };
 
@@ -414,7 +414,7 @@ const CollectionCenters = () => {
                 {filteredCenters.map((center, index) => (
                   <div 
                     key={center.id} 
-                    className={`group ${viewMode === 'list' ? 'flex' : ''} bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl hover:shadow-2xl border border-emerald-200 hover:border-emerald-300 transition-all duration-500 hover:-translate-y-2 transform`}
+                    className={`group ${viewMode === 'list' ? 'flex' : ''} bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl border border-white/20 shadow-lg hover:shadow-2xl hover:border-white/30 transition-all duration-300 hover:-translate-y-1 transform`}
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     {/* Center Content */}
@@ -422,10 +422,10 @@ const CollectionCenters = () => {
                       {/* Header */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-emerald-700 transition-colors">
+                          <h3 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-300 transition-colors">
                             {center.name}
                           </h3>
-                          <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                          <div className="flex items-center space-x-2 text-sm text-emerald-200 mb-2">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -436,95 +436,82 @@ const CollectionCenters = () => {
                         
                         {/* Status & Rating */}
                         <div className="flex flex-col items-end space-y-2">
-                          <span className={`${getStatusColor(center.status)} text-white px-3 py-1 rounded-full text-xs font-semibold`}>
+                          <span className={`${getStatusColor(center.status)} bg-opacity-20 text-white px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBorderColor(center.status)}`}>
                             {center.status}
                           </span>
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center space-x-1 bg-black/20 px-2 py-1 rounded-full">
                             <svg className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 24 24">
                               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                             </svg>
-                            <span className="text-sm font-semibold text-gray-700">{center.rating}</span>
+                            <span className="text-sm font-semibold text-white">{center.rating}</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Quick Info */}
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">Capacity</p>
-                          <div className="flex items-center space-x-2">
-                            <span className={`${getCapacityColor(center.capacity)} w-3 h-3 rounded-full`}></span>
-                            <span className="text-sm font-semibold text-gray-700">{center.capacity}</span>
+                      {/* Center Details */}
+                      <div className="border-t border-white/20 my-4 pt-4">
+                        <h4 className="text-sm font-semibold text-emerald-300 uppercase tracking-wider mb-3">Center Details</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-xs text-emerald-300/70">Capacity</p>
+                            <p className="font-semibold text-white">{center.capacity} ({center.capacityMT})</p>
                           </div>
-                          <p className="text-xs text-gray-500">{center.capacityMT}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">Manager</p>
-                          <p className="text-sm font-semibold text-gray-700">{center.manager}</p>
-                          <p className="text-xs text-gray-500">{center.staffCount} staff</p>
+                          <div>
+                            <p className="text-xs text-emerald-300/70">Manager</p>
+                            <p className="font-semibold text-white">{center.manager}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-emerald-300/70">Operating Hours</p>
+                            <p className="font-semibold text-white">{center.operatingHours}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-emerald-300/70">Established</p>
+                            <p className="font-semibold text-white">{center.established}</p>
+                          </div>
                         </div>
                       </div>
 
                       {/* Services */}
-                      <div className="mb-4">
-                        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-2">Services</p>
+                      <div className="my-4">
+                        <h4 className="text-sm font-semibold text-emerald-300 uppercase tracking-wider mb-3">Services</h4>
                         <div className="flex flex-wrap gap-2">
-                          {center.services.slice(0, viewMode === 'list' ? 6 : 3).map((service, idx) => (
-                            <span key={idx} className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium">
+                          {center.services.slice(0, viewMode === 'list' ? 6 : 4).map((service, idx) => (
+                            <span key={idx} className="px-2 py-1 bg-emerald-500/20 text-emerald-100 rounded-lg text-xs font-medium">
                               {service}
                             </span>
                           ))}
-                          {center.services.length > (viewMode === 'list' ? 6 : 3) && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium">
-                              +{center.services.length - (viewMode === 'list' ? 6 : 3)} more
+                          {center.services.length > (viewMode === 'list' ? 6 : 4) && (
+                            <span className="px-2 py-1 bg-black/20 text-gray-300 rounded-lg text-xs font-medium">
+                              +{center.services.length - (viewMode === 'list' ? 6 : 4)} more
                             </span>
                           )}
                         </div>
                       </div>
 
-                      {/* Contact Info */}
-                      <div className="border-t pt-4">
-                        <div className="grid grid-cols-1 gap-2 text-sm">
-                          <div className="flex items-center space-x-2 text-gray-600">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                            <span>{center.phone}</span>
-                          </div>
-                          <div className="flex items-center space-x-2 text-gray-600">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>{center.operatingHours}</span>
-                          </div>
-                          <div className="flex items-center space-x-2 text-gray-600">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span>Est. {center.established}</span>
-                          </div>
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="mt-4 grid grid-cols-3 gap-2">
+                      {/* Action Buttons */}
+                      <div className="border-t border-white/20 pt-4 mt-4">
+                        <div className="grid grid-cols-3 gap-2">
                           <a
                             href={`tel:${center.phone.replace(/\s+/g, '')}`}
-                            className="px-4 py-2 text-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
+                            className="flex items-center justify-center gap-2 px-3 py-2 text-center bg-emerald-500/80 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
                           >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                             Call
                           </a>
                           <a
                             href={`mailto:${center.email}`}
-                            className="px-4 py-2 text-center bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
+                            className="flex items-center justify-center gap-2 px-3 py-2 text-center bg-indigo-500/80 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
                           >
+                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                             Email
                           </a>
                           <a
                             href={`https://www.google.com/maps?q=${encodeURIComponent(center.address)}${center.coordinates ? `@${center.coordinates.lat},${center.coordinates.lng},15z` : ''}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-4 py-2 text-center bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
+                            className="flex items-center justify-center gap-2 px-3 py-2 text-center bg-blue-500/80 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
                           >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l6-3m-6 3V7m0 10l-6-3m6 3l6-3"></path></svg>
                             Directions
                           </a>
                         </div>
