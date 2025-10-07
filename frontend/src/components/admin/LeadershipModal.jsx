@@ -17,6 +17,7 @@ const createEmptyLeadershipForm = () => ({
 const LeadershipModal = ({ isOpen, onClose, leader, onSave, existingLeaders = [] }) => {
   const [formData, setFormData] = useState(createEmptyLeadershipForm())
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [orderError, setOrderError] = useState('');
 
   // Calculate next available order position
   const getNextAvailableOrder = useCallback(() => {
@@ -59,6 +60,30 @@ const LeadershipModal = ({ isOpen, onClose, leader, onSave, existingLeaders = []
     }
   }, [isOpen, leader, getNextAvailableOrder])
 
+  const validateOrderPosition = useCallback((orderValue) => {
+    const orderNumber = parseInt(orderValue, 10);
+    if (isNaN(orderNumber) || orderNumber < 1) {
+      setOrderError('Order must be a positive number.');
+      return false;
+    }
+
+    const isTaken = existingLeaders.some(
+      (l) => l.order_index === orderNumber && l.id !== leader?.id
+    );
+
+    if (isTaken) {
+      setOrderError('This order number is already taken.');
+      return false;
+    }
+
+    setOrderError('');
+    return true;
+  }, [existingLeaders, leader]);
+
+  useEffect(() => {
+    validateOrderPosition(formData.order_position);
+  }, [formData.order_position, validateOrderPosition]);
+
   const handleInputChange = (e) => {
     const { name, value, type, checked, files } = e.target
     if (type === 'file') {
@@ -71,8 +96,12 @@ const LeadershipModal = ({ isOpen, onClose, leader, onSave, existingLeaders = []
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+    e.preventDefault();
+    if (!validateOrderPosition(formData.order_position)) {
+      toast.error('Please fix the errors before saving.');
+      return;
+    }
+    setIsSubmitting(true);
 
     const { name, position } = formData
     if (!name || !position) {
@@ -87,7 +116,7 @@ const LeadershipModal = ({ isOpen, onClose, leader, onSave, existingLeaders = []
       onClose()
     } catch (error) {
       console.error('LeadershipModal: Error in handleSubmit:', error)
-      toast.error(error.message || 'Failed to save leadership member')
+      // The error toast is already shown in the parent component
     } finally {
       setIsSubmitting(false)
     }
@@ -233,30 +262,19 @@ const LeadershipModal = ({ isOpen, onClose, leader, onSave, existingLeaders = []
                 min="1"
                 value={formData.order_position}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${
+                  orderError
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-green-500'
+                }`}
                 required
               />
               <p className="mt-1 text-xs text-gray-500">
-                {(() => {
-                  const takenOrders = existingLeaders
-                    .filter(l => l.id !== leader?.id)
-                    .map(l => l.order_index)
-                    .filter(o => o)
-                    .sort((a, b) => a - b)
-                  
-                  if (takenOrders.length === 0) {
-                    return 'No orders taken yet. You can use any number.'
-                  }
-                  
-                  const isCurrentTaken = takenOrders.includes(parseInt(formData.order_position))
-                  
-                  return (
-                    <span className={isCurrentTaken ? 'text-red-600 font-medium' : ''}>
-                      {isCurrentTaken ? '⚠️ This order is already taken! ' : '✓ Available. '}
-                      Taken: {takenOrders.join(', ')}
-                    </span>
-                  )
-                })()}
+                {orderError ? (
+                  <span className="text-red-600 font-medium">⚠️ {orderError}</span>
+                ) : (
+                  <span className="text-green-600">✓ Available</span>
+                )}
               </p>
             </div>
 
@@ -288,7 +306,7 @@ const LeadershipModal = ({ isOpen, onClose, leader, onSave, existingLeaders = []
             <button
               type="submit"
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:bg-green-300"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !!orderError}
             >
               <Save className="h-4 w-4" />
               <span>{isSubmitting ? 'Saving...' : (leader ? 'Update' : 'Create')}</span>
