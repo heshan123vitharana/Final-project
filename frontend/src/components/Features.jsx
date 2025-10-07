@@ -542,7 +542,7 @@ const Features = () => {
               </div>
               <button
                 onClick={() => setIsVideoModalOpen(false)}
-                className="absolute -top-4 -right-4 bg-white text-gray-800 rounded-full w-10 h-10 flex items-center justify-center text-2xl font-bold hover:bg-gray-200 transition-colors shadow-lg"
+                className="absolute top-3 right-3 bg-white/70 backdrop-blur-sm hover:bg-white text-gray-900 rounded-full w-9 h-9 flex items-center justify-center text-3xl font-light leading-none transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white"
                 aria-label="Close video"
               >
                 &times;
