@@ -439,10 +439,11 @@ const Features = () => {
                     <motion.div 
                       key={cardId} 
                       layout
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
                       onClick={() => setSelectedId(isSelected ? null : cardId)}
                       className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-300 transition-all duration-300 group cursor-pointer overflow-hidden"
                     >
-                      <div className="flex items-center justify-between p-4">
+                      <motion.div layout="position" className="flex items-center justify-between p-4">
                         <div className="flex items-center gap-5 flex-grow">
                           {/* Numbered Icon */}
                           <div className="relative flex-shrink-0">
@@ -468,7 +469,7 @@ const Features = () => {
                             <div className="text-emerald-800 font-semibold text-sm capitalize">{service.type || 'General'}</div>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
 
                       <AnimatePresence>
                         {isSelected && (
