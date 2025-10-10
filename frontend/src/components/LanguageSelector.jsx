@@ -42,21 +42,23 @@ const LanguageSelector = () => {
       {/* Language Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center space-x-2 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-md hover:bg-emerald-200 hover:text-emerald-800 transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50"
+        className="draw-border-button-white text-xs font-medium text-gray-600 rounded-md focus:outline-none"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <span className="font-bold tracking-wide">
-          {currentLanguage.code.toUpperCase()}
-        </span>
-        <svg 
-          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
-          fill="none" 
-          stroke="currentColor" 
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <div className="text-content">
+          <span className="font-bold tracking-wide">
+            {currentLanguage.code.toUpperCase()}
+          </span>
+          <svg 
+            className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </button>
 
       {/* Dropdown Menu */}

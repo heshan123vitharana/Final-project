@@ -217,6 +217,58 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
             background-color: #ef4444;
             color: white;
           }
+
+          .draw-border-button-white {
+            position: relative;
+            background: transparent;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            padding: 0.375rem 0.75rem; /* py-1.5 px-3 */
+          }
+
+          .draw-border-button-white .text-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            space-x: 2;
+          }
+
+          .draw-border-button-white:before,
+          .draw-border-button-white:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-color: #d1d5db; /* gray-300 */
+            transition: all 0.4s ease;
+          }
+
+          .draw-border-button-white:before {
+            top: -2px;
+            left: -2px;
+            border-top: 2px solid transparent;
+            border-left: 2px solid transparent;
+          }
+
+          .draw-border-button-white:after {
+            bottom: -2px;
+            right: -2px;
+            border-bottom: 2px solid transparent;
+            border-right: 2px solid transparent;
+          }
+
+          .draw-border-button-white:hover:before,
+          .draw-border-button-white:hover:after {
+            width: calc(100% + 4px);
+            height: calc(100% + 4px);
+            border-color: #9ca3af; /* gray-400 */
+          }
+          
+          .draw-border-button-white:hover {
+            background-color: #f3f4f6; /* gray-100 */
+          }
         `}
       </style>
       <header className={`fixed top-0 left-0 w-full z-30 transition-all duration-300 ${isScrolled ? 'shadow-lg' : ''}`}>
