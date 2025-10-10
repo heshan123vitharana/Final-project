@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const userModel = require('../models/userModel');
+const adminModel = require('../models/adminModel');
 
 const toEnumBusinessType = (value) => {
   if (!value) return null;
@@ -112,26 +113,68 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password)
+    if (!email || !password) {
       return res.status(400).json({ message: 'email and password are required' });
+    }
 
+    // 1. Check for Admin user first
+    console.log(`[AUTH] Attempting login for: ${email}`);
+    const admin = await adminModel.findActiveByEmail(String(email).toLowerCase().trim());
+    if (admin) {
+      console.log('[AUTH] Admin user found. Comparing password...');
+      const ok = await bcrypt.compare(password, admin.password);
+      if (ok) {
+        console.log('[AUTH] Admin password correct. Generating token.');
+        const token = jwt.sign(
+          {
+            sub: admin.id,
+            email: admin.email,
+            role: 'admin',
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+        );
+        return res.json({
+          message: 'Admin login successful',
+          token,
+          role: 'admin',
+          user: {
+            id: admin.id,
+            username: admin.username,
+            email: admin.email,
+          },
+        });
+      }
+      // If admin is found but password is wrong, fail immediately.
+      console.log('[AUTH] Admin password incorrect.');
+      return res.status(401).json({ message: 'Invalid credentials' });
+    } else {
+      console.log('[AUTH] No active admin user found. Proceeding to check for mill user.');
+    }
+
+    // 2. If not an admin, check for a Mill user
     const user = await userModel.findByEmail(String(email).toLowerCase().trim());
-    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
     const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!ok) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
     const token = jwt.sign(
       {
         sub: user.id,
         email: user.email,
         business_type: user.business_type,
+        role: 'mill',
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
     );
 
-    // Get complete profile information for new users
+    // Get complete profile information for mill users
     const { getUserWithProfilePhoto } = require('../models/userModel');
     const fullUser = await getUserWithProfilePhoto(user.id);
 
@@ -143,6 +186,7 @@ const login = async (req, res) => {
       message: 'Login successful',
       token,
       isFirstLogin,
+      role: 'mill',
       user: {
         id: fullUser.id,
         first_name: fullUser.first_name,
@@ -170,7 +214,7 @@ const login = async (req, res) => {
 
 const getProfile = async (req, res) => {
   try {
-    const userId = req.user.sub;
+    // const userId = req.user.sub;
     const user = await userModel.findByEmail(req.user.email);
     
     if (!user) {
