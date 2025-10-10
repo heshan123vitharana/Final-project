@@ -168,6 +168,55 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
           .time-display {
             font-family: 'Roboto Mono', monospace;
           }
+
+          .draw-border-button {
+            position: relative;
+            background: transparent;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            padding: 0.375rem 1rem; /* Corresponds to py-1.5 px-4 */
+          }
+
+          .draw-border-button .text-content {
+            position: relative;
+            z-index: 1;
+          }
+
+          .draw-border-button:before,
+          .draw-border-button:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-color: #ef4444; /* red-500 */
+            transition: all 0.4s ease;
+          }
+
+          .draw-border-button:before {
+            top: -2px;
+            left: -2px;
+            border-top: 2px solid transparent;
+            border-left: 2px solid transparent;
+          }
+
+          .draw-border-button:after {
+            bottom: -2px;
+            right: -2px;
+            border-bottom: 2px solid transparent;
+            border-right: 2px solid transparent;
+          }
+
+          .draw-border-button:hover:before,
+          .draw-border-button:hover:after {
+            width: calc(100% + 4px);
+            height: calc(100% + 4px);
+            border-color: #ef4444;
+          }
+          
+          .draw-border-button:hover {
+            background-color: #ef4444;
+            color: white;
+          }
         `}
       </style>
       <header className={`fixed top-0 left-0 w-full z-30 transition-all duration-300 ${isScrolled ? 'shadow-lg' : ''}`}>
@@ -290,15 +339,12 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
                 {/* Language Selector */}
                 <LanguageSelector />
                 
-                {/* Enhanced Mill Owner Portal Button */}
+                {/* Animated Login Button */}
                 <button
-                  onClick={() => {
-                    // Mill Owner Portal button clicked
-                    onMillRegistrationClick();
-                  }}
-                  className="relative px-4 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-md hover:bg-emerald-200 hover:text-emerald-800 transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50"
+                  onClick={onMillRegistrationClick}
+                  className="draw-border-button text-xs font-medium text-red-600 rounded-md focus:outline-none"
                 >
-                  <span className="relative z-10">Sign In/Up</span>
+                  <span className="text-content">Login</span>
                 </button>
               </div>
             </div>
@@ -397,11 +443,9 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
                     onMillRegistrationClick();
                     setIsMenuOpen(false);
                   }}
-                  className="relative w-full px-5 py-3 text-sm font-light text-white bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-full hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-emerald-500/50 hover:shadow-2xl transform hover:scale-105 group"
+                  className="relative w-full px-5 py-3 text-sm font-light text-white bg-red-600 rounded-full hover:bg-red-700 transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-red-500/50"
                 >
-                  <span className="relative z-10">Sign In/Up</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-white/10 opacity-0 group-hover:opacity-100 rounded-full transition-all duration-300"></div>
-                  <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-emerald-500 opacity-0 group-hover:opacity-30 rounded-full blur-md transition-all duration-300"></div>
+                  Login
                 </button>
                 
                 {/* Quick Access Links */}
