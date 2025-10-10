@@ -298,7 +298,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
                   }}
                   className="relative px-4 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-md hover:bg-emerald-200 hover:text-emerald-800 transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50"
                 >
-                  <span className="relative z-10">Mill Portal</span>
+                  <span className="relative z-10">Sign In/Up</span>
                 </button>
               </div>
             </div>
@@ -399,7 +399,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
                   }}
                   className="relative w-full px-5 py-3 text-sm font-light text-white bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-full hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 flex items-center justify-center shadow-md hover:shadow-emerald-500/50 hover:shadow-2xl transform hover:scale-105 group"
                 >
-                  <span className="relative z-10">Mill Portal</span>
+                  <span className="relative z-10">Sign In/Up</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-white/10 opacity-0 group-hover:opacity-100 rounded-full transition-all duration-300"></div>
                   <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-emerald-500 opacity-0 group-hover:opacity-30 rounded-full blur-md transition-all duration-300"></div>
                 </button>
