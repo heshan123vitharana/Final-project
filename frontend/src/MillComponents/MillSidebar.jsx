@@ -205,7 +205,8 @@ const MillSidebar = ({ onBackToHome }) => {
             onClick={() => {
               // Clear session data
               sessionStorage.removeItem('millOwnerData');
-              localStorage.removeItem('millOwnerData');
+              sessionStorage.removeItem('token');
+              localStorage.removeItem('millData');
               
               // Show logout success toast
               handleLogoutSuccess('Mill Owner');

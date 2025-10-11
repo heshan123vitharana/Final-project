@@ -2,6 +2,39 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 
+const normalizeValue = (value) => {
+    if (value === undefined || value === null) {
+        return null;
+    }
+
+    if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed === '' ? null : trimmed;
+    }
+
+    return value;
+};
+
+const normalizeDate = (value) => {
+    const normalized = normalizeValue(value);
+    if (!normalized) {
+        return null;
+    }
+
+    if (normalized instanceof Date) {
+        return normalized.toISOString().split('T')[0];
+    }
+
+    if (typeof normalized === 'string') {
+        const date = new Date(normalized);
+        return Number.isNaN(date.getTime())
+            ? null
+            : date.toISOString().split('T')[0];
+    }
+
+    return normalized;
+};
+
 // Test route
 router.get('/test', (_req, res) => {
   console.log('📸 Profile test route hit!');
@@ -185,6 +218,31 @@ router.put('/update/:userId', async (req, res) => {
             registrationDate
         } = req.body;
 
+        const sanitizedBusinessTypeRaw = normalizeValue(businessType);
+        const sanitizedBusinessType = sanitizedBusinessTypeRaw
+            ? ['private', 'government'].includes(sanitizedBusinessTypeRaw.toLowerCase())
+                ? sanitizedBusinessTypeRaw.toLowerCase()
+                : null
+            : null;
+
+        const normalizedValues = {
+            firstName: normalizeValue(firstName),
+            lastName: normalizeValue(lastName),
+            nic: normalizeValue(nic),
+            email: normalizeValue(email),
+            phone: normalizeValue(phone),
+            address: normalizeValue(address),
+            city: normalizeValue(city),
+            district: normalizeValue(district),
+            postalCode: normalizeValue(postalCode),
+            businessName: normalizeValue(businessName),
+            businessType: sanitizedBusinessType,
+            millCapacity: normalizeValue(millCapacity),
+            millLocation: normalizeValue(millLocation),
+            millDistrict: normalizeValue(millDistrict),
+            registrationDate: normalizeDate(registrationDate)
+        };
+
         console.log(`📝 Updating complete profile for user ${userId}`);
         console.log('📝 Received data:', { firstName, lastName, nic, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation, millDistrict, registrationDate });
 
@@ -195,7 +253,24 @@ router.put('/update/:userId', async (req, res) => {
                 address = ?, city = ?, district = ?, postal_code = ?,
                 business_name = ?, business_type = ?, mill_capacity = ?, mill_location = ?, mill_district = ?, registration_date = ?
             WHERE id = ?
-        `, [firstName, lastName, nic, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation, millDistrict, registrationDate, userId]);
+        `, [
+            normalizedValues.firstName,
+            normalizedValues.lastName,
+            normalizedValues.nic,
+            normalizedValues.email,
+            normalizedValues.phone,
+            normalizedValues.address,
+            normalizedValues.city,
+            normalizedValues.district,
+            normalizedValues.postalCode,
+            normalizedValues.businessName,
+            normalizedValues.businessType,
+            normalizedValues.millCapacity,
+            normalizedValues.millLocation,
+            normalizedValues.millDistrict,
+            normalizedValues.registrationDate,
+            userId
+        ]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'User not found' });
@@ -207,21 +282,21 @@ router.put('/update/:userId', async (req, res) => {
             message: 'Profile updated successfully',
             user: {
                 id: userId,
-                firstName,
-                lastName,
-                nic,
-                email,
-                phone,
-                address,
-                city,
-                district,
-                postalCode,
-                businessName,
-                businessType,
-                millCapacity,
-                millLocation,
-                millDistrict,
-                registrationDate
+                firstName: normalizedValues.firstName,
+                lastName: normalizedValues.lastName,
+                nic: normalizedValues.nic,
+                email: normalizedValues.email,
+                phone: normalizedValues.phone,
+                address: normalizedValues.address,
+                city: normalizedValues.city,
+                district: normalizedValues.district,
+                postalCode: normalizedValues.postalCode,
+                businessName: normalizedValues.businessName,
+                businessType: normalizedValues.businessType,
+                millCapacity: normalizedValues.millCapacity,
+                millLocation: normalizedValues.millLocation,
+                millDistrict: normalizedValues.millDistrict,
+                registrationDate: normalizedValues.registrationDate
             }
         });
 

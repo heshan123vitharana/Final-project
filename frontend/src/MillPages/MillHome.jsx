@@ -44,8 +44,18 @@ const MillHome = ({ userData }) => {
       if (sessionData) {
         return JSON.parse(sessionData);
       }
+
+      const localData = localStorage.getItem('millData');
+      if (localData) {
+        const parsed = JSON.parse(localData);
+        sessionStorage.setItem('millOwnerData', localData);
+        if (parsed?.token) {
+          sessionStorage.setItem('token', parsed.token);
+        }
+        return parsed;
+      }
     } catch (error) {
-      console.error("Error parsing session data:", error);
+      console.error("Error parsing stored mill data:", error);
     }
 
     return null;
@@ -115,14 +125,18 @@ const MillHome = ({ userData }) => {
   };
 
   // Fetch stock summary from API
-  const fetchStockData = async () => {
+  const fetchStockData = useCallback(async () => {
     try {
       setLoadingStock(true);
       setStockError(null);
 
       // Get authentication token from session storage
       const millOwnerData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-      const token = millOwnerData.token || sessionStorage.getItem('token');
+      const localData = JSON.parse(localStorage.getItem('millData') || '{}');
+      const token = currentUserData?.token
+        || millOwnerData.token
+        || localData.token
+        || sessionStorage.getItem('token');
 
       if (!token) {
         throw new Error('No authentication token found');
@@ -151,7 +165,7 @@ const MillHome = ({ userData }) => {
     } finally {
       setLoadingStock(false);
     }
-  };
+  }, [currentUserData?.token]);
 
   useEffect(() => {
     const fetchProfilePhoto = async () => {
@@ -175,7 +189,7 @@ const MillHome = ({ userData }) => {
   // Load stock data when component mounts
   useEffect(() => {
     fetchStockData();
-  }, []);
+  }, [fetchStockData]);
 
   // Fetch user's license data
   const fetchLicenseData = useCallback(async () => {

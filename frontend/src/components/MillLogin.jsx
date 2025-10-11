@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { validateFormWithToast, handleApiError } from '../utils/validation';
-import { motion } from 'framer-motion';
 
 const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword }) => {
   const [formData, setFormData] = useState({

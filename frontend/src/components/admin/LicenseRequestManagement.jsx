@@ -1,111 +1,153 @@
-import React, { useState, useEffect } from 'react'
-import { 
-  Check, 
-  X, 
-  Eye, 
-  Download, 
-  Search, 
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import {
+  Check,
+  X,
+  Eye,
+  Download,
+  Search,
   Filter,
   Clock,
   AlertCircle,
-  FileCheck
+  RefreshCcw
 } from 'lucide-react'
 import { generatePermitCertificate } from '../../utils/certificateGenerator';
+const API_BASE_URL = 'http://localhost:5000/api/licenses';
 
-// Mock data for license requests
-const initialLicenseRequests = [
-  {
-    id: 'LR001',
-    millName: 'Green Valley Rice Mill',
-    ownerName: 'Kamal Perera',
-    location: 'Colombo',
-    submitDate: '2025-01-15',
-    status: 'pending',
-    paymentReceipt: 'receipt_001.pdf',
-    email: 'kamal@greenvalley.lk',
-    phone: '+94771234567',
-    capacity: '500 MT/month',
-    type: 'Private'
-  },
-  {
-    id: 'LR002',
-    millName: 'Sri Lanka Rice Processing',
-    ownerName: 'Nimali Fernando',
-    location: 'Kurunegala',
-    submitDate: '2025-01-16',
-    status: 'pending',
-    paymentReceipt: 'receipt_002.pdf',
-    email: 'nimali@slrp.lk',
-    phone: '+94777654321',
-    capacity: '750 MT/month',
-    type: 'Government'
-  },
-  {
-    id: 'LR003',
-    millName: 'Golden Grain Mills',
-    ownerName: 'Ravi Silva',
-    location: 'Anuradhapura',
-    submitDate: '2025-01-14',
-    status: 'approved',
-    paymentReceipt: 'receipt_003.pdf',
-    email: 'ravi@goldengrain.lk',
-    phone: '+94712345678',
-    capacity: '300 MT/month',
-    type: 'Private',
-    certificateNumber: 'PMB/ML/2025/LR003',
-    approvedDate: '2025-01-16'
-  }
-]
+const mapApplicationToRequest = (application) => {
+  const ownerName = [application.first_name, application.last_name]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+
+  const locationParts = [application.address, application.city, application.district]
+    .filter(Boolean)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const applicationNumber = application.application_number || `ML-${application.id}`;
+
+  return {
+    id: applicationNumber,
+    applicationId: application.id,
+    applicationNumber,
+    licenseType: application.license_type,
+    status: (application.status || 'pending').toLowerCase(),
+    submitDate: application.created_at,
+    approvedDate: application.approved_date,
+    rejectedDate: application.rejected_date,
+    rejectionReason: application.rejection_reason,
+    certificateNumber: application.license_number,
+    approvalComments: application.approval_comments,
+    millName: application.business_name || 'N/A',
+    ownerName: ownerName || 'N/A',
+    email: application.email || 'N/A',
+    phone: application.phone || 'N/A',
+    location: locationParts.length ? locationParts.join(', ') : 'N/A',
+    capacity: application.mill_capacity || 'N/A',
+    type: application.business_type || 'N/A',
+    raw: application
+  };
+};
+
+const createDocumentState = () => ({
+  payment_receipt: { data: null, loading: false, error: null },
+  br_document: { data: null, loading: false, error: null }
+});
 
 // Document Viewer Component
-const DocumentViewer = ({ documentType, getDocumentSrc }) => {
+const DocumentViewer = ({ documentType, documentState, onRetry }) => {
   const [showPdfViewer, setShowPdfViewer] = useState(false)
 
-  const documentSrc = getDocumentSrc()
-  const isPdf = documentSrc.includes('application/pdf')
+  const documentSrc = documentState?.data || ''
+  const isPdf = showPdfViewer || documentSrc.includes('application/pdf')
+
+  useEffect(() => {
+    setShowPdfViewer(false)
+  }, [documentSrc])
 
   const handleImageError = () => {
-    if (!showPdfViewer) {
+    if (!showPdfViewer && documentSrc) {
       setShowPdfViewer(true)
     }
   }
 
   const handleDownload = () => {
+    if (!documentSrc) return
+
     const link = document.createElement('a')
+    const extension = isPdf ? 'pdf' : 'jpg'
     link.href = documentSrc
-    const extension = isPdf || showPdfViewer ? 'pdf' : 'jpg'
     link.download = `${documentType}_${Date.now()}.${extension}`
+    document.body.appendChild(link)
     link.click()
+    document.body.removeChild(link)
+  }
+
+  if (documentState?.loading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 border border-dashed border-gray-200 rounded-lg bg-gray-50">
+        <Clock className="animate-spin text-green-600 mb-2" size={20} />
+        <p className="text-sm text-gray-600">Loading document...</p>
+      </div>
+    )
+  }
+
+  if (documentState?.error) {
+    return (
+      <div className="p-4 border border-red-200 rounded-lg bg-red-50 text-center text-sm text-red-600 space-y-3">
+        <div className="flex items-center justify-center space-x-2">
+          <AlertCircle size={18} />
+          <span>{documentState.error}</span>
+        </div>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="inline-flex items-center px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-md hover:bg-red-100"
+          >
+            <RefreshCcw size={14} className="mr-1" />
+            Try Again
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  if (!documentSrc) {
+    return (
+      <div className="p-4 border border-dashed border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-500">
+        No document uploaded.
+      </div>
+    )
   }
 
   return (
-    <div className="text-center">
-      <div className="mb-4 flex justify-center space-x-2">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <span className="text-sm text-gray-600">
-          Document: {documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
+          {documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
         </span>
         <button
           onClick={handleDownload}
-          className="text-blue-600 hover:text-blue-800 text-sm underline flex items-center"
+          className="text-blue-600 hover:text-blue-800 text-sm underline inline-flex items-center"
         >
           <Download size={14} className="mr-1" />
           Download
         </button>
       </div>
 
-      {isPdf || showPdfViewer ? (
-        <div className="w-full">
+      {isPdf ? (
+        <div className="w-full border border-gray-200 rounded-lg overflow-hidden">
           <iframe
-            src={documentSrc.replace('data:image/jpeg;base64,', 'data:application/pdf;base64,')}
+            src={documentSrc.startsWith('data:application/pdf') ? documentSrc : documentSrc.replace('data:image/jpeg;base64,', 'data:application/pdf;base64,')}
             width="100%"
-            height="600px"
+            height="480px"
             style={{ border: 'none' }}
             title={`${documentType} PDF Viewer`}
             onError={() => {
               console.log('PDF failed to load')
             }}
           />
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-xs text-gray-500 px-4 py-2 bg-gray-50 border-t border-gray-200">
             If the document doesn't display properly, try downloading it.
           </p>
         </div>
@@ -115,12 +157,11 @@ const DocumentViewer = ({ documentType, getDocumentSrc }) => {
             src={documentSrc}
             alt={documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
             className="max-w-full h-auto mx-auto rounded-lg shadow-lg"
-            style={{ maxHeight: '600px' }}
+            style={{ maxHeight: '480px' }}
             onError={handleImageError}
-            onLoad={() => {/* Image loaded */}}
           />
           {!showPdfViewer && (
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-xs text-gray-500 mt-2 text-center">
               Click download if the image doesn't display properly
             </p>
           )}
@@ -131,7 +172,9 @@ const DocumentViewer = ({ documentType, getDocumentSrc }) => {
 }
 
 const LicenseRequestManagement = () => {
-  const [licenseRequests, setLicenseRequests] = useState(initialLicenseRequests)
+  const [licenseRequests, setLicenseRequests] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [selectedRequest, setSelectedRequest] = useState(null)
   const [showModal, setShowModal] = useState(false)
   const [filter, setFilter] = useState('All')
@@ -139,6 +182,122 @@ const LicenseRequestManagement = () => {
   const [modalOpen, setModalOpen] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
   const [processingAction, setProcessingAction] = useState(null) // For loading indicators
+  const [documents, setDocuments] = useState(() => createDocumentState())
+
+  const getProcessingKey = useCallback((action, id) => `${action}${id ? `-${id}` : ''}`, [])
+  const startProcessing = useCallback((action, id) => {
+    setProcessingAction(getProcessingKey(action, id))
+  }, [getProcessingKey])
+  const stopProcessing = useCallback(() => {
+    setProcessingAction(null)
+  }, [])
+  const isProcessing = useCallback((action, id) => processingAction === getProcessingKey(action, id), [processingAction, getProcessingKey])
+
+  const resetDocuments = useCallback(() => setDocuments(() => createDocumentState()), [])
+
+  const fetchLicenseRequests = useCallback(async (signal) => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/admin/applications`,
+        signal ? { signal } : undefined
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || 'Failed to load license applications')
+      }
+
+      const data = await response.json()
+      const applications = Array.isArray(data.applications) ? data.applications : []
+      const mapped = applications.map(mapApplicationToRequest)
+      setLicenseRequests(mapped)
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('Error fetching license requests:', err)
+        setError(err.message || 'Failed to load license applications')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const loadDocument = useCallback(async (request, documentType) => {
+    if (!request?.applicationId) {
+      return
+    }
+
+    setDocuments(prev => ({
+      ...prev,
+      [documentType]: {
+        ...prev[documentType],
+        loading: true,
+        error: null
+      }
+    }))
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/document/${request.applicationId}/${documentType}`)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || 'Failed to load document')
+      }
+
+      const result = await response.json()
+      let docData = typeof result.documentData === 'string' ? result.documentData.trim() : null
+
+      if (docData && !docData.startsWith('data:')) {
+        const looksPdf = docData.startsWith('JVBER') || docData.includes('JVBER')
+        const prefix = looksPdf ? 'data:application/pdf;base64,' : 'data:image/jpeg;base64,'
+        docData = `${prefix}${docData}`
+      }
+
+      setDocuments(prev => ({
+        ...prev,
+        [documentType]: {
+          data: docData,
+          loading: false,
+          error: null
+        }
+      }))
+    } catch (err) {
+      console.error(`Error loading ${documentType}:`, err)
+      setDocuments(prev => ({
+        ...prev,
+        [documentType]: {
+          ...prev[documentType],
+          loading: false,
+          error: err.message || 'Failed to load document'
+        }
+      }))
+    }
+  }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    fetchLicenseRequests(controller.signal)
+
+    return () => {
+      controller.abort()
+    }
+  }, [fetchLicenseRequests])
+
+  useEffect(() => {
+    if (showModal && selectedRequest) {
+      resetDocuments()
+      loadDocument(selectedRequest, 'payment_receipt')
+      loadDocument(selectedRequest, 'br_document')
+    }
+  }, [showModal, selectedRequest, resetDocuments, loadDocument])
+
+  useEffect(() => {
+    if (!showModal) {
+      resetDocuments()
+    }
+  }, [showModal, resetDocuments])
 
   const handleDownloadCertificate = async (request) => {
     setProcessingAction(request.id);
@@ -185,13 +344,17 @@ const LicenseRequestManagement = () => {
     }
   };
 
-  const filteredRequests = licenseRequests.filter(request => {
-    const matchesSearch = request.millName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.id.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filter === 'All' || request.status === filter
-    return matchesSearch && matchesStatus
-  })
+  const filteredRequests = useMemo(() => {
+    return licenseRequests.filter(request => {
+      const term = searchTerm.trim().toLowerCase()
+      const matchesSearch = !term ||
+        request.millName.toLowerCase().includes(term) ||
+        request.ownerName.toLowerCase().includes(term) ||
+        (request.id || '').toLowerCase().includes(term)
+      const matchesStatus = filter === 'All' || request.status === filter
+      return matchesSearch && matchesStatus
+    })
+  }, [licenseRequests, searchTerm, filter])
 
   const handleApprove = (requestId) => {
     const request = licenseRequests.find(req => req.id === requestId)
@@ -257,6 +420,36 @@ const LicenseRequestManagement = () => {
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 bg-white rounded-lg shadow-sm">
+        <Clock className="animate-spin text-green-600 mb-4" size={32} />
+        <p className="text-gray-600">Loading license requests...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-8">
+        <div className="flex flex-col items-center text-center space-y-4">
+          <AlertCircle className="text-red-500" size={40} />
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">Unable to load license requests</h3>
+            <p className="text-sm text-gray-500 mt-1">{error}</p>
+          </div>
+          <button
+            onClick={() => fetchLicenseRequests()}
+            className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+          >
+            <RefreshCcw size={16} className="mr-2" />
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header with Search and Filters */}
@@ -286,6 +479,13 @@ const LicenseRequestManagement = () => {
                 <option value="rejected">Rejected</option>
               </select>
             </div>
+            <button
+              onClick={() => fetchLicenseRequests()}
+              className="flex items-center px-3 py-2 text-sm text-green-600 border border-green-200 rounded-lg hover:bg-green-50"
+            >
+              <RefreshCcw size={16} className={`mr-2 ${processingAction === 'refresh' ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
           </div>
           
           <div className="text-sm text-gray-600">

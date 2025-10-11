@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react';
 
 const CategorizedGallery = () => {
@@ -9,7 +9,24 @@ const CategorizedGallery = () => {
   const [expandedCategory, setExpandedCategory] = useState(null);
 
   // Fetch categories with image counts
-  const fetchCategories = async () => {
+  const fetchCategoryImages = useCallback(async (categoryId) => {
+    if (!categoryId) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch(`http://localhost:5000/api/categories/${categoryId}/images?active=true`);
+      if (response.ok) {
+        const data = await response.json();
+        setImages(data.data.images || []);
+      }
+    } catch (error) {
+      console.error('Error fetching category images:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await fetch('http://localhost:5000/api/categories/with-counts?active=true');
       if (response.ok) {
@@ -26,27 +43,11 @@ const CategorizedGallery = () => {
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  };
-
-  // Fetch images for a specific category
-  const fetchCategoryImages = async (categoryId) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/categories/${categoryId}/images?active=true`);
-      if (response.ok) {
-        const data = await response.json();
-        setImages(data.data.images || []);
-      }
-    } catch (error) {
-      console.error('Error fetching category images:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchCategoryImages]);
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [fetchCategories]);
 
   // Handle category selection
   const handleCategorySelect = (category) => {

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import LanguageSelector from './LanguageSelector';
 import pmbLogo from '../assets/logo-p.png';
 
@@ -155,10 +154,6 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
   };
 
   // Removed handleAdminClick and onAdminClick as Admin button is no longer used
-
-  const handleDropdownToggle = (id) => {
-    setActiveDropdown(activeDropdown === id ? null : id);
-  };
 
   return (
     <>

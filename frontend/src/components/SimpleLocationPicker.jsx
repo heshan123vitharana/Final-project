@@ -66,31 +66,55 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
     setSelectedLocation(location);
   };
 
-  const handleGetCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            address: `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`
-          };
+  const defaultLocation = {
+    lat: 7.8731,
+    lng: 80.7718,
+    address: 'Sri Lanka'
+  };
 
-          setSelectedLocation(location);
-          setManualInput({
-            address: location.address,
-            lat: location.lat.toString(),
-            lng: location.lng.toString()
-          });
-        },
-        (error) => {
-          console.error('Error getting current location:', error);
-          alert('Unable to get current location. Please enter manually.');
-        }
-      );
-    } else {
-      alert('Geolocation is not supported by this browser.');
+  const applyLocation = (location) => {
+    setSelectedLocation(location);
+    setManualInput({
+      address: location.address || '',
+      lat: location.lat?.toString() || '',
+      lng: location.lng?.toString() || ''
+    });
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by this browser. A default Sri Lankan location has been applied.');
+      applyLocation(defaultLocation);
+      return;
     }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          address: `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`
+        };
+
+        applyLocation(location);
+      },
+      (error) => {
+        console.error('Error getting current location:', error);
+
+        let message = 'Unable to get current location. Please enter it manually.';
+        if (error?.code === error.PERMISSION_DENIED) {
+          message = 'Location permission was denied. Please allow access or enter the location manually.';
+        } else if (error?.code === error.POSITION_UNAVAILABLE) {
+          message = 'Location information is unavailable right now. Please enter the location manually.';
+        } else if (error?.code === error.TIMEOUT) {
+          message = 'Timed out while retrieving location. Please try again or enter it manually.';
+        }
+
+        alert(`${message} A default Sri Lankan location has been applied for convenience.`);
+        applyLocation(defaultLocation);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+    );
   };
 
   const handleConfirm = () => {

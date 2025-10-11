@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 
 const Features = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -440,14 +440,14 @@ const Features = () => {
                   const isSelected = selectedId === cardId;
 
                   return (
-                    <motion.div 
+                    <Motion.div 
                       key={cardId} 
                       layout
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       onClick={() => setSelectedId(isSelected ? null : cardId)}
                       className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-300 transition-all duration-300 group cursor-pointer overflow-hidden"
                     >
-                      <motion.div layout="position" className="flex items-center justify-between p-4">
+                      <Motion.div layout="position" className="flex items-center justify-between p-4">
                         <div className="flex items-center gap-5 flex-grow">
                           {/* Numbered Icon */}
                           <div className="relative flex-shrink-0">
@@ -473,11 +473,11 @@ const Features = () => {
                             <div className="text-emerald-800 font-semibold text-sm capitalize">{service.type || 'General'}</div>
                           </div>
                         </div>
-                      </motion.div>
+                      </Motion.div>
 
                       <AnimatePresence>
                         {isSelected && (
-                          <motion.div
+                          <Motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto', transition: { duration: 0.4, ease: "easeInOut" } }}
                             exit={{ opacity: 0, height: 0, transition: { duration: 0.3, ease: "easeInOut" } }}
@@ -502,10 +502,10 @@ const Features = () => {
                                 </div>
                               )}
                             </div>
-                          </motion.div>
+                          </Motion.div>
                         )}
                       </AnimatePresence>
-                    </motion.div>
+                    </Motion.div>
                   )
                 })
               )}
@@ -516,14 +516,14 @@ const Features = () => {
 
       <AnimatePresence>
         {isVideoModalOpen && (
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
             onClick={() => setIsVideoModalOpen(false)}
           >
-            <motion.div
+            <Motion.div
               initial={{ scale: 0.8, y: 50 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.8, y: 50 }}
@@ -547,8 +547,8 @@ const Features = () => {
               >
                 &times;
               </button>
-            </motion.div>
-          </motion.div>
+            </Motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
 

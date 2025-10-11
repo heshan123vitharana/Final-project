@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import HeroSection from './components/HeroSection';
@@ -49,11 +49,64 @@ const HomePage = () => (
   </div>
 );
 
+const syncMillSession = (millData) => {
+  if (!millData) {
+    sessionStorage.removeItem('millOwnerData');
+    sessionStorage.removeItem('token');
+    return;
+  }
+
+  try {
+    const normalized = millData.user
+      ? {
+          ...millData.user,
+          token: millData.token,
+          role: millData.role,
+          isFirstLogin: millData.isFirstLogin ?? false,
+        }
+      : millData;
+
+    localStorage.setItem('millData', JSON.stringify(normalized));
+    sessionStorage.setItem('millOwnerData', JSON.stringify(normalized));
+
+    if (normalized.token) {
+      sessionStorage.setItem('token', normalized.token);
+    } else if (millData.token) {
+      sessionStorage.setItem('token', millData.token);
+    }
+
+    return normalized;
+  } catch (error) {
+    console.error('Failed to sync mill session data:', error);
+    return millData;
+  }
+};
+
 const AuthPageWrapper = () => {
   const [isMillAuthenticated, setIsMillAuthenticated] = useState(!!localStorage.getItem('millData'));
 
+  useEffect(() => {
+    if (!sessionStorage.getItem('millOwnerData')) {
+      const stored = localStorage.getItem('millData');
+      if (stored) {
+        try {
+          sessionStorage.setItem('millOwnerData', stored);
+          const parsed = JSON.parse(stored);
+          if (parsed?.token) {
+            sessionStorage.setItem('token', parsed.token);
+          }
+        } catch (error) {
+          console.error('Failed to hydrate mill session from local storage:', error);
+        }
+      }
+    }
+  }, []);
+
   const handleMillAuthSuccess = (millData) => {
-    localStorage.setItem('millData', JSON.stringify(millData));
+    const normalized = syncMillSession(millData);
+    if (!normalized && millData) {
+      localStorage.setItem('millData', JSON.stringify(millData));
+    }
     setIsMillAuthenticated(true);
   };
 
@@ -102,7 +155,22 @@ const MillPage = () => {
     return savedData ? JSON.parse(savedData) : null;
   });
 
+  useEffect(() => {
+    if (userData) {
+      try {
+        sessionStorage.setItem('millOwnerData', JSON.stringify(userData));
+        if (userData.token) {
+          sessionStorage.setItem('token', userData.token);
+        }
+      } catch (error) {
+        console.error('Failed to hydrate mill session:', error);
+      }
+    }
+  }, [userData]);
+
   const handleLogout = () => {
+    sessionStorage.removeItem('millOwnerData');
+    sessionStorage.removeItem('token');
     localStorage.removeItem('millData');
     setIsMillAuthenticated(false);
     setUserData(null);
