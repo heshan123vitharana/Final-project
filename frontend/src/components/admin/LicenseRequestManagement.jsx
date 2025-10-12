@@ -721,10 +721,20 @@ const LicenseRequestManagement = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700">Payment Receipt</label>
-                <button className="inline-flex items-center text-blue-600 hover:text-blue-800">
-                  <Download size={16} className="mr-1" />
-                  {selectedRequest.paymentReceipt}
-                </button>
+                <DocumentViewer
+                  documentType="payment_receipt"
+                  documentState={documents.payment_receipt}
+                  onRetry={() => loadDocument(selectedRequest, 'payment_receipt')}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Business Registration</label>
+                <DocumentViewer
+                  documentType="br_document"
+                  documentState={documents.br_document}
+                  onRetry={() => loadDocument(selectedRequest, 'br_document')}
+                />
               </div>
               
               {selectedRequest.rejectionReason && (

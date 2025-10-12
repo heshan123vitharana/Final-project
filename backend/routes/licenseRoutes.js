@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
-const { generateLicense, saveLicenseToDatabase } = require('../utils/licenseGenerator');
+
 const CertificateDataGenerator = require('../utils/certificateDataGenerator');
 const UnifiedCertificateGenerator = require('../utils/unifiedCertificateGenerator');
 
@@ -900,9 +900,8 @@ router.get('/certificate/:applicationId', async (req, res) => {
         res.json({
             success: true,
             certificate: certificateData,
-                submittedDate: application.created_at,
-                approvedDate: application.approved_date
-            },
+            submittedDate: application.created_at,
+            approvedDate: application.approved_date,
             validation: validation,
             message: 'UNIFIED Certificate data generated successfully'
         });
