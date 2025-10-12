@@ -1,41 +1,23 @@
 {
-  "name": "admin-dashboard",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "rice-mill-management-system",
+  "version": "1.0.0",
+  "description": "A comprehensive system for managing rice mill operations, including licensing, stock, and sales.",
+  "main": "backend/server.js",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "install": "npm install --prefix backend && npm install --prefix frontend",
+    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "start": "node backend/server.js"
   },
-  "dependencies": {
-    "@babel/types": "^7.28.4",
-    "file-saver": "^2.0.5",
-    "framer-motion": "^12.23.22",
-    "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.3",
-    "jspdf-autotable": "^5.0.2",
-    "lucide-react": "^0.536.0",
-    "pdf-lib": "^1.17.1",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-router-dom": "^7.7.1",
-    "recharts": "^3.1.2"
-  },
+  "keywords": [
+    "react",
+    "nodejs",
+    "express",
+    "mysql",
+    "tailwindcss"
+  ],
+  "author": "Your Name",
+  "license": "ISC",
   "devDependencies": {
-    "@eslint/js": "^9.30.1",
-    "@tailwindcss/vite": "^4.1.12",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^4.6.0",
-    "autoprefixer": "^10.4.21",
-    "eslint": "^9.30.1",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.20",
-    "globals": "^16.3.0",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17",
-    "vite": "^7.0.4"
+    "concurrently": "^8.2.2"
   }
 }
