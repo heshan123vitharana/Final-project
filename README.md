@@ -140,4 +140,3 @@ Make sure you have the following software installed:
 * **Register/Login:** Create a new account or log in as an existing user (e.g., admin, mill owner).
 * **Admin Dashboard:** If you log in as an admin, you will see the dashboard where you can manage license requests and other system settings.
 * **Apply for a License:** If you log in as a mill owner, you can fill out and submit a license application form.
-
