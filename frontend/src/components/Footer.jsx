@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Phone, Mail, Link2, Building, ChevronRight, Newspaper, Facebook, Twitter, Linkedin, Youtube } from 'lucide-react';
 
 const Footer = () => {
+  const navigate = useNavigate();
   const quickLinks = [
     { name: 'Paddy Procurement', href: '/services/procurement' },
     { name: 'Storage Services', href: '/services/storage' },
@@ -24,6 +25,18 @@ const Footer = () => {
     { name: 'YouTube', icon: Youtube, href: 'https://youtube.com' },
   ];
 
+  const handleLogoClick = (event) => {
+    event.preventDefault();
+
+    if (window.location.pathname === '/') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    navigate('/');
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+  };
+
   return (
     <footer className="relative bg-gradient-to-br from-gray-900 via-slate-900 to-black text-white overflow-hidden">
       {/* Professional Background Elements */}
@@ -38,7 +51,13 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Enhanced Company Info */}
           <div className="space-y-4 md:col-span-2 lg:col-span-1">
-            <img src="/paddy-marketing-board-logo.png" alt="Paddy Marketing Board" className="h-16 mb-4" />
+            <Link to="/" aria-label="Go to home" onClick={handleLogoClick}>
+              <img
+                src="/paddy-marketing-board-logo.png"
+                alt="Paddy Marketing Board"
+                className="h-20 w-auto max-w-[240px] object-contain mb-4"
+              />
+            </Link>
             <p className="text-gray-300 text-sm leading-relaxed">
               Ensuring food security and supporting Sri Lankan farmers through quality rice distribution 
               and sustainable agricultural practices since 1971 with excellence and innovation.
