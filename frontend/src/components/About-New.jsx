@@ -292,14 +292,22 @@ export default function AboutNew() {
           {galleryImages.length > 1 && (
             <>
               <button
-                onClick={prevImage}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  prevImage();
+                }}
                 className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-3xl hover:text-gray-300 z-10"
+                aria-label="View previous image"
               >
                 ‹
               </button>
               <button
-                onClick={nextImage}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  nextImage();
+                }}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-3xl hover:text-gray-300 z-10"
+                aria-label="View next image"
               >
                 ›
               </button>
