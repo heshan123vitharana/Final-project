@@ -11,7 +11,7 @@ import {
   RefreshCcw
 } from 'lucide-react'
 import { generatePermitCertificate } from '../../utils/certificateGenerator';
-const API_BASE_URL = 'http://localhost:5000/api/licenses';
+const API_BASE_URL = 'http://localhost:5000/api/license';
 
 const mapApplicationToRequest = (application) => {
   const ownerName = [application.first_name, application.last_name]
@@ -195,6 +195,29 @@ const LicenseRequestManagement = () => {
 
   const resetDocuments = useCallback(() => setDocuments(() => createDocumentState()), [])
 
+  const updateLicenseStatus = useCallback(async (applicationId, status, details) => {
+    startProcessing(status, applicationId);
+    try {
+      const response = await fetch(`${API_BASE_URL}/applications/${applicationId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status, ...details }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to update status to ${status}`);
+      }
+
+      const updatedApplication = await response.json();
+      return mapApplicationToRequest(updatedApplication);
+    } finally {
+      stopProcessing();
+    }
+  }, [startProcessing, stopProcessing]);
+
   const fetchLicenseRequests = useCallback(async (signal) => {
     setIsLoading(true)
     setError(null)
@@ -356,51 +379,55 @@ const LicenseRequestManagement = () => {
     })
   }, [licenseRequests, searchTerm, filter])
 
-  const handleApprove = (requestId) => {
-    const request = licenseRequests.find(req => req.id === requestId)
-    if (!request) return
+  const handleApprove = async (request) => {
+    if (!request) return;
 
-    const certificateNumber = `PMB/ML/${new Date().getFullYear()}/${request.id}`;
+    const certificateNumber = `PMB/ML/${new Date().getFullYear()}/${request.applicationId}`;
     
-    // Update request status
-    setLicenseRequests(prev => prev.map(req => 
-      req.id === requestId 
-        ? { 
-            ...req, 
-            status: 'approved', 
-            approvedDate: new Date().toISOString().split('T')[0],
-            certificateNumber: certificateNumber
-          }
-        : req
-    ))
-    
-    // Simulate email sending
-    setTimeout(() => {
-      alert(`License approved! Certificate ${certificateNumber} generated and email sent to ${request.email}`)
-    }, 1000)
-  }
+    try {
+      const updatedRequest = await updateLicenseStatus(request.applicationId, 'approved', {
+        certificateNumber,
+        approvalComments: 'License approved by admin.',
+      });
+
+      setLicenseRequests(prev => prev.map(req => 
+        req.applicationId === request.applicationId ? updatedRequest : req
+      ));
+      
+      alert(`License approved! Certificate ${certificateNumber} generated and email sent to ${request.email}`);
+    } catch (error) {
+      console.error('Failed to approve license:', error);
+      alert(`Failed to approve license: ${error.message}`);
+    }
+  };
 
   const handleReject = (request) => {
     setSelectedRequest(request)
     setModalOpen(true)
   }
 
-  const confirmReject = () => {
-    if (rejectionReason.trim()) {
-      setLicenseRequests(prev => prev.map(req => 
-        req.id === selectedRequest.id 
-          ? { ...req, status: 'rejected', rejectionReason, rejectedDate: new Date().toISOString().split('T')[0] }
-          : req
-      ))
-      
-      setModalOpen(false)
-      setRejectionReason('')
-      setSelectedRequest(null)
-      
-      // Simulate email notification
-      alert('License rejected and notification email sent to mill owner.')
+  const confirmReject = async () => {
+    if (rejectionReason.trim() && selectedRequest) {
+      try {
+        const updatedRequest = await updateLicenseStatus(selectedRequest.applicationId, 'rejected', {
+          rejectionReason,
+        });
+
+        setLicenseRequests(prev => prev.map(req => 
+          req.applicationId === selectedRequest.applicationId ? updatedRequest : req
+        ));
+        
+        setModalOpen(false);
+        setRejectionReason('');
+        setSelectedRequest(null);
+        
+        alert('License rejected and notification email sent to mill owner.');
+      } catch (error) {
+        console.error('Failed to reject license:', error);
+        alert(`Failed to reject license: ${error.message}`);
+      }
     }
-  }
+  };
 
   const getStatusBadge = (status) => {
     const badges = {
@@ -563,18 +590,38 @@ const LicenseRequestManagement = () => {
                     {request.status === 'pending' && (
                       <>
                         <button
-                          onClick={() => handleApprove(request.id)}
+                          onClick={() => handleApprove(request)}
                           className="text-green-600 hover:text-green-900 inline-flex items-center"
+                          disabled={isProcessing('approved', request.applicationId)}
                         >
-                          <Check size={16} className="mr-1" />
-                          Approve
+                          {isProcessing('approved', request.applicationId) ? (
+                            <>
+                              <Clock size={16} className="mr-1 animate-spin" />
+                              Approving...
+                            </>
+                          ) : (
+                            <>
+                              <Check size={16} className="mr-1" />
+                              Approve
+                            </>
+                          )}
                         </button>
                         <button
                           onClick={() => handleReject(request)}
                           className="text-red-600 hover:text-red-900 inline-flex items-center"
+                          disabled={isProcessing('rejected', request.applicationId)}
                         >
-                          <X size={16} className="mr-1" />
-                          Reject
+                           {isProcessing('rejected', request.applicationId) ? (
+                            <>
+                              <Clock size={16} className="mr-1 animate-spin" />
+                              Rejecting...
+                            </>
+                          ) : (
+                            <>
+                              <X size={16} className="mr-1" />
+                              Reject
+                            </>
+                          )}
                         </button>
                       </>
                     )}
@@ -692,12 +739,13 @@ const LicenseRequestManagement = () => {
               <div className="flex space-x-3 mt-6">
                 <button
                   onClick={() => {
-                    handleApprove(selectedRequest.id)
+                    handleApprove(selectedRequest)
                     setShowModal(false)
                   }}
                   className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  disabled={isProcessing('approved', selectedRequest.applicationId)}
                 >
-                  Approve License
+                  {isProcessing('approved', selectedRequest.applicationId) ? 'Approving...' : 'Approve License'}
                 </button>
                 <button
                   onClick={() => {
@@ -705,8 +753,9 @@ const LicenseRequestManagement = () => {
                     handleReject(selectedRequest)
                   }}
                   className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                  disabled={isProcessing('rejected', selectedRequest.applicationId)}
                 >
-                  Reject License
+                  {isProcessing('rejected', selectedRequest.applicationId) ? 'Rejecting...' : 'Reject License'}
                 </button>
               </div>
             )}
@@ -750,10 +799,10 @@ const LicenseRequestManagement = () => {
               </button>
               <button
                 onClick={confirmReject}
-                disabled={!rejectionReason.trim()}
+                disabled={!rejectionReason.trim() || isProcessing('rejected', selectedRequest?.applicationId)}
                 className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirm Rejection
+                {isProcessing('rejected', selectedRequest?.applicationId) ? 'Confirming...' : 'Confirm Rejection'}
               </button>
             </div>
           </div>

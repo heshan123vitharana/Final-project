@@ -5,6 +5,93 @@ const { generateLicense, saveLicenseToDatabase } = require('../utils/licenseGene
 const CertificateDataGenerator = require('../utils/certificateDataGenerator');
 const UnifiedCertificateGenerator = require('../utils/unifiedCertificateGenerator');
 
+// Endpoint to update license application status
+router.put('/applications/:applicationId/status', async (req, res) => {
+    const { applicationId } = req.params;
+    const { status, rejectionReason, certificateNumber, approvalComments } = req.body;
+
+    console.log(`Attempting to update application ${applicationId} to status: ${status}`);
+
+    if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status provided.' });
+    }
+
+    try {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            let query;
+            let values;
+            const currentDate = new Date();
+
+            if (status === 'approved') {
+                query = `
+                    UPDATE mill_license_applications
+                    SET 
+                        status = $1, 
+                        approved_date = $2, 
+                        license_number = $3,
+                        approval_comments = $4,
+                        updated_at = $2
+                    WHERE id = $5
+                    RETURNING *;
+                `;
+                values = [status, currentDate, certificateNumber, approvalComments, applicationId];
+            } else { // 'rejected'
+                query = `
+                    UPDATE mill_license_applications
+                    SET 
+                        status = $1, 
+                        rejected_date = $2, 
+                        rejection_reason = $3,
+                        updated_at = $2
+                    WHERE id = $4
+                    RETURNING *;
+                `;
+                values = [status, currentDate, rejectionReason, applicationId];
+            }
+
+            const result = await client.query(query, values);
+
+            if (result.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ message: 'Application not found.' });
+            }
+
+            await client.query('COMMIT');
+            
+            // Fetch the full application details to return
+            const fullApplicationQuery = `
+                SELECT mla.*, u.first_name, u.last_name, u.email, u.phone, up.business_name, up.business_type, up.address, up.city, up.district, up.mill_capacity
+                FROM mill_license_applications mla
+                JOIN users u ON mla.user_id = u.id
+                LEFT JOIN user_profiles up ON u.id = up.user_id
+                WHERE mla.id = $1;
+            `;
+            const fullResult = await client.query(fullApplicationQuery, [applicationId]);
+
+            if (fullResult.rows.length === 0) {
+                // This should not happen if the update was successful, but as a safeguard
+                return res.status(404).json({ message: 'Updated application details could not be retrieved.' });
+            }
+
+            console.log(`Successfully updated application ${applicationId} to ${status}.`);
+            res.status(200).json(fullResult.rows[0]);
+
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error(`Error during transaction for application ${applicationId}:`, error);
+            res.status(500).json({ message: 'Database error during status update.', error: error.message });
+        } finally {
+            client.release();
+        }
+    } catch (error) {
+        console.error(`Failed to connect to database for application ${applicationId}:`, error);
+        res.status(500).json({ message: 'Failed to connect to the database.', error: error.message });
+    }
+});
+
 // Apply for mill license
 router.post('/apply', async (req, res) => {
     try {
@@ -813,93 +900,6 @@ router.get('/certificate/:applicationId', async (req, res) => {
         res.json({
             success: true,
             certificate: certificateData,
-            application: {
-                id: application.id,
-                applicationNumber: application.application_number,
-                status: application.status,
-                submittedDate: application.created_at,
-                approvedDate: application.approved_date
-            },
-            validation: validation,
-            // Add download options
-            downloadOptions: {
-                textCertificate: `/api/licenses/download-text/${applicationId}`,
-                pdfCertificate: `/api/licenses/download/${applicationId}`,
-                imageCertificate: `/api/licenses/download-image/${applicationId}`
-            }
-        });
-
-    } catch (error) {
-        console.error('Error retrieving UNIFIED certificate data:', error);
-        res.status(500).json({
-            message: 'Failed to retrieve certificate data',
-            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-        });
-    }
-});
-
-// Admin route to view certificate for approved applications (UNIFIED)
-router.get('/admin/certificate/:applicationId', async (req, res) => {
-    try {
-        console.log('🎖️ Admin UNIFIED certificate view request received for ID:', req.params.applicationId);
-        const { applicationId } = req.params;
-
-        // First get the license application details
-        const applicationQuery = `
-            SELECT ml.*, u.first_name, u.last_name, u.business_name, u.business_type,
-                   u.city, u.district, u.mill_district, u.address, u.mill_location, u.mill_capacity,
-                   u.email, u.phone, u.nic, u.postal_code
-            FROM mill_licenses ml
-            JOIN users u ON ml.user_id = u.id
-            WHERE ml.id = ? AND ml.status = 'approved'
-        `;
-
-        const [applications] = await pool.execute(applicationQuery, [applicationId]);
-
-        if (applications.length === 0) {
-            return res.status(404).json({
-                message: 'Certificate not found or application not approved'
-            });
-        }
-
-        const application = applications[0];
-        const user = {
-            first_name: application.first_name,
-            last_name: application.last_name,
-            business_name: application.business_name,
-            business_type: application.business_type,
-            city: application.city,
-            district: application.district,
-            mill_district: application.mill_district,
-            address: application.address,
-            mill_location: application.mill_location,
-            mill_capacity: application.mill_capacity,
-            email: application.email,
-            phone: application.phone,
-            nic: application.nic,
-            postal_code: application.postal_code
-        };
-
-        // Use UNIFIED certificate data generator for consistency
-        const unifiedGenerator = new UnifiedCertificateGenerator();
-        const certificateData = unifiedGenerator.generateStandardizedCertificateData(application, user);
-
-        // Validate the certificate data
-        const validation = unifiedGenerator.validateCertificateData(certificateData);
-        if (!validation.isValid) {
-            console.warn('⚠️ Certificate data validation warnings:', validation.errors);
-        }
-
-        console.log(`✅ UNIFIED Certificate data generated for admin view: ${certificateData.licenseNumber}`);
-
-        // Return complete certificate data for admin view
-        res.json({
-            success: true,
-            certificate: certificateData,
-            application: {
-                id: application.id,
-                applicationNumber: application.application_number,
-                status: application.status,
                 submittedDate: application.created_at,
                 approvedDate: application.approved_date
             },

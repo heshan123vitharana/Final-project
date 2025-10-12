@@ -101,7 +101,7 @@ app.use('/api/stock', stockRoutes);
 console.log('✅ Stock routes registered');
 app.use('/api/profile', profileRoutes);
 console.log('✅ Profile routes registered');
-app.use('/api/licenses', licenseRoutes);
+app.use('/api/license', licenseRoutes);
 console.log('✅ License routes registered');
 app.use('/api/completeness', completenessRoutes);
 console.log('✅ Completeness routes registered');
