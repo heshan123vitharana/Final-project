@@ -53,21 +53,68 @@ const mapApplicationToRequest = (application) => {
   };
 };
 
+const createEmptyDocument = () => ({
+  data: null,
+  loading: false,
+  error: null,
+  applicationNumber: null,
+  filename: null,
+  mimeType: null,
+  uploadedAt: null
+})
+
 const createDocumentState = () => ({
-  payment_receipt: { data: null, loading: false, error: null },
-  br_document: { data: null, loading: false, error: null }
+  payment_receipt: createEmptyDocument(),
+  br_document: createEmptyDocument()
 });
 
 // Document Viewer Component
 const DocumentViewer = ({ documentType, documentState, onRetry }) => {
   const [showPdfViewer, setShowPdfViewer] = useState(false)
 
-  const documentSrc = documentState?.data || ''
-  const isPdf = showPdfViewer || documentSrc.includes('application/pdf')
+  const rawDocumentData = documentState?.data
+  const documentSrc = typeof rawDocumentData === 'string'
+    ? rawDocumentData
+    : rawDocumentData?.documentData || rawDocumentData?.data || ''
+
+  const effectiveMimeType = documentState?.mimeType || (typeof documentSrc === 'string' && documentSrc.startsWith('data:')
+    ? documentSrc.split(';')[0].replace('data:', '')
+    : undefined)
+
+  const formattedUploadedAt = useMemo(() => {
+    if (!documentState?.uploadedAt) {
+      return null
+    }
+
+    const parsed = new Date(documentState.uploadedAt)
+    if (Number.isNaN(parsed.getTime())) {
+      return documentState.uploadedAt
+    }
+
+    return parsed.toLocaleString()
+  }, [documentState?.uploadedAt])
+
+  const resolvedSrc = useMemo(() => {
+    if (!documentSrc) {
+      return ''
+    }
+
+    if (typeof documentSrc === 'string' && documentSrc.startsWith('data:')) {
+      return documentSrc
+    }
+
+    if (effectiveMimeType && typeof documentSrc === 'string') {
+      return `data:${effectiveMimeType};base64,${documentSrc}`
+    }
+
+    return documentSrc
+  }, [documentSrc, effectiveMimeType])
+
+  const isPdf = showPdfViewer || (effectiveMimeType?.includes('pdf'))
 
   useEffect(() => {
     setShowPdfViewer(false)
-  }, [documentSrc])
+  }, [resolvedSrc])
 
   const handleImageError = () => {
     if (!showPdfViewer && documentSrc) {
@@ -76,12 +123,16 @@ const DocumentViewer = ({ documentType, documentState, onRetry }) => {
   }
 
   const handleDownload = () => {
-    if (!documentSrc) return
+    if (!resolvedSrc) return
 
     const link = document.createElement('a')
-    const extension = isPdf ? 'pdf' : 'jpg'
-    link.href = documentSrc
-    link.download = `${documentType}_${Date.now()}.${extension}`
+    const extension = isPdf ? 'pdf' : (documentState?.mimeType?.split('/')?.[1] || 'jpg')
+    const filename = documentState?.filename || `${documentType}_${Date.now()}`
+    const normalizedFilename = filename.toLowerCase().endsWith(`.${extension.toLowerCase()}`)
+      ? filename
+      : `${filename}.${extension}`
+    link.href = resolvedSrc
+    link.download = normalizedFilename
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -116,7 +167,7 @@ const DocumentViewer = ({ documentType, documentState, onRetry }) => {
     )
   }
 
-  if (!documentSrc) {
+  if (!resolvedSrc) {
     return (
       <div className="p-4 border border-dashed border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-500">
         No document uploaded.
@@ -126,10 +177,26 @@ const DocumentViewer = ({ documentType, documentState, onRetry }) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-600">
-          {documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
-        </span>
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col">
+          <span className="text-sm text-gray-600 font-medium">
+            {documentType === 'payment_receipt' ? 'Payment Receipt' : 'Business Registration Document'}
+          </span>
+          {documentState?.applicationNumber && (
+            <span className="text-xs text-gray-500 mt-1">
+              Application: {documentState.applicationNumber}
+            </span>
+          )}
+          {documentState?.filename && (
+            <span className="text-xs text-gray-500">File: {documentState.filename}</span>
+          )}
+          {formattedUploadedAt && (
+            <span className="text-xs text-gray-500">Uploaded: {formattedUploadedAt}</span>
+          )}
+          {documentState?.mimeType && (
+            <span className="text-xs text-gray-500">Type: {documentState.mimeType}</span>
+          )}
+        </div>
         <button
           onClick={handleDownload}
           className="text-blue-600 hover:text-blue-800 text-sm underline inline-flex items-center"
@@ -142,7 +209,7 @@ const DocumentViewer = ({ documentType, documentState, onRetry }) => {
       {isPdf ? (
         <div className="w-full border border-gray-200 rounded-lg overflow-hidden">
           <iframe
-            src={documentSrc.startsWith('data:application/pdf') ? documentSrc : documentSrc.replace('data:image/jpeg;base64,', 'data:application/pdf;base64,')}
+            src={resolvedSrc}
             width="100%"
             height="480px"
             style={{ border: 'none' }}
@@ -158,7 +225,7 @@ const DocumentViewer = ({ documentType, documentState, onRetry }) => {
       ) : (
         <div>
           <img
-            src={documentSrc}
+            src={resolvedSrc}
             alt={documentType === 'payment_receipt' ? 'Payment Receipt' : 'BR Document'}
             className="max-w-full h-auto mx-auto rounded-lg shadow-lg"
             style={{ maxHeight: '480px' }}
@@ -187,6 +254,7 @@ const LicenseRequestManagement = () => {
   const [rejectionReason, setRejectionReason] = useState('')
   const [processingAction, setProcessingAction] = useState(null) // For loading indicators
   const [documents, setDocuments] = useState(() => createDocumentState())
+  const [viewedRequests, setViewedRequests] = useState({})
 
   const getProcessingKey = useCallback((action, id) => `${action}${id ? `-${id}` : ''}`, [])
   const startProcessing = useCallback((action, id) => {
@@ -198,6 +266,20 @@ const LicenseRequestManagement = () => {
   const isProcessing = useCallback((action, id) => processingAction === getProcessingKey(action, id), [processingAction, getProcessingKey])
 
   const resetDocuments = useCallback(() => setDocuments(() => createDocumentState()), [])
+
+  const selectedDocumentsReady = useMemo(() => {
+    if (!selectedRequest) {
+      return false
+    }
+
+    const receipt = documents.payment_receipt
+    const brDoc = documents.br_document
+
+    const receiptReady = Boolean(receipt?.data) && !receipt?.loading && !receipt?.error
+    const brReady = Boolean(brDoc?.data) && !brDoc?.loading && !brDoc?.error
+
+    return receiptReady && brReady
+  }, [selectedRequest, documents])
 
   const updateLicenseStatus = useCallback(async (applicationId, status, details) => {
     startProcessing(status, applicationId);
@@ -214,8 +296,9 @@ const LicenseRequestManagement = () => {
     setError(null)
 
     try {
-      const applications = await fetchLicenseApplications(signal);
-      const mapped = applications.map(mapApplicationToRequest)
+      const applications = await fetchLicenseApplications(signal)
+      const safeApplications = Array.isArray(applications) ? applications : []
+      const mapped = safeApplications.map(mapApplicationToRequest)
       setLicenseRequests(mapped)
     } catch (err) {
       if (err.name !== 'AbortError') {
@@ -242,14 +325,54 @@ const LicenseRequestManagement = () => {
     }))
 
     try {
-      const docData = await fetchDocument(request.applicationId, documentType);
+      const docResponse = await fetchDocument(request.applicationId, documentType);
+      let docData = docResponse?.documentData || docResponse?.data || docResponse;
+
+      if (docData && typeof docData === 'object' && docData.type === 'Buffer' && Array.isArray(docData.data)) {
+        try {
+          const uint8Array = new Uint8Array(docData.data)
+          let binary = ''
+          const chunkSize = 0x8000
+
+          for (let i = 0; i < uint8Array.length; i += chunkSize) {
+            const chunk = uint8Array.subarray(i, i + chunkSize)
+            binary += String.fromCharCode.apply(null, chunk)
+          }
+
+          docData = btoa(binary)
+        } catch (bufferError) {
+          console.error('Failed to convert buffer to base64:', bufferError)
+          throw new Error('Unable to read document data')
+        }
+      }
+      let inferredMimeType
+
+      if (typeof docData === 'string') {
+        if (docData.startsWith('data:')) {
+          inferredMimeType = docData.split(';')[0].replace('data:', '')
+        } else if (docData.startsWith('JVBERi0')) {
+          inferredMimeType = 'application/pdf'
+        } else if (docData.startsWith('/9j/')) {
+          inferredMimeType = 'image/jpeg'
+        } else if (docData.startsWith('iVBOR')) {
+          inferredMimeType = 'image/png'
+        }
+      }
+
+      const metadata = {
+        applicationNumber: docResponse?.applicationNumber || request.applicationNumber,
+        filename: docResponse?.filename || `${documentType}-${request.applicationNumber || request.applicationId}`,
+        mimeType: docResponse?.mimeType || inferredMimeType,
+        uploadedAt: docResponse?.uploadedAt || docResponse?.uploaded_at || docResponse?.createdAt || docResponse?.created_at || null
+      };
 
       setDocuments(prev => ({
         ...prev,
         [documentType]: {
           data: docData,
           loading: false,
-          error: null
+          error: null,
+          ...metadata
         }
       }))
     } catch (err) {
@@ -288,6 +411,23 @@ const LicenseRequestManagement = () => {
       resetDocuments()
     }
   }, [showModal, resetDocuments])
+
+  useEffect(() => {
+    if (!selectedRequest || !selectedDocumentsReady) {
+      return
+    }
+
+    setViewedRequests(prev => {
+      if (prev[selectedRequest.applicationId]) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        [selectedRequest.applicationId]: true
+      }
+    })
+  }, [selectedRequest, selectedDocumentsReady])
 
   const handleDownloadCertificate = async (request) => {
     setProcessingAction(request.id);
@@ -346,27 +486,57 @@ const LicenseRequestManagement = () => {
     })
   }, [licenseRequests, searchTerm, filter])
 
-  const handleApprove = async (request) => {
-    if (!request) return;
+  const clearViewedFlag = useCallback((applicationId) => {
+    setViewedRequests(prev => {
+      if (!prev[applicationId]) {
+        return prev
+      }
 
-    const certificateNumber = `PMB/ML/${new Date().getFullYear()}/${request.applicationId}`;
-    
+      const next = { ...prev }
+      delete next[applicationId]
+      return next
+    })
+  }, [])
+
+  const handleApprove = async (request, source = 'table') => {
+    if (!request) return
+
+    const hasReviewedDocuments = viewedRequests[request.applicationId] ||
+      (selectedRequest?.applicationId === request.applicationId && selectedDocumentsReady)
+
+    if (!hasReviewedDocuments) {
+      setSelectedRequest(request)
+      setShowModal(true)
+      alert('Review the submitted documents before approving this license.')
+      return
+    }
+
+    const certificateNumber = `PMB/ML/${new Date().getFullYear()}/${request.applicationId}`
+
     try {
-      const updatedRequest = await updateLicenseStatus(request.applicationId, 'approved', {
+      await updateLicenseStatus(request.applicationId, 'approved', {
         certificateNumber,
         approvalComments: 'License approved by admin.',
-      });
+      })
 
-      setLicenseRequests(prev => prev.map(req => 
-        req.applicationId === request.applicationId ? updatedRequest : req
-      ));
-      
-      alert(`License approved! Certificate ${certificateNumber} generated and email sent to ${request.email}`);
+      setLicenseRequests(prev => prev.filter(req =>
+        req.applicationId !== request.applicationId
+      ))
+
+      clearViewedFlag(request.applicationId)
+
+      if (source === 'modal') {
+        setShowModal(false)
+        resetDocuments()
+        setSelectedRequest(null)
+      }
+
+      alert(`License approved! Certificate ${certificateNumber} generated and email sent to ${request.email}`)
     } catch (error) {
-      console.error('Failed to approve license:', error);
-      alert(`Failed to approve license: ${error.message}`);
+      console.error('Failed to approve license:', error)
+      alert(`Failed to approve license: ${error.message}`)
     }
-  };
+  }
 
   const handleReject = (request) => {
     setSelectedRequest(request)
@@ -376,17 +546,20 @@ const LicenseRequestManagement = () => {
   const confirmReject = async () => {
     if (rejectionReason.trim() && selectedRequest) {
       try {
-        const updatedRequest = await updateLicenseStatus(selectedRequest.applicationId, 'rejected', {
+        await updateLicenseStatus(selectedRequest.applicationId, 'rejected', {
           rejectionReason,
         });
 
-        setLicenseRequests(prev => prev.map(req => 
-          req.applicationId === selectedRequest.applicationId ? updatedRequest : req
+        setLicenseRequests(prev => prev.filter(req =>
+          req.applicationId !== selectedRequest.applicationId
         ));
+
+        clearViewedFlag(selectedRequest.applicationId)
         
         setModalOpen(false);
         setRejectionReason('');
         setSelectedRequest(null);
+        resetDocuments()
         
         alert('License rejected and notification email sent to mill owner.');
       } catch (error) {
@@ -516,7 +689,7 @@ const LicenseRequestManagement = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredRequests.map((request) => (
-                <tr key={request.id} className="hover:bg-gray-50">
+                  <tr key={request.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {request.id}
                   </td>
@@ -554,44 +727,6 @@ const LicenseRequestManagement = () => {
                       <Eye size={16} className="mr-1" />
                       View
                     </button>
-                    {request.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => handleApprove(request)}
-                          className="text-green-600 hover:text-green-900 inline-flex items-center"
-                          disabled={isProcessing('approved', request.applicationId)}
-                        >
-                          {isProcessing('approved', request.applicationId) ? (
-                            <>
-                              <Clock size={16} className="mr-1 animate-spin" />
-                              Approving...
-                            </>
-                          ) : (
-                            <>
-                              <Check size={16} className="mr-1" />
-                              Approve
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleReject(request)}
-                          className="text-red-600 hover:text-red-900 inline-flex items-center"
-                          disabled={isProcessing('rejected', request.applicationId)}
-                        >
-                           {isProcessing('rejected', request.applicationId) ? (
-                            <>
-                              <Clock size={16} className="mr-1 animate-spin" />
-                              Rejecting...
-                            </>
-                          ) : (
-                            <>
-                              <X size={16} className="mr-1" />
-                              Reject
-                            </>
-                          )}
-                        </button>
-                      </>
-                    )}
                     {request.status === 'approved' && request.certificateNumber && (
                       <button
                         onClick={() => handleDownloadCertificate(request)}
@@ -626,7 +761,10 @@ const LicenseRequestManagement = () => {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">License Request Details</h3>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false)
+                  setSelectedRequest(null)
+                }}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X size={24} />
@@ -715,12 +853,10 @@ const LicenseRequestManagement = () => {
             {selectedRequest.status === 'pending' && (
               <div className="flex space-x-3 mt-6">
                 <button
-                  onClick={() => {
-                    handleApprove(selectedRequest)
-                    setShowModal(false)
-                  }}
-                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                  disabled={isProcessing('approved', selectedRequest.applicationId)}
+                  onClick={() => handleApprove(selectedRequest, 'modal')}
+                  className={`flex-1 bg-green-600 text-white px-4 py-2 rounded-lg transition-colors ${!selectedDocumentsReady ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'}`}
+                  disabled={isProcessing('approved', selectedRequest.applicationId) || !selectedDocumentsReady}
+                  title={selectedDocumentsReady ? 'Approve license' : 'Review documents before approving'}
                 >
                   {isProcessing('approved', selectedRequest.applicationId) ? 'Approving...' : 'Approve License'}
                 </button>
@@ -735,6 +871,11 @@ const LicenseRequestManagement = () => {
                   {isProcessing('rejected', selectedRequest.applicationId) ? 'Rejecting...' : 'Reject License'}
                 </button>
               </div>
+            )}
+            {selectedRequest.status === 'pending' && !selectedDocumentsReady && (
+              <p className="text-xs text-red-600 mt-2">
+                Review both the payment receipt and business registration documents before approving this license.
+              </p>
             )}
           </div>
         </div>

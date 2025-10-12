@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 const db = require('../database');
 
 const adminLogin = async (req, res) => {
@@ -33,9 +34,9 @@ const adminLogin = async (req, res) => {
        
         const admin = rows[0];
         console.log('Found admin:', { id: admin.id, username: admin.username, email: admin.email });
-       
-        // Check password (plain text comparison for now)
-        if (admin.password !== password) {
+
+        const passwordMatches = await bcrypt.compare(password, admin.password);
+        if (!passwordMatches) {
             console.log('Password mismatch for email:', email);
             return res.status(401).json({
                 message: 'Login error',

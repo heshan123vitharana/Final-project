@@ -5,7 +5,7 @@ const pool = require('../config/database');
 const CertificateDataGenerator = require('../utils/certificateDataGenerator');
 const UnifiedCertificateGenerator = require('../utils/unifiedCertificateGenerator');
 
-// Endpoint to update license application status
+// Endpoint to update license application status (MySQL version)
 router.put('/applications/:applicationId/status', async (req, res) => {
     const { applicationId } = req.params;
     const { status, rejectionReason, certificateNumber, approvalComments } = req.body;
@@ -17,77 +17,60 @@ router.put('/applications/:applicationId/status', async (req, res) => {
     }
 
     try {
-        const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
+        let query;
+        let values;
+        const currentDate = new Date();
 
-            let query;
-            let values;
-            const currentDate = new Date();
-
-            if (status === 'approved') {
-                query = `
-                    UPDATE mill_license_applications
-                    SET 
-                        status = $1, 
-                        approved_date = $2, 
-                        license_number = $3,
-                        approval_comments = $4,
-                        updated_at = $2
-                    WHERE id = $5
-                    RETURNING *;
-                `;
-                values = [status, currentDate, certificateNumber, approvalComments, applicationId];
-            } else { // 'rejected'
-                query = `
-                    UPDATE mill_license_applications
-                    SET 
-                        status = $1, 
-                        rejected_date = $2, 
-                        rejection_reason = $3,
-                        updated_at = $2
-                    WHERE id = $4
-                    RETURNING *;
-                `;
-                values = [status, currentDate, rejectionReason, applicationId];
-            }
-
-            const result = await client.query(query, values);
-
-            if (result.rows.length === 0) {
-                await client.query('ROLLBACK');
-                return res.status(404).json({ message: 'Application not found.' });
-            }
-
-            await client.query('COMMIT');
-            
-            // Fetch the full application details to return
-            const fullApplicationQuery = `
-                SELECT mla.*, u.first_name, u.last_name, u.email, u.phone, up.business_name, up.business_type, up.address, up.city, up.district, up.mill_capacity
-                FROM mill_license_applications mla
-                JOIN users u ON mla.user_id = u.id
-                LEFT JOIN user_profiles up ON u.id = up.user_id
-                WHERE mla.id = $1;
+        if (status === 'approved') {
+            query = `
+                UPDATE mill_licenses
+                SET 
+                    status = ?, 
+                    approved_date = ?, 
+                    license_number = ?,
+                    approval_comments = ?,
+                    updated_at = NOW()
+                WHERE id = ?
             `;
-            const fullResult = await client.query(fullApplicationQuery, [applicationId]);
-
-            if (fullResult.rows.length === 0) {
-                // This should not happen if the update was successful, but as a safeguard
-                return res.status(404).json({ message: 'Updated application details could not be retrieved.' });
-            }
-
-            console.log(`Successfully updated application ${applicationId} to ${status}.`);
-            res.status(200).json(fullResult.rows[0]);
-
-        } catch (error) {
-            await client.query('ROLLBACK');
-            console.error(`Error during transaction for application ${applicationId}:`, error);
-            res.status(500).json({ message: 'Database error during status update.', error: error.message });
-        } finally {
-            client.release();
+            values = [status, currentDate, certificateNumber, approvalComments, applicationId];
+        } else { // 'rejected'
+            query = `
+                UPDATE mill_licenses
+                SET 
+                    status = ?, 
+                    rejected_date = ?, 
+                    rejection_reason = ?,
+                    updated_at = NOW()
+                WHERE id = ?
+            `;
+            values = [status, currentDate, rejectionReason, applicationId];
         }
+
+        const [result] = await pool.execute(query, values);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Application not found.' });
+        }
+
+        // Fetch the full application details to return
+        const fullApplicationQuery = `
+            SELECT ml.*, u.first_name, u.last_name, u.email, u.phone, 
+                   u.business_name, u.business_type, u.address, u.city, u.district, u.mill_capacity
+            FROM mill_licenses ml
+            JOIN users u ON ml.user_id = u.id
+            WHERE ml.id = ?
+        `;
+        const [fullResult] = await pool.execute(fullApplicationQuery, [applicationId]);
+
+        if (fullResult.length === 0) {
+            return res.status(404).json({ message: 'Updated application details could not be retrieved.' });
+        }
+
+        console.log(`Successfully updated application ${applicationId} to ${status}.`);
+        res.status(200).json(fullResult[0]);
+
     } catch (error) {
-        console.error(`Failed to connect to database for application ${applicationId}:`, error);
+        console.error(`Error updating application ${applicationId}:`, error);
         res.status(500).json({ message: 'Failed to connect to the database.', error: error.message });
     }
 });

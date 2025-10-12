@@ -89,8 +89,18 @@ const AdminLogin = ({ onBackToHome, onLogin }) => {
       
       if (response.ok) {
         handleLoginSuccess('Admin');
-        // Store admin data and navigate to dashboard
-        const adminData = { ...result.user, token: result.token };
+        // Support both legacy { user } and current { admin } payloads
+        const adminPayload = result.admin || result.user || {};
+        const adminData = {
+          ...adminPayload,
+          ...(result.token ? { token: result.token } : {})
+        };
+
+        if (Object.keys(adminData).length === 0) {
+          handleApiError(null, { error: 'Invalid admin payload from server' });
+          return;
+        }
+
         sessionStorage.setItem('adminData', JSON.stringify(adminData));
         if (onLogin) {
           onLogin(adminData);

@@ -102,6 +102,7 @@ console.log('✅ Stock routes registered');
 app.use('/api/profile', profileRoutes);
 console.log('✅ Profile routes registered');
 app.use('/api/license', licenseRoutes);
+app.use('/api/licenses', licenseRoutes); // backward compatibility for pluralized route usage
 console.log('✅ License routes registered');
 app.use('/api/completeness', completenessRoutes);
 console.log('✅ Completeness routes registered');
