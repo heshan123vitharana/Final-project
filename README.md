@@ -34,7 +34,7 @@ This project is built with modern and popular web technologies:
   * **Express.js:** A web framework for Node.js that simplifies creating APIs.
 
 * **Database (Where the data is stored):**
-  * **PostgreSQL:** A powerful and reliable open-source relational database.
+  * **MySQL:** A popular and reliable open-source relational database.
 
 ## Project Structure
 
@@ -68,7 +68,7 @@ To run this project on your local machine, follow these steps.
 Make sure you have the following software installed:
 
 * [Node.js](https://nodejs.org/) (which includes `npm`)
-* [PostgreSQL](https://www.postgresql.org/download/)
+* [MySQL](https://www.mysql.com/downloads/)
 
 ### Installation & Setup
 
@@ -93,18 +93,18 @@ Make sure you have the following software installed:
      npm install
      ```
 
-   * Create a `.env` file in the `backend` directory and add your PostgreSQL database connection details. It should look like this:
+   * Create a `.env` file in the `backend` directory and add your MySQL database connection details. It should look like this:
 
      ```env
-     DB_USER=your_postgres_username
+     DB_USER=your_mysql_username
      DB_HOST=localhost
      DB_DATABASE=your_database_name
-     DB_PASSWORD=your_postgres_password
-     DB_PORT=5432
+     DB_PASSWORD=your_mysql_password
+     DB_PORT=3306
      PORT=5000
      ```
 
-   * Set up your PostgreSQL database. You can use the `.sql` files in the `backend` directory to create the necessary tables and add sample data.
+   * Set up your MySQL database. You can use the `.sql` files in the `backend` directory to create the necessary tables and add sample data.
    * Start the backend server:
 
      ```bash
