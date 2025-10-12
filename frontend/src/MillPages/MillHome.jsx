@@ -13,6 +13,7 @@ import {
   FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { generatePermitCertificate } from '../utils/certificateGenerator';
 
 // Home page component for the Mill Dashboard
 const MillHome = ({ userData }) => {
@@ -251,77 +252,102 @@ const MillHome = ({ userData }) => {
     };
   };
 
-  // Download certificate function
-  const downloadCertificate = async (applicationId) => {
+  // View certificate function - Opens PDF in new window
+  const viewCertificate = async (license) => {
+    if (!license) {
+      toast.error('License data not available');
+      return;
+    }
+
+    if (!effectiveUserData) {
+      toast.error('User data not available. Please refresh the page.');
+      return;
+    }
+    
     try {
       setLoadingCertificate(true);
 
-      // Fetch certificate data from the unified endpoint
-      const response = await fetch(`http://localhost:5000/api/licenses/certificate/${applicationId}`);
+      const permitData = {
+        permitNo: license.license_number || 'N/A',
+        holderName: `${effectiveUserData?.first_name || ''} ${effectiveUserData?.last_name || ''}`.trim() || 'N/A',
+        holderAddress: `${effectiveUserData?.address || ''}, ${effectiveUserData?.city || ''}, ${effectiveUserData?.district || ''}`.trim() || 'N/A',
+        nic: effectiveUserData?.nic || 'N/A',
+        locationAddress: `${effectiveUserData?.address || ''}, ${effectiveUserData?.city || ''}, ${effectiveUserData?.district || ''}`.trim() || 'N/A',
+        storageCapacity: effectiveUserData?.mill_capacity || 'N/A',
+        fee: '1000.00',
+        validityStart: license.approved_date || new Date().toISOString(),
+        validityEnd: new Date(new Date(license.approved_date || new Date()).setFullYear(new Date(license.approved_date || new Date()).getFullYear() + 1)).toISOString(),
+        applicationDate: license.applied_date || license.created_at || new Date().toISOString(),
+        receiptNo: 'N/A',
+        receiptDate: license.applied_date || license.created_at || new Date().toISOString(),
+        issuedDate: license.approved_date || new Date().toISOString(),
+      };
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to retrieve certificate' }));
-        throw new Error(errorData.message || 'Failed to retrieve certificate');
+      const pdfBytes = await generatePermitCertificate(permitData);
+      
+      if (pdfBytes) {
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+        toast.success('Certificate opened in new tab');
+      } else {
+        toast.error('Failed to generate certificate');
       }
+    } catch (error) {
+      console.error('Error viewing certificate:', error);
+      toast.error(`Failed to view certificate: ${error.message}`);
+    } finally {
+      setLoadingCertificate(false);
+    }
+  };
 
-      const data = await response.json();
+  // Download certificate function - Now generates PDF like admin
+  const downloadCertificate = async (license) => {
+    if (!license) {
+      toast.error('License data not available');
+      return;
+    }
 
-      if (data.success && data.certificate) {
-        const certificate = data.certificate;
+    if (!effectiveUserData) {
+      toast.error('User data not available. Please refresh the page.');
+      return;
+    }
+    
+    try {
+      setLoadingCertificate(true);
 
-        // Generate formatted certificate content using server data
-        const certificateContent = `
-GOVERNMENT OF SRI LANKA
-PADDY MARKETING BOARD
+      const permitData = {
+        permitNo: license.license_number || 'N/A',
+        holderName: `${effectiveUserData?.first_name || ''} ${effectiveUserData?.last_name || ''}`.trim() || 'N/A',
+        holderAddress: `${effectiveUserData?.address || ''}, ${effectiveUserData?.city || ''}, ${effectiveUserData?.district || ''}`.trim() || 'N/A',
+        nic: effectiveUserData?.nic || 'N/A',
+        locationAddress: `${effectiveUserData?.address || ''}, ${effectiveUserData?.city || ''}, ${effectiveUserData?.district || ''}`.trim() || 'N/A',
+        storageCapacity: effectiveUserData?.mill_capacity || 'N/A',
+        fee: '1000.00',
+        validityStart: license.approved_date || new Date().toISOString(),
+        validityEnd: new Date(new Date(license.approved_date || new Date()).setFullYear(new Date(license.approved_date || new Date()).getFullYear() + 1)).toISOString(),
+        applicationDate: license.applied_date || license.created_at || new Date().toISOString(),
+        receiptNo: 'N/A',
+        receiptDate: license.applied_date || license.created_at || new Date().toISOString(),
+        issuedDate: license.approved_date || new Date().toISOString(),
+      };
 
-LICENSE TO OPERATE RICE MILL
-
-License issued under Section 10 of the Paddy Marketing Board Act No. 14 of 1971
-
-License Number: ${certificate.licenseNumber}
-
-1. Name of the License Holder: ${certificate.holderName}
-2. Address of the License Holder: ${certificate.holderAddress}
-3. Name of the Business and Business Location: ${certificate.businessName}, ${certificate.businessLocation}
-4. Capacity of the Milling Machine/Mill: ${certificate.millCapacity}
-5. Validity Period of the License:
-   (a) Commencement Date: ${certificate.commencementDate}
-   (b) Expiry Date: ${certificate.expiryDate}
-
-This license is issued to the above-mentioned license holder by the Paddy Marketing Board to operate a business of milling, parboiling, or processing rice at the aforementioned business location, following the consideration of the application submitted by the license holder. This license is subject to the specific conditions stipulated herein.
-
-CONDITIONS:
-1. This license is non-transferable and must be displayed prominently at the business premises.
-2. The license holder must comply with all regulations under the Paddy Marketing Board Act.
-3. Regular inspections may be conducted by authorized officers of the PMB.
-4. Any changes to the business location or capacity must be reported immediately.
-5. This license must be renewed annually before the expiry date.
-
-Issued by the Paddy Marketing Board.
-
-Date: ${certificate.issueDate}
-Place: ${certificate.issuedAt}
-Address: ${certificate.officeAddress}
-
-${certificate.issuingOfficer}
-Issuing Officer
-PMB
-
-This is an official government document. Any unauthorized reproduction is strictly prohibited.
-`;
-
-        // Download as text file (for now - can be enhanced to download PDF)
-        const blob = new Blob([certificateContent], { type: 'text/plain' });
+      const pdfBytes = await generatePermitCertificate(permitData);
+      
+      if (pdfBytes) {
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `PMB_License_Certificate_${certificate.holderName.replace(/\s+/g, '_')}.txt`;
+        link.download = `PMB_License_Certificate_${license.license_number}.pdf`;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-
         toast.success('Certificate downloaded successfully!');
       } else {
-        toast.error(data.message || 'Certificate not available');
+        toast.error('Failed to generate certificate');
       }
     } catch (error) {
       console.error('Error downloading certificate:', error);
@@ -416,11 +442,12 @@ This is an official government document. Any unauthorized reproduction is strict
           </h2>
           {licenseData && licenseData.status === 'approved' && (
             <button
-              onClick={() => setShowCertificateModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              onClick={() => viewCertificate(licenseData)}
+              disabled={loadingCertificate}
+              className={`inline-flex items-center px-4 py-2 ${loadingCertificate ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg transition-colors`}
             >
               <FileText className="mr-2" size={16} />
-              View Certificate
+              {loadingCertificate ? 'Loading...' : 'View Certificate'}
             </button>
           )}
         </div>
@@ -763,7 +790,7 @@ This is an official government document. Any unauthorized reproduction is strict
             {/* Action Buttons */}
             <div className="flex space-x-4 mt-6">
               <button
-                onClick={() => downloadCertificate(licenseData.id)}
+                onClick={() => downloadCertificate(licenseData)}
                 disabled={loadingCertificate}
                 className={`flex-1 ${loadingCertificate ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white px-4 py-3 rounded-lg transition-colors flex items-center justify-center`}
               >

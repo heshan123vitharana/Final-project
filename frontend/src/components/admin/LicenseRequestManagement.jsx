@@ -711,7 +711,9 @@ const LicenseRequestManagement = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {request.certificateNumber ? (
-                      <span className="font-mono text-green-600">{request.certificateNumber}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-mono text-green-700 font-semibold bg-green-50 px-2 py-1 rounded border border-green-200">{request.certificateNumber}</span>
+                      </div>
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
@@ -723,15 +725,20 @@ const LicenseRequestManagement = () => {
                         setShowModal(true)
                       }}
                       className="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                      title={request.status === 'approved' && request.certificateNumber ? 'View details and certificate' : 'View details'}
                     >
                       <Eye size={16} className="mr-1" />
-                      View
+                      {request.status === 'approved' && request.certificateNumber ? 'View & Certificate' : 'View'}
                     </button>
                     {request.status === 'approved' && request.certificateNumber && (
                       <button
-                        onClick={() => handleDownloadCertificate(request)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadCertificate(request);
+                        }}
                         disabled={processingAction === request.id}
-                        className="text-purple-600 hover:text-purple-900 inline-flex items-center disabled:opacity-50 disabled:cursor-wait"
+                        className="text-green-600 hover:text-green-900 inline-flex items-center disabled:opacity-50 disabled:cursor-wait"
+                        title="Download certificate PDF"
                       >
                         {processingAction === request.id ? (
                           <>
@@ -741,7 +748,7 @@ const LicenseRequestManagement = () => {
                         ) : (
                           <>
                             <Download size={16} className="mr-1" />
-                            Download Certificate
+                            Download
                           </>
                         )}
                       </button>
@@ -759,7 +766,15 @@ const LicenseRequestManagement = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">License Request Details</h3>
+              <div className="flex items-center space-x-3">
+                <h3 className="text-lg font-semibold">License Request Details</h3>
+                {selectedRequest.status === 'approved' && selectedRequest.certificateNumber && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <Check size={12} className="mr-1" />
+                    Certificate Available
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => {
                   setShowModal(false)
@@ -846,6 +861,59 @@ const LicenseRequestManagement = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Rejection Reason</label>
                   <p className="text-sm text-red-600">{selectedRequest.rejectionReason}</p>
+                </div>
+              )}
+
+              {selectedRequest.status === 'approved' && selectedRequest.certificateNumber && (
+                <div className="border-t border-green-200 pt-4 mt-4">
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg p-5 shadow-sm">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-shrink-0 w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                          <Check className="text-white" size={24} />
+                        </div>
+                        <div>
+                          <p className="text-base font-semibold text-green-800">License Certificate</p>
+                          <p className="text-xs text-green-600">Official PMB License Document</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDownloadCertificate(selectedRequest)}
+                        disabled={processingAction === selectedRequest.id}
+                        className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-wait shadow-sm"
+                      >
+                        {processingAction === selectedRequest.id ? (
+                          <>
+                            <Clock size={16} className="mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Download size={16} className="mr-2" />
+                            Download PDF
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="border-t border-green-200 pt-3 mt-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-gray-600">Certificate Number:</span>
+                        <span className="text-sm font-mono font-semibold text-green-700 bg-white px-3 py-1 rounded border border-green-200">{selectedRequest.certificateNumber}</span>
+                      </div>
+                      {selectedRequest.approvedDate && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-600">Approved Date:</span>
+                          <span className="text-sm text-green-700">{new Date(selectedRequest.approvedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        </div>
+                      )}
+                      {selectedRequest.approvalComments && (
+                        <div className="mt-3 pt-3 border-t border-green-200">
+                          <p className="text-xs font-medium text-gray-600 mb-1">Admin Comments:</p>
+                          <p className="text-sm text-gray-700 italic">{selectedRequest.approvalComments}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

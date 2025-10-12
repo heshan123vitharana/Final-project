@@ -447,17 +447,6 @@ const MillRegistration = () => {
     }
   };
 
-  // View and download certificate handlers
-  const handleViewCertificate = () => { window.open('/certificates/sample-certificate.pdf', '_blank'); };
-  const handleDownloadCertificate = () => {
-    const link = document.createElement('a');
-    link.href = '/certificates/sample-certificate.pdf';
-    link.download = 'Licence_Certificate.pdf';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   // Filter licence history based on status and date range
   const filteredHistory = history.filter(item => {
     const matchStatus = statusFilter ? item.status === statusFilter : true;
@@ -552,24 +541,6 @@ const MillRegistration = () => {
                 {currentLicense.approval_comments && (
                   <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                     <p><strong>Admin Comments:</strong> {currentLicense.approval_comments}</p>
-                  </div>
-                )}
-
-                {/* Certificate buttons only for approved licenses */}
-                {currentLicense.status === 'approved' && (
-                  <div className="mt-4 flex space-x-4">
-                    <button
-                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                      onClick={handleViewCertificate}
-                    >
-                      View Certificate
-                    </button>
-                    <button
-                      className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                      onClick={handleDownloadCertificate}
-                    >
-                      Download Certificate
-                    </button>
                   </div>
                 )}
               </>
