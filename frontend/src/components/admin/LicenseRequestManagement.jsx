@@ -11,7 +11,11 @@ import {
   RefreshCcw
 } from 'lucide-react'
 import { generatePermitCertificate } from '../../utils/certificateGenerator';
-const API_BASE_URL = 'http://localhost:5000/api/license';
+import { 
+  fetchLicenseApplications, 
+  updateLicenseStatus as apiUpdateLicenseStatus, 
+  fetchDocument 
+} from '../../api/licenseApi';
 
 const mapApplicationToRequest = (application) => {
   const ownerName = [application.first_name, application.last_name]
@@ -198,20 +202,7 @@ const LicenseRequestManagement = () => {
   const updateLicenseStatus = useCallback(async (applicationId, status, details) => {
     startProcessing(status, applicationId);
     try {
-      const response = await fetch(`${API_BASE_URL}/applications/${applicationId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status, ...details }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to update status to ${status}`);
-      }
-
-      const updatedApplication = await response.json();
+      const updatedApplication = await apiUpdateLicenseStatus(applicationId, status, details);
       return mapApplicationToRequest(updatedApplication);
     } finally {
       stopProcessing();
@@ -223,18 +214,7 @@ const LicenseRequestManagement = () => {
     setError(null)
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/admin/applications`,
-        signal ? { signal } : undefined
-      )
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Failed to load license applications')
-      }
-
-      const data = await response.json()
-      const applications = Array.isArray(data.applications) ? data.applications : []
+      const applications = await fetchLicenseApplications(signal);
       const mapped = applications.map(mapApplicationToRequest)
       setLicenseRequests(mapped)
     } catch (err) {
@@ -262,20 +242,7 @@ const LicenseRequestManagement = () => {
     }))
 
     try {
-      const response = await fetch(`${API_BASE_URL}/document/${request.applicationId}/${documentType}`)
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || 'Failed to load document')
-      }
-
-      const result = await response.json()
-      let docData = typeof result.documentData === 'string' ? result.documentData.trim() : null
-
-      if (docData && !docData.startsWith('data:')) {
-        const looksPdf = docData.startsWith('JVBER') || docData.includes('JVBER')
-        const prefix = looksPdf ? 'data:application/pdf;base64,' : 'data:image/jpeg;base64,'
-        docData = `${prefix}${docData}`
-      }
+      const docData = await fetchDocument(request.applicationId, documentType);
 
       setDocuments(prev => ({
         ...prev,
