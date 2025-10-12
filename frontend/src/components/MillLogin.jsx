@@ -83,8 +83,8 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h5a3 3 0 013 3v1"></path></svg>
                   </div>
                   <div>
-                    <h1 className="text-base font-bold text-gray-900 tracking-tight">Unified Login</h1>
-                    <p className="text-xs text-gray-500 font-medium">Admin & Mill Access</p>
+                    <h1 className="text-base font-bold text-gray-900 tracking-tight">Mill Services Portal</h1>
+                    <p className="text-xs text-gray-500 font-medium">Secure access for registered partners</p>
                   </div>
                 </div>
 
@@ -92,18 +92,18 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
                 <button
                   type="button"
                   onClick={onExit}
-                  className="text-gray-500 hover:text-green-600 transition-colors flex items-center space-x-1.5 text-sm font-medium bg-gray-50 hover:bg-green-50 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-green-200"
+                  className="flex items-center space-x-1.5 text-sm font-semibold text-emerald-700 bg-emerald-50/90 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-300 px-3.5 py-1.5 rounded-lg shadow-sm transition-all duration-200"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                   </svg>
-                  <span className="font-semibold tracking-wide">Back to Home</span>
+                  <span className="tracking-wide">Home</span>
                 </button>
               </div>
 
               <h2 className="text-xl font-bold text-gray-900 mb-1 tracking-tight">Welcome Back</h2>
               <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                Sign in to access your dashboard.
+                Sign in to continue to your mill dashboard.
               </p>
             </div>
 
