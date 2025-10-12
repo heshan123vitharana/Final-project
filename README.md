@@ -141,6 +141,3 @@ Make sure you have the following software installed:
 * **Admin Dashboard:** If you log in as an admin, you will see the dashboard where you can manage license requests and other system settings.
 * **Apply for a License:** If you log in as a mill owner, you can fill out and submit a license application form.
 
----
-
-This `README.md` provides a clear and simple guide to your project. If you'd like any sections expanded or modified, just let me know!
