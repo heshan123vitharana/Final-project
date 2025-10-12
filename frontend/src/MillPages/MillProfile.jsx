@@ -160,7 +160,8 @@ const MillProfile = ({ userData }) => {
           businessType: currentUserData.business_type || "private",
           millCapacity: currentUserData.mill_capacity || "",
           millLocation: currentUserData.mill_location || "",
-          millDistrict: currentUserData.mill_district || "",
+          // Always map millDistrict from mill_district (snake_case) in backend
+          millDistrict: currentUserData.mill_district || currentUserData.millDistrict || "",
           registrationDate: currentUserData.registration_date ?
             new Date(currentUserData.registration_date).toISOString().split('T')[0] :
             (currentUserData.created_at ? new Date(currentUserData.created_at).toISOString().split('T')[0] : ""),

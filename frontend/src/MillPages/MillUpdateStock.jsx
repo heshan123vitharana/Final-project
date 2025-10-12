@@ -107,19 +107,37 @@ const MillUpdateStock = ({ userData }) => {
     }
   };
 
-  // Set page title and load user data on mount
+
+  // Fetch latest user profile from backend and update session storage and state
   useEffect(() => {
     document.title = "Dashboard | Update Stock";
 
-    // Get current user data with comprehensive logging
-    const user = getCurrentUserData();
-    setCurrentUser(user);
-
-    // Fetch initial prices for user's mill district
-    if (user?.mill_district) {
-      fetchPrices(user.mill_district);
-    }
-  }, [userData, getCurrentUserData]);
+    const fetchAndSetUser = async () => {
+      let user = getCurrentUserData();
+      try {
+        const userId = user?.id || effectiveUserData?.id || userData?.id;
+        if (userId) {
+          const res = await fetch(`http://localhost:5000/api/licenses/profile-check/${userId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.id) {
+              // Update session storage and state
+              sessionStorage.setItem('millOwnerData', JSON.stringify(data));
+              user = data;
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch latest user profile:', err);
+      }
+      setCurrentUser(user);
+      // Fetch initial prices for user's mill district
+      if (user?.mill_district) {
+        fetchPrices(user.mill_district);
+      }
+    };
+    fetchAndSetUser();
+  }, [userData, getCurrentUserData, effectiveUserData]);
 
   // Handle form field changes
   const handleChange = (e) => {
