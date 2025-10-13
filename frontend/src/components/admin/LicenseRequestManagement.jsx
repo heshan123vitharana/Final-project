@@ -51,6 +51,7 @@ const mapApplicationToRequest = (application) => {
     type: application.business_type || 'N/A',
     raw: application
   };
+
 };
 
 const createEmptyDocument = () => ({
@@ -267,6 +268,22 @@ const LicenseRequestManagement = () => {
 
   const resetDocuments = useCallback(() => setDocuments(() => createDocumentState()), [])
 
+  const buildPermitData = useCallback((request) => ({
+    permitNo: request.certificateNumber,
+    holderName: request.ownerName,
+    holderAddress: request.location,
+    nic: 'N/A',
+    locationAddress: request.location,
+    storageCapacity: request.capacity,
+    fee: '1000.00',
+    validityStart: request.approvedDate,
+    validityEnd: new Date(new Date(request.approvedDate).setFullYear(new Date(request.approvedDate).getFullYear() + 1)).toISOString(),
+    applicationDate: request.submitDate,
+    receiptNo: 'N/A',
+    receiptDate: request.submitDate,
+    issuedDate: new Date().toISOString(),
+  }), [])
+
   const selectedDocumentsReady = useMemo(() => {
     if (!selectedRequest) {
       return false
@@ -429,50 +446,54 @@ const LicenseRequestManagement = () => {
     })
   }, [selectedRequest, selectedDocumentsReady])
 
-  const handleDownloadCertificate = async (request) => {
-    setProcessingAction(request.id);
+  const handleDownloadCertificate = useCallback(async (request) => {
+    startProcessing('download', request.id)
     try {
-      // Prepare data for the new certificate generator
-      const permitData = {
-        permitNo: request.certificateNumber,
-        holderName: request.ownerName,
-        holderAddress: request.location,
-        nic: 'N/A', // This data is not in the mock object
-        locationAddress: request.location,
-        storageCapacity: request.capacity,
-        fee: '1000.00', // Example fee
-        validityStart: request.approvedDate,
-        validityEnd: new Date(new Date(request.approvedDate).setFullYear(new Date(request.approvedDate).getFullYear() + 1)).toISOString(),
-        applicationDate: request.submitDate,
-        receiptNo: 'N/A', // This data is not in the mock object
-        receiptDate: request.submitDate,
-        issuedDate: new Date().toISOString(),
-      };
-
-      // Generate the PDF using the new utility function
-      const pdfBytes = await generatePermitCertificate(permitData);
+      const permitData = buildPermitData(request)
+      const pdfBytes = await generatePermitCertificate(permitData)
 
       if (pdfBytes) {
-        // Create a blob and trigger the download
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Permit_Certificate_${request.id}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `Permit_Certificate_${request.id}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
       } else {
-        throw new Error('PDF generation failed.');
+        throw new Error('PDF generation failed.')
       }
     } catch (err) {
-      console.error("Error generating or downloading certificate:", err);
-      alert('Could not download the certificate. Please try again.');
+      console.error('Error generating or downloading certificate:', err)
+      alert('Could not download the certificate. Please try again.')
     } finally {
-      setProcessingAction(null);
+      stopProcessing()
     }
-  };
+  }, [buildPermitData, startProcessing, stopProcessing])
+
+  const handleViewCertificate = useCallback(async (request) => {
+    startProcessing('view', request.id)
+    try {
+      const permitData = buildPermitData(request)
+      const pdfBytes = await generatePermitCertificate(permitData)
+
+      if (pdfBytes) {
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+        const url = window.URL.createObjectURL(blob)
+        window.open(url, '_blank')
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000)
+      } else {
+        throw new Error('PDF generation failed.')
+      }
+    } catch (err) {
+      console.error('Error generating or viewing certificate:', err)
+      alert('Could not open the certificate. Please try again.')
+    } finally {
+      stopProcessing()
+    }
+  }, [buildPermitData, startProcessing, stopProcessing])
 
   const filteredRequests = useMemo(() => {
     return licenseRequests.filter(request => {
@@ -702,7 +723,7 @@ const LicenseRequestManagement = () => {
                       <span className="text-gray-400">-</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium space-x-2 truncate">
+                  <td className="px-4 py-3 text-sm font-medium space-x-2">
                     <button
                       onClick={() => {
                         setSelectedRequest(request)
@@ -712,19 +733,21 @@ const LicenseRequestManagement = () => {
                       title={request.status === 'approved' && request.certificateNumber ? 'View details and certificate' : 'View details'}
                     >
                       <Eye size={16} className="mr-1" />
-                      {request.status === 'approved' && request.certificateNumber ? 'View & Certificate' : 'View'}
+                      <span className="whitespace-nowrap">
+                        {request.status === 'approved' && request.certificateNumber ? 'View & Certificate' : 'View'}
+                      </span>
                     </button>
                     {request.status === 'approved' && request.certificateNumber && (
                       <button
                         onClick={(e) => {
-                          e.stopPropagation();
-                          handleDownloadCertificate(request);
+                          e.stopPropagation()
+                          handleDownloadCertificate(request)
                         }}
-                        disabled={processingAction === request.id}
+                        disabled={isProcessing('download', request.id)}
                         className="text-green-600 hover:text-green-900 inline-flex items-center disabled:opacity-50 disabled:cursor-wait"
                         title="Download certificate PDF"
                       >
-                        {processingAction === request.id ? (
+                        {isProcessing('download', request.id) ? (
                           <>
                             <Clock size={16} className="mr-1 animate-spin" />
                             Generating...
@@ -861,19 +884,19 @@ const LicenseRequestManagement = () => {
                         </div>
                       </div>
                       <button
-                        onClick={() => handleDownloadCertificate(selectedRequest)}
-                        disabled={processingAction === selectedRequest.id}
-                        className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-wait shadow-sm"
+                        onClick={() => handleViewCertificate(selectedRequest)}
+                        disabled={isProcessing('view', selectedRequest.id)}
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-wait shadow-sm"
                       >
-                        {processingAction === selectedRequest.id ? (
+                        {isProcessing('view', selectedRequest.id) ? (
                           <>
                             <Clock size={16} className="mr-2 animate-spin" />
-                            Generating...
+                            Opening...
                           </>
                         ) : (
                           <>
-                            <Download size={16} className="mr-2" />
-                            Download PDF
+                            <Eye size={16} className="mr-2" />
+                            View Certificate
                           </>
                         )}
                       </button>
