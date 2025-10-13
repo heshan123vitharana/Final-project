@@ -813,13 +813,12 @@ const LicenseRequestManagement = () => {
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="flex flex-col min-w-0">
                   <label className="block text-sm font-medium text-gray-700">Location</label>
-                  <p className="text-sm text-gray-900">{selectedRequest.location}</p>
+                  <p className="text-xs text-gray-900 whitespace-pre-line break-words" style={{minWidth:'180px',maxWidth:'100%',wordBreak:'break-word'}}>{selectedRequest.location}</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Type</label>
-                  <p className="text-sm text-gray-900">{selectedRequest.type}</p>
+                <div className="flex flex-col min-w-[120px] justify-center">
+                  <span className="block text-sm font-medium text-gray-700">Type: <span className="font-normal text-gray-800">{selectedRequest.type}</span></span>
                 </div>
               </div>
               

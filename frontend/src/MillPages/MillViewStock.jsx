@@ -263,15 +263,15 @@ const MillViewStock = ({ userData }) => {
               <table className="w-full">
                 <thead className="bg-green-100">
                   <tr>
-                    <th className="px-4 py-3 text-left text-green-700 font-semibold">Date</th>
-                    <th className="px-4 py-3 text-left text-green-700 font-semibold">Farmer</th>
-                    <th className="px-4 py-3 text-left text-green-700 font-semibold">Type</th>
-                    <th className="px-4 py-3 text-left text-green-700 font-semibold">Condition</th>
-                    <th className="px-4 py-3 text-left text-green-700 font-semibold">Region</th>
-                    <th className="px-4 py-3 text-left text-green-700 font-semibold">Quantity</th>
-                    <th className="px-4 py-3 text-left text-green-700 font-semibold">Price/kg</th>
-                    <th className="px-4 py-3 text-left text-green-700 font-semibold">Total</th>
-                    <th className="px-4 py-3 text-left text-green-700 font-semibold">Actions</th>
+                    <th className="px-4 py-3 text-left text-green-700 font-semibold min-w-[100px]">Date</th>
+                    <th className="px-4 py-3 text-left text-green-700 font-semibold min-w-[120px]">Farmer</th>
+                    <th className="px-6 py-3 text-left text-green-700 font-semibold min-w-[120px]">Type</th>
+                    <th className="px-4 py-3 text-left text-green-700 font-semibold min-w-[110px]">Condition</th>
+                    <th className="px-6 py-3 text-left text-green-700 font-semibold min-w-[200px]">Location</th>
+                    <th className="px-4 py-3 text-left text-green-700 font-semibold min-w-[90px]">Quantity</th>
+                    <th className="px-4 py-3 text-left text-green-700 font-semibold min-w-[90px]">Price/kg</th>
+                    <th className="px-4 py-3 text-left text-green-700 font-semibold min-w-[90px]">Total</th>
+                    <th className="px-4 py-3 text-left text-green-700 font-semibold min-w-[90px]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -284,7 +284,7 @@ const MillViewStock = ({ userData }) => {
                           <div className="text-sm text-gray-500">ID: {entry.farmer_id}</div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">{entry.paddy_type}</td>
+                      <td className="px-6 py-3">{entry.paddy_type}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 text-xs rounded ${
                           entry.paddy_condition === 'Wet' 
@@ -294,7 +294,7 @@ const MillViewStock = ({ userData }) => {
                           {entry.paddy_condition}
                         </span>
                       </td>
-                      <td className="px-4 py-3">{entry.region}</td>
+                      <td className="px-6 py-3">{entry.region}</td>
                       <td className="px-4 py-3">{entry.quantity} kg</td>
                       <td className="px-4 py-3">LKR {parseFloat(entry.price_per_kg).toFixed(2)}</td>
                       <td className="px-4 py-3 font-semibold">LKR {parseFloat(entry.total_amount).toFixed(2)}</td>
