@@ -1,5 +1,6 @@
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
+import { showSuccessToast, showInfoToast } from '../utils/validation';
 
 // Initial notifications (replace with API data if needed)
 const initialNotifications = [
@@ -19,10 +20,14 @@ const MillNotifications = () => {
   // Remove a single notification by id
   const dismissNotification = (id) => {
     setNotifications((prev) => prev.filter((note) => note.id !== id));
+    showInfoToast('Notification dismissed');
   };
 
   // Clear all notifications
-  const clearAll = () => setNotifications([]);
+  const clearAll = () => {
+    setNotifications([]);
+    showSuccessToast('All notifications cleared');
+  };
 
   return (
     <div className="p-6 bg-green-50 min-h-screen">

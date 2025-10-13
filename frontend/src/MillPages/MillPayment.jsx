@@ -6,13 +6,8 @@ import autoTable from "jspdf-autotable";
 const MillPayment = () => {
   // State for date filter input
   const [dateFilter, setDateFilter] = useState("");
-
-  // Dummy payment data (replace with API data if needed)
-  const dummyPayments = [
-    { id: "PMT001", farmerId: "F001", accountNo: "1234567890", amount: 50000, date: "2025-08-06", status: "Verified" },
-    { id: "PMT002", farmerId: "F002", accountNo: "9876543210", amount: 30000, date: "2025-08-05", status: "Verified" },
-    { id: "PMT003", farmerId: "F003", accountNo: "1122334455", amount: 20000, date: "2025-08-04", status: "Verified" },
-  ];
+  // TODO: Replace with real payment data from API or props
+  const dummyPayments = [];
 
   // Set page title on mount
   useEffect(() => {

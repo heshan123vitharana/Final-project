@@ -162,12 +162,16 @@ const MillSidebar = ({ onBackToHome }) => {
               <span className={`ml-3 drop-shadow-lg ${isCollapsed ? 'hidden' : 'block'}`}>
                 {label}
               </span>
-              {/* Tooltip for collapsed sidebar */}
-              {isCollapsed && (
-                <span className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-2 text-sm bg-gray-900 text-white rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 whitespace-nowrap border border-gray-700 backdrop-blur-sm">
-                  {label}
-                </span>
-              )}
+              {/* Enhanced tooltip: always show on hover, better style */}
+              <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-2 text-xs bg-gray-900 text-white rounded shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 z-20 whitespace-nowrap border border-gray-700 backdrop-blur-sm"
+                style={{
+                  minWidth: '90px',
+                  display: isCollapsed ? 'block' : 'block',
+                  visibility: isCollapsed || !isCollapsed ? 'visible' : 'hidden'
+                }}
+              >
+                {label}
+              </span>
             </button>
           ))}
         </nav>
