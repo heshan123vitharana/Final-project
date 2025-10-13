@@ -1,4 +1,5 @@
 import { useState, useEffect, memo } from 'react';
+import ReactDOM from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   HomeIcon,
@@ -101,8 +102,30 @@ const MillSidebar = ({ onBackToHome }) => {
     { to: 'profile', icon: <UserCircleIcon className="h-5 w-5" />, label: 'Profile' },
   ];
 
+  // Tooltip state for portal
+  const [tooltip, setTooltip] = useState(null);
+
+  // Render tooltip in portal
+  const tooltipPortal = tooltip && ReactDOM.createPortal(
+    <span
+      className="pointer-events-none fixed px-3 py-2 text-xs bg-gray-900 text-white rounded-lg drop-shadow-2xl z-[9999] whitespace-nowrap border border-gray-700 backdrop-blur-sm"
+      style={{
+        top: tooltip.top,
+        left: tooltip.left,
+        minWidth: '90px',
+        transform: 'translateY(-50%)',
+        transition: 'opacity 0.2s',
+        opacity: 1
+      }}
+    >
+      {tooltip.label}
+    </span>,
+    document.body
+  );
+
   return (
-    // Sidebar container with responsive width and rainbow nature background
+    <>
+    {/* Sidebar container with responsive width and rainbow nature background */}
     <aside
       className={`text-white transition-all duration-300 ease-in-out
         ${isCollapsed ? 'w-20' : 'w-64'} flex flex-col h-full shadow-2xl relative`}
@@ -147,6 +170,19 @@ const MillSidebar = ({ onBackToHome }) => {
           {navItems.map(({ to, icon, label }) => (
             <button
               key={to}
+              onMouseEnter={e => {
+                if (isCollapsed) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setTooltip({
+                    label,
+                    top: rect.top + rect.height / 2,
+                    left: rect.right + 12,
+                  });
+                }
+              }}
+              onMouseLeave={() => {
+                if (isCollapsed) setTooltip(null);
+              }}
               onClick={(e) => {
                 e.preventDefault();
                 const targetPath = `/mill/${to}`;
@@ -158,18 +194,10 @@ const MillSidebar = ({ onBackToHome }) => {
                 borderRight: location.pathname === `/mill/${to}` ? '4px solid #facc15' : 'none'
               }}
             >
-              <div className="drop-shadow-lg">{icon}</div>
+              <div className="drop-shadow-lg relative group/icon">
+                {icon}
+              </div>
               <span className={`ml-3 drop-shadow-lg ${isCollapsed ? 'hidden' : 'block'}`}>
-                {label}
-              </span>
-              {/* Enhanced tooltip: always show on hover, better style */}
-              <span className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-2 text-xs bg-gray-900 text-white rounded shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 z-20 whitespace-nowrap border border-gray-700 backdrop-blur-sm"
-                style={{
-                  minWidth: '90px',
-                  display: isCollapsed ? 'block' : 'block',
-                  visibility: isCollapsed || !isCollapsed ? 'visible' : 'hidden'
-                }}
-              >
                 {label}
               </span>
             </button>
@@ -240,7 +268,9 @@ const MillSidebar = ({ onBackToHome }) => {
           </button>
         </div>
       </div>
-    </aside>
+  </aside>
+  {tooltipPortal}
+  </>
   );
 };
 
