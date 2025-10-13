@@ -1,4 +1,18 @@
+
 import { useState, useEffect, useMemo, useCallback } from "react";
+
+// Sri Lankan Districts (copied from MillProfile.jsx)
+const sriLankanDistricts = [
+  'Colombo', 'Gampaha', 'Kalutara',
+  'Kandy', 'Matale', 'Nuwara Eliya',
+  'Galle', 'Matara', 'Hambantota',
+  'Jaffna', 'Kilinochchi', 'Mannar', 'Mullaitivu', 'Vavuniya',
+  'Ampara', 'Batticaloa', 'Trincomalee',
+  'Kurunegala', 'Puttalam',
+  'Anuradhapura', 'Polonnaruwa',
+  'Badulla', 'Monaragala',
+  'Ratnapura', 'Kegalle'
+];
 
 // Dropdown options for paddy types and states
 const paddyTypes = ["Nadu - White", "Nadu - Red", "Samba", "Kiri Samba"];
@@ -28,6 +42,7 @@ const MillUpdateStock = ({ userData }) => {
     quantity: "",
     paddy_type: "",
     paddy_condition: "",
+    mill_district: "", // User-selected mill district
     entry_date: new Date().toISOString().split("T")[0],
     notes: "",
     price_per_kg: "", // Add price field to form data
@@ -131,12 +146,14 @@ const MillUpdateStock = ({ userData }) => {
         console.error('Failed to fetch latest user profile:', err);
       }
       setCurrentUser(user);
-      // Fetch initial prices for user's mill district
-      if (user?.mill_district) {
-        fetchPrices(user.mill_district);
+      // Fetch initial prices for selected or user's mill district
+      const initialDistrict = formData.mill_district || user?.mill_district;
+      if (initialDistrict) {
+        fetchPrices(initialDistrict);
       }
     };
     fetchAndSetUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData, getCurrentUserData, effectiveUserData]);
 
   // Handle form field changes
@@ -171,25 +188,21 @@ const MillUpdateStock = ({ userData }) => {
     }
   };
 
-  // Re-fetch prices when paddy type or condition changes
+  // Re-fetch prices when paddy type, condition, or mill district changes
   useEffect(() => {
-    if (currentUser?.mill_district && (formData.paddy_type || formData.paddy_condition)) {
-      // Refetching prices for current user mill district and form data
-
-      // Create mapping for variety names
+    const selectedDistrict = formData.mill_district || currentUser?.mill_district;
+    if (selectedDistrict && (formData.paddy_type || formData.paddy_condition)) {
+      // Refetching prices for selected mill district and form data
       const varietyMapping = {
         'Nadu - White': 'Nadu',
         'Nadu - Red': 'Red Nadu',
         'Samba': 'Samba',
         'Kiri Samba': 'Keeri Samba'
       };
-
       const mappedVariety = varietyMapping[formData.paddy_type] || formData.paddy_type;
-      fetchPrices(currentUser.mill_district, mappedVariety, formData.paddy_condition);
-    } else if (!currentUser?.mill_district) {
-      // Cannot fetch prices - no mill district available
+      fetchPrices(selectedDistrict, mappedVariety, formData.paddy_condition);
     }
-  }, [formData.paddy_type, formData.paddy_condition, currentUser?.mill_district]);
+  }, [formData.paddy_type, formData.paddy_condition, formData.mill_district, currentUser?.mill_district]);
 
   // Calculate total amount
   const totalAmount =
@@ -401,25 +414,24 @@ const MillUpdateStock = ({ userData }) => {
           />
         </div>
 
-        {/* User's Mill District (Display Only) */}
+        {/* Mill District Dropdown */}
         <div>
-          <label className="block text-sm font-semibold mb-1 text-green-800">Your Mill District</label>
-          <div className="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-            <span className="font-medium">
-              {currentUser?.mill_district || userData?.mill_district || 'Mill District not available'}
-            </span>
-            <span className="text-sm text-gray-500 ml-2">
-              {currentUser?.mill_district || userData?.mill_district ?
-                '(Paddy prices are based on your mill district)' :
-                '(Please update your profile with mill district information)'
-              }
-            </span>
-          </div>
-          {!currentUser?.mill_district && !userData?.mill_district && (
-            <p className="text-xs text-red-600 mt-1">
-              ⚠️ Mill District information is required for accurate price calculation. Please update your profile.
-            </p>
-          )}
+          <label className="block text-sm font-semibold mb-1 text-green-800">Mill District</label>
+          <select
+            name="mill_district"
+            value={formData.mill_district || currentUser?.mill_district || ""}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-500"
+          >
+            <option value="">Select Mill District</option>
+            {sriLankanDistricts.map((district) => (
+              <option key={district} value={district}>{district}</option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-600 mt-1">
+            Paddy prices will be fetched for the selected district.
+          </p>
         </div>
 
         {/* Paddy Type dropdown */}
@@ -465,62 +477,64 @@ const MillUpdateStock = ({ userData }) => {
         {/* Unit Price Selection */}
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold mb-1 text-green-800">
-            Unit Price (LKR/kg) - Based on your mill district: {currentUser?.mill_district || 'Unknown'}
+            Unit Price (LKR/kg) - Based on selected mill district: {formData.mill_district || currentUser?.mill_district || 'Unknown'}
           </label>
           {loadingPrices ? (
             <div className="w-full p-3 border border-green-300 rounded-lg bg-gray-50 flex items-center justify-center">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600 mr-2"></div>
               Loading available prices...
             </div>
-          ) : availablePrices.length > 0 ? (
-            <>
-              <select
-                name="price_per_kg"
-                value={formData.price_per_kg}
-                onChange={handleChange}
-                required={!formData.manual_price}
-                className="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-500"
-              >
-                <option value="">Select Price Option</option>
-                {availablePrices.map((price) => (
-                  <option key={price.id} value={price.id}>
-                    {price.variety} ({price.type}) - LKR {price.pricePerKg}/kg
-                    {price.market && ` - ${price.market}`}
-                    {price.trend === 'rising' && ' ⬆️'}
-                    {price.trend === 'falling' && ' ⬇️'}
-                    {price.trend === 'stable' && ' ➡️'}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-600 mt-1">
-                {availablePrices.length} price option{availablePrices.length !== 1 ? 's' : ''} available based on your selection
-              </p>
-            </>
-          ) : formData.paddy_type && formData.paddy_condition ? (
-            <>
-              <div className="mb-3 p-3 border border-orange-300 rounded-lg bg-orange-50 text-orange-800 text-center">
-                ⚠️ No prices available for {formData.paddy_type} ({formData.paddy_condition}) in {currentUser?.mill_district || 'your mill district'}
-                <br />
-                <span className="text-sm">Please enter the unit price manually below</span>
-              </div>
-              <input
-                type="number"
-                name="manual_price"
-                value={formData.manual_price}
-                onChange={handleChange}
-                placeholder="Enter unit price (LKR/kg)"
-                required
-                min="0"
-                step="0.01"
-                className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-500 bg-blue-50"
-              />
-              <p className="text-xs text-blue-600 mt-1">
-                💡 Manual price entry - this price will be saved for this transaction
-              </p>
-            </>
+          ) : (formData.mill_district || currentUser?.mill_district) && formData.paddy_type && formData.paddy_condition ? (
+            availablePrices.length > 0 ? (
+              <>
+                <select
+                  name="price_per_kg"
+                  value={formData.price_per_kg}
+                  onChange={handleChange}
+                  required={!formData.manual_price}
+                  className="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-500"
+                >
+                  <option value="">Select Price Option</option>
+                  {availablePrices.map((price) => (
+                    <option key={price.id} value={price.id}>
+                      {price.variety} ({price.type}) - LKR {price.pricePerKg}/kg
+                      {price.market && ` - ${price.market}`}
+                      {price.trend === 'rising' && ' ⬆️'}
+                      {price.trend === 'falling' && ' ⬇️'}
+                      {price.trend === 'stable' && ' ➡️'}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-600 mt-1">
+                  {availablePrices.length} price option{availablePrices.length !== 1 ? 's' : ''} available based on your selection
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="mb-3 p-3 border border-orange-300 rounded-lg bg-orange-50 text-orange-800 text-center">
+                  ⚠️ No prices available for {formData.paddy_type} ({formData.paddy_condition}) in {formData.mill_district || currentUser?.mill_district || 'your mill district'}
+                  <br />
+                  <span className="text-sm">Please enter the unit price manually below</span>
+                </div>
+                <input
+                  type="number"
+                  name="manual_price"
+                  value={formData.manual_price}
+                  onChange={handleChange}
+                  placeholder="Enter unit price (LKR/kg)"
+                  required
+                  min="0"
+                  step="0.01"
+                  className="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-500 bg-blue-50"
+                />
+                <p className="text-xs text-blue-600 mt-1">
+                  💡 Manual price entry - this price will be saved for this transaction
+                </p>
+              </>
+            )
           ) : (
             <div className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 text-center">
-              Please select paddy type and condition to see available prices or enter manual price
+              Please select mill district, paddy type and condition to see available prices or enter manual price
             </div>
           )}
         </div>
