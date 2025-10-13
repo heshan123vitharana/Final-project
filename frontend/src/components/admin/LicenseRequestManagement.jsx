@@ -662,63 +662,47 @@ const LicenseRequestManagement = () => {
       </div>
 
       {/* Requests Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      <div className="bg-white rounded-lg shadow-sm">
+        <div>
+          <table className="w-full table-fixed" style={{tableLayout:'fixed'}}>
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Request ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Mill Information
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Submit Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Certificate No.
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px] truncate">Request ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[220px] truncate">Mill Information</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px] truncate">Submit Date</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[110px] truncate">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[160px] truncate">Certificate No.</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[160px] truncate">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredRequests.map((request) => (
-                  <tr key={request.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {request.id}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{request.millName}</div>
-                      <div className="text-sm text-gray-500">{request.ownerName}</div>
-                      <div className="text-sm text-gray-500">{request.location}</div>
+                <tr key={request.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900 truncate" style={{wordBreak:'break-all'}}>{request.id}</td>
+                  <td className="px-4 py-3">
+                    <div className="truncate" style={{maxWidth:'200px'}}>
+                      <div className="text-sm font-medium text-gray-900 truncate">{request.millName}</div>
+                      <div className="text-sm text-gray-500 truncate">{request.ownerName}</div>
+                      <div className="text-xs text-gray-500 truncate" style={{maxWidth:'180px'}}>{request.location}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(request.submitDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-4 py-3 text-sm text-gray-500 truncate">{new Date(request.submitDate).toLocaleDateString()}</td>
+                  <td className="px-4 py-3">
                     <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(request.status)}`}>
                       {getStatusIcon(request.status)}
                       <span className="capitalize">{request.status}</span>
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-4 py-3 text-sm text-gray-500 truncate">
                     {request.certificateNumber ? (
                       <div className="flex items-center space-x-2">
-                        <span className="font-mono text-green-700 font-semibold bg-green-50 px-2 py-1 rounded border border-green-200">{request.certificateNumber}</span>
+                        <span className="font-mono text-green-700 font-semibold bg-green-50 px-2 py-1 rounded border border-green-200 truncate">{request.certificateNumber}</span>
                       </div>
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                  <td className="px-4 py-3 text-sm font-medium space-x-2 truncate">
                     <button
                       onClick={() => {
                         setSelectedRequest(request)
