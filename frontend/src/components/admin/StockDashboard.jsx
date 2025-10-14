@@ -359,7 +359,7 @@ const StockDashboard = () => {
               />
               <Bar
                 dataKey="capacity"
-                fill="#E5E7EB"
+                fill="#3B82F6"
                 name="Total Capacity (MT)"
                 radius={[4, 4, 0, 0]}
               />
