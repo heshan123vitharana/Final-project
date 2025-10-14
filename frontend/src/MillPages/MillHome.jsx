@@ -537,6 +537,19 @@ const MillHome = ({ userData }) => {
       timeStyle: 'short'
     });
   };
+  
+  const formatDateLabel = (value) => {
+    if (!value) {
+      return null;
+    }
+
+    const parsed = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return parsed.toLocaleDateString('en-GB');
+  };
 
   const formatReportPeriod = (report) => {
     const formatDate = (input) => {
@@ -569,6 +582,62 @@ const MillHome = ({ userData }) => {
 
     return 'Latest update';
   };
+
+  const licenseValidity = useMemo(() => {
+    if (!licenseData || licenseData.status !== 'approved') {
+      return null;
+    }
+
+    const referenceValue = licenseData.approved_date || licenseData.updated_at || licenseData.created_at;
+    if (!referenceValue) {
+      return null;
+    }
+
+    const startDate = new Date(referenceValue);
+    if (Number.isNaN(startDate.getTime())) {
+      return null;
+    }
+
+    let endDate = null;
+
+    if (licenseData.valid_until) {
+      const parsedValidUntil = new Date(licenseData.valid_until);
+      if (!Number.isNaN(parsedValidUntil.getTime())) {
+        endDate = parsedValidUntil;
+      }
+    }
+
+    if (!endDate) {
+      endDate = new Date(startDate);
+      endDate.setFullYear(endDate.getFullYear() + 1);
+    }
+
+    const now = new Date();
+    const diffMs = endDate.getTime() - now.getTime();
+    const dayMs = 1000 * 60 * 60 * 24;
+    const absoluteDiff = Math.abs(diffMs);
+    const daysRemaining = diffMs >= 0
+      ? Math.ceil(absoluteDiff / dayMs)
+      : -Math.ceil(absoluteDiff / dayMs);
+
+    let daysLabel = null;
+    if (absoluteDiff < dayMs) {
+      daysLabel = diffMs >= 0 ? 'Expires today' : 'Expired today';
+    } else if (daysRemaining > 0) {
+      daysLabel = `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} remaining`;
+    } else if (daysRemaining < 0) {
+      const overdueDays = Math.abs(daysRemaining);
+      daysLabel = `Expired ${overdueDays} day${overdueDays === 1 ? '' : 's'} ago`;
+    }
+
+    return {
+      startDate,
+      endDate,
+      isExpired: diffMs < 0,
+      daysRemaining,
+      daysLabel
+    };
+  }, [licenseData]);
 
   try {
     const licenseStatusDisplay = licenseData ? getStatusDisplay(licenseData.status) : null;
@@ -722,6 +791,28 @@ const MillHome = ({ userData }) => {
                             ).toLocaleDateString('en-GB')}
                           </span>
                         </div>
+                        {licenseData.status === 'approved' && (
+                          <div className="mt-1 space-y-1 text-[11px]">
+                            <div className="flex items-center gap-1.5 text-gray-500">
+                              <CheckCircle size={12} className="text-green-600" />
+                              <span>
+                                {licenseValidity?.isExpired ? 'Expired on' : 'Valid until'}{' '}
+                                {licenseValidity?.endDate ? formatDateLabel(licenseValidity.endDate) : 'Calculating...'}
+                              </span>
+                            </div>
+                            {licenseValidity?.daysLabel && (
+                              <div className={`flex items-center gap-1.5 font-semibold ${licenseValidity.isExpired ? 'text-red-600' : 'text-green-600'}`}>
+                                {licenseValidity.isExpired ? <AlertCircle size={12} /> : <CheckCircle size={12} />}
+                                <span>{licenseValidity.daysLabel}</span>
+                              </div>
+                            )}
+                            {licenseValidity?.isExpired && (
+                              <span className="block text-[11px] text-amber-700">
+                                Renew your license from the Mill Registration page to restore active status.
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100">
                         <ChevronRight className="text-gray-400" size={16} />
@@ -1173,6 +1264,30 @@ const MillHome = ({ userData }) => {
                 </div>
               )}
 
+              {licenseData.status === 'approved' && (
+                <div className="bg-emerald-50 rounded-lg p-4 md:col-span-2">
+                  <span className="block text-xs font-medium text-emerald-700 uppercase tracking-wide">License Validity</span>
+                  <div className="mt-2 flex flex-col gap-1 text-sm text-emerald-800 sm:flex-row sm:items-center sm:justify-between">
+                    <span>
+                      Valid from{' '}
+                      <strong>{formatDateLabel(licenseValidity?.startDate || licenseData.approved_date) || 'Not available'}</strong>
+                    </span>
+                    <span>
+                      Valid until{' '}
+                      <strong>{licenseValidity?.endDate ? formatDateLabel(licenseValidity.endDate) : 'Not available'}</strong>
+                    </span>
+                  </div>
+                  {licenseValidity?.daysLabel && (
+                    <p className={`mt-2 text-sm font-semibold ${licenseValidity.isExpired ? 'text-red-600' : 'text-green-600'}`}>
+                      {licenseValidity.daysLabel}
+                    </p>
+                  )}
+                  {licenseValidity?.isExpired && (
+                    <p className="mt-1 text-sm text-amber-700">Submit a renewal request from the Mill Registration page to restore your license.</p>
+                  )}
+                </div>
+              )}
+
               {licenseData.rejected_date && (
                 <div className="bg-red-50 rounded-lg p-4 md:col-span-2">
                   <span className="block text-xs font-medium text-red-700 uppercase tracking-wide">Rejected Date</span>
@@ -1192,8 +1307,14 @@ const MillHome = ({ userData }) => {
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-5">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="text-base font-semibold text-green-800">Your license is active</p>
-                    <p className="text-sm text-green-600 mt-1">Access your certificate whenever you need it.</p>
+                    <p className={`text-base font-semibold ${licenseValidity?.isExpired ? 'text-red-700' : 'text-green-800'}`}>
+                      {licenseValidity?.isExpired ? 'Your license has expired' : 'Your license is active'}
+                    </p>
+                    <p className={`text-sm mt-1 ${licenseValidity?.isExpired ? 'text-red-600' : 'text-green-600'}`}>
+                      {licenseValidity?.isExpired
+                        ? 'Submit a renewal request from the Mill Registration page to continue operations.'
+                        : 'Access your certificate whenever you need it.'}
+                    </p>
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <button
@@ -1221,6 +1342,18 @@ const MillHome = ({ userData }) => {
                       <Download size={16} className="mr-2" />
                       {loadingCertificate ? 'Preparing...' : 'Download PDF'}
                     </button>
+                    {licenseValidity?.isExpired && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowLicenseDetailsModal(false);
+                          navigate('/mill/register');
+                        }}
+                        className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-amber-500 text-amber-700 transition-colors hover:bg-amber-50"
+                      >
+                        Renew License
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

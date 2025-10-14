@@ -190,24 +190,51 @@ router.post('/apply', async (req, res) => {
             });
         }
 
-        // Check if user already has a pending or active license application
-        const [existingLicense] = await pool.execute(
-            'SELECT * FROM mill_licenses WHERE user_id = ? AND status IN ("pending", "approved") ORDER BY created_at DESC LIMIT 1',
+        // Check if user already has a pending license application
+        const [pendingApplications] = await pool.execute(
+            'SELECT id, application_number, status, created_at FROM mill_licenses WHERE user_id = ? AND status = "pending" ORDER BY created_at DESC LIMIT 1',
             [userId]
         );
 
-        if (existingLicense.length > 0) {
-            const license = existingLicense[0];
-            if (license.status === 'pending') {
-                return res.status(400).json({ 
-                    message: 'You already have a pending license application',
-                    existingApplication: license
-                });
-            } else if (license.status === 'approved') {
-                return res.status(400).json({ 
-                    message: 'You already have an active license',
-                    existingLicense: license
-                });
+        if (pendingApplications.length > 0) {
+            const pendingApplication = pendingApplications[0];
+            return res.status(400).json({ 
+                message: 'You already have a pending license application',
+                existingApplication: pendingApplication,
+                requiresRenewalWait: false
+            });
+        }
+
+        // Enforce one-year validity period for approved licenses before allowing renewal
+        const [latestApprovedRows] = await pool.execute(`
+            SELECT id, application_number, status, approved_date, created_at, license_number
+            FROM mill_licenses
+            WHERE user_id = ? AND status = "approved"
+            ORDER BY COALESCE(approved_date, created_at) DESC
+            LIMIT 1
+        `, [userId]);
+
+        if (latestApprovedRows.length > 0) {
+            const activeLicense = latestApprovedRows[0];
+            const approvalReference = activeLicense.approved_date || activeLicense.created_at;
+
+            if (approvalReference) {
+                const approvalDate = new Date(approvalReference);
+
+                if (!Number.isNaN(approvalDate.getTime())) {
+                    const renewalEligibleDate = new Date(approvalDate);
+                    renewalEligibleDate.setFullYear(renewalEligibleDate.getFullYear() + 1);
+
+                    const now = new Date();
+                    if (renewalEligibleDate > now) {
+                        return res.status(400).json({
+                            message: 'Your current license is still active. Renewal will be available after the one-year validity period.',
+                            activeLicense,
+                            licenseExpiresOn: renewalEligibleDate.toISOString(),
+                            requiresRenewalWait: true
+                        });
+                    }
+                }
             }
         }
 
@@ -254,9 +281,49 @@ router.get('/applications/:userId', async (req, res) => {
             ORDER BY ml.created_at DESC
         `, [userId]);
 
+        const now = new Date();
+        const enrichedApplications = applications.map(application => {
+            if (!application) {
+                return application;
+            }
+
+            let validUntil = null;
+            let isExpired = false;
+            let daysUntilExpiry = null;
+
+            if (application.status === 'approved') {
+                const referenceDate = application.approved_date || application.updated_at || application.created_at;
+
+                if (referenceDate) {
+                    const parsedReference = new Date(referenceDate);
+
+                    if (!Number.isNaN(parsedReference.getTime())) {
+                        const expiryDate = new Date(parsedReference);
+                        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+                        validUntil = expiryDate.toISOString();
+
+                        const diffMs = expiryDate.getTime() - now.getTime();
+                        daysUntilExpiry = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+                        if (diffMs < 0) {
+                            isExpired = true;
+                        }
+                    }
+                }
+            }
+
+            return {
+                ...application,
+                valid_until: validUntil,
+                is_expired: isExpired,
+                days_until_expiry: daysUntilExpiry
+            };
+        });
+
         res.status(200).json({
             message: 'License applications retrieved successfully',
-            applications
+            applications: enrichedApplications
         });
 
     } catch (error) {

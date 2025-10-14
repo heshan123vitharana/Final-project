@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ProfileCompletenessBar from '../components/ProfileCompletenessBar';
@@ -78,6 +78,200 @@ const MillRegistration = () => {
   };
 
 
+    const computeValidityWindow = (license) => {
+      if (!license || license.status !== 'approved') {
+        return null;
+      }
+
+      const referenceValue = license.approved_date || license.updated_at || license.created_at;
+      if (!referenceValue) {
+        return null;
+      }
+
+      const startDate = new Date(referenceValue);
+      if (Number.isNaN(startDate.getTime())) {
+        return null;
+      }
+
+      let endDate = null;
+
+      if (license.valid_until) {
+        const parsedValidUntil = new Date(license.valid_until);
+        if (!Number.isNaN(parsedValidUntil.getTime())) {
+          endDate = parsedValidUntil;
+        }
+      }
+
+      if (!endDate) {
+        endDate = new Date(startDate);
+        endDate.setFullYear(endDate.getFullYear() + 1);
+      }
+
+      const now = new Date();
+      const diffMs = endDate.getTime() - now.getTime();
+      const dayMs = 1000 * 60 * 60 * 24;
+      const absoluteDiff = Math.abs(diffMs);
+      const daysRemaining = diffMs >= 0
+        ? Math.ceil(absoluteDiff / dayMs)
+        : -Math.ceil(absoluteDiff / dayMs);
+
+      let daysLabel = null;
+      if (absoluteDiff < dayMs) {
+        daysLabel = diffMs >= 0 ? 'Expires today' : 'Expired today';
+      } else if (daysRemaining > 0) {
+        daysLabel = `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} remaining`;
+      } else if (daysRemaining < 0) {
+        const overdueDays = Math.abs(daysRemaining);
+        daysLabel = `Expired ${overdueDays} day${overdueDays === 1 ? '' : 's'} ago`;
+      }
+
+      return {
+        startDate,
+        endDate,
+        isExpired: diffMs < 0,
+        daysRemaining,
+        daysLabel
+      };
+    };
+
+    const formatDateLabel = (value) => {
+      if (!value) {
+        return null;
+      }
+
+      const parsed = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(parsed.getTime())) {
+        return null;
+      }
+
+      return parsed.toLocaleDateString('en-GB');
+    };
+
+    const licenseEligibility = useMemo(() => {
+      if (!Array.isArray(history) || history.length === 0) {
+        return {
+          pendingApplication: null,
+          latestApproved: null,
+          validity: null,
+          canApplyNow: true,
+          showRenewButton: false,
+          hasActiveLicense: false,
+          renewAvailableOn: null
+        };
+      }
+
+      const pendingApplication = history.find((app) => app.status === 'pending') || null;
+
+      const approvedLicenses = history
+        .filter((app) => app.status === 'approved')
+        .sort((a, b) => {
+          const aDate = new Date(a.approved_date || a.updated_at || a.created_at);
+          const bDate = new Date(b.approved_date || b.updated_at || b.created_at);
+          return bDate - aDate;
+        });
+
+      const latestApproved = approvedLicenses.length > 0 ? approvedLicenses[0] : null;
+      const validity = computeValidityWindow(latestApproved);
+      const licenseIsExpired = validity ? validity.isExpired : false;
+
+      const canApplyNow = !pendingApplication && (!latestApproved || licenseIsExpired);
+      const showRenewButton = !pendingApplication && !!latestApproved && licenseIsExpired;
+      const hasActiveLicense = !!latestApproved && !licenseIsExpired;
+      const canSubmitNewApplication = !pendingApplication && !latestApproved;
+
+      return {
+        pendingApplication,
+        latestApproved,
+        validity,
+        canApplyNow,
+        showRenewButton,
+        hasActiveLicense,
+        renewAvailableOn: validity?.endDate || null,
+        canSubmitNewApplication,
+        canRenewApplication: showRenewButton
+      };
+    }, [history]);
+
+    const currentLicenseValidity = useMemo(() => computeValidityWindow(currentLicense), [currentLicense]);
+
+    const pendingSubmittedOn = licenseEligibility.pendingApplication
+      ? formatDateLabel(licenseEligibility.pendingApplication.applied_date || licenseEligibility.pendingApplication.created_at)
+      : null;
+
+    const validityEndLabel = licenseEligibility.validity?.endDate
+      ? formatDateLabel(licenseEligibility.validity.endDate)
+      : null;
+
+    const applyButtonDisabled = !licenseEligibility.canSubmitNewApplication;
+    const renewButtonDisabled = !licenseEligibility.canRenewApplication;
+
+    const applyButtonTooltip = (() => {
+      if (!applyButtonDisabled) {
+        return '';
+      }
+      if (licenseEligibility.pendingApplication) {
+        return pendingSubmittedOn
+          ? `Pending application submitted on ${pendingSubmittedOn}.`
+          : 'You already have a pending license application.';
+      }
+      if (licenseEligibility.latestApproved) {
+        return 'Renew your existing license when it expires to continue.';
+      }
+      return 'You are not eligible to submit a new license request right now.';
+    })();
+
+    const renewButtonTooltip = (() => {
+      if (!renewButtonDisabled) {
+        return '';
+      }
+      if (licenseEligibility.pendingApplication) {
+        return pendingSubmittedOn
+          ? `Pending application submitted on ${pendingSubmittedOn}.`
+          : 'You already have a pending license application.';
+      }
+      if (!licenseEligibility.latestApproved) {
+        return 'You need an approved license before you can request a renewal.';
+      }
+      if (licenseEligibility.validity && !licenseEligibility.validity.isExpired) {
+        return validityEndLabel
+          ? `Renewal available after ${validityEndLabel}.`
+          : 'Renewal will be available after the current license expires.';
+      }
+      return 'Renewal is not available right now.';
+    })();
+
+    const handleOpenForm = (type) => {
+      if (!canApplyForLicense) {
+        toast.error('Please complete your profile before applying for a license.');
+        return;
+      }
+
+      if (!licenseEligibility.canApplyNow) {
+        if (licenseEligibility.pendingApplication) {
+          const submittedOn = formatDateLabel(licenseEligibility.pendingApplication.applied_date || licenseEligibility.pendingApplication.created_at);
+          toast.error(submittedOn
+            ? `You already have a pending license application submitted on ${submittedOn}. Please wait for it to be processed.`
+            : 'You already have a pending license application. Please wait for it to be processed.');
+          return;
+        }
+
+        if (licenseEligibility.validity?.endDate) {
+          const nextEligible = formatDateLabel(licenseEligibility.validity.endDate);
+          toast.error(nextEligible
+            ? `Your current license is valid until ${nextEligible}. Renewal will be available after this date.`
+            : 'Your current license is still active. Renewal will be available after the one-year validity period.');
+          return;
+        }
+
+        toast.error('You are not eligible to submit a new license request right now.');
+        return;
+      }
+
+      setFormType(type);
+      setShowForm(true);
+    };
+
+
   // File input refs
   const paymentReceiptRef = useRef(null);
   const brDocumentRef = useRef(null);
@@ -87,10 +281,9 @@ const MillRegistration = () => {
   const toggleStatusSection = () => setShowStatusSection(!showStatusSection);
   const toggleHistorySection = () => setShowHistorySection(!showHistorySection);
 
-  // Open and close form handlers
-  const handleOpenForm = (type) => { setFormType(type); setShowForm(true); };
+  // Close form handler
   const handleCloseForm = () => {
-    setFormType('');
+    setFormType('new');
     setShowForm(false);
     setFormData({
       licenseType: 'Standard Mill License',
@@ -519,6 +712,15 @@ const MillRegistration = () => {
                         <p><strong>Approved Date:</strong> {currentLicense.approved_date ?
                           new Date(currentLicense.approved_date).toLocaleDateString() :
                           'Processing...'}</p>
+                        {currentLicenseValidity?.endDate && (
+                          <p><strong>Valid Until:</strong> {formatDateLabel(currentLicenseValidity.endDate)}</p>
+                        )}
+                        {currentLicenseValidity?.daysLabel && (
+                          <p><strong>Validity Status:</strong> {currentLicenseValidity.daysLabel}</p>
+                        )}
+                        {currentLicenseValidity?.isExpired && (
+                          <p className="text-red-600 font-semibold">Your license has expired. Please submit a renewal request.</p>
+                        )}
                       </>
                     )}
 
@@ -595,10 +797,72 @@ const MillRegistration = () => {
                   <li>No pending violations or penalties.</li>
                   <li>Agree to terms and conditions.</li>
                 </ul>
-                {/* Apply and Renew buttons */}
-                <div className="flex space-x-4">
-                  <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700" onClick={() => handleOpenForm('Apply')}>Apply Licence</button>
-                  <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600" onClick={() => handleOpenForm('Renew')}>Renew Licence</button>
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    {licenseEligibility.pendingApplication && (
+                      <div className="bg-yellow-50 border border-yellow-200 p-3 rounded text-yellow-800">
+                        <p className="font-medium">You already have a pending license application.</p>
+                        {pendingSubmittedOn && (
+                          <p className="text-sm">Submitted on {pendingSubmittedOn}. Please wait for admin review.</p>
+                        )}
+                      </div>
+                    )}
+
+                    {!licenseEligibility.pendingApplication && licenseEligibility.hasActiveLicense && (
+                      <div className="bg-blue-50 border border-blue-200 p-3 rounded text-blue-800">
+                        <p className="font-medium">Your current license is active.</p>
+                        {validityEndLabel ? (
+                          <p className="text-sm">
+                            Valid until {validityEndLabel}
+                            {licenseEligibility.validity?.daysLabel ? ` (${licenseEligibility.validity.daysLabel})` : ''}.
+                            Renewal will be available after this date.
+                          </p>
+                        ) : (
+                          <p className="text-sm">Renewal will be available after the one-year validity period.</p>
+                        )}
+                      </div>
+                    )}
+
+                    {!licenseEligibility.pendingApplication && !licenseEligibility.hasActiveLicense && licenseEligibility.showRenewButton && (
+                      <div className="bg-amber-50 border border-amber-200 p-3 rounded text-amber-900">
+                        <p className="font-medium">Your previous license has expired.</p>
+                        {validityEndLabel ? (
+                          <p className="text-sm">Expired on {validityEndLabel}. You can submit a renewal request now.</p>
+                        ) : (
+                          <p className="text-sm">You can submit a renewal request now.</p>
+                        )}
+                      </div>
+                    )}
+
+                    {!licenseEligibility.pendingApplication && !licenseEligibility.hasActiveLicense && !licenseEligibility.showRenewButton && (
+                      <div className="bg-green-50 border border-green-200 p-3 rounded text-green-800">
+                        <p className="font-medium">You are eligible to apply for a mill license.</p>
+                        <p className="text-sm">Review the requirements below and submit your application.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Apply and Renew buttons */}
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                    <button
+                      type="button"
+                      className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleOpenForm('Apply')}
+                      disabled={applyButtonDisabled}
+                      title={applyButtonTooltip || undefined}
+                    >
+                      Apply Licence
+                    </button>
+                    <button
+                      type="button"
+                      className="w-full sm:w-auto bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => handleOpenForm('Renew')}
+                      disabled={renewButtonDisabled}
+                      title={renewButtonTooltip || undefined}
+                    >
+                      Renew Licence
+                    </button>
+                  </div>
                 </div>
               </>
             )}
