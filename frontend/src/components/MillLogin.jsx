@@ -186,7 +186,7 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
                       <span className="font-semibold">Signing In...</span>
                     </>
                   ) : (
-                    <span className="font-bold tracking-wide">Sign In</span>
+                    <span className="font-bold tracking-wide">Sign in</span>
                   )}
                 </button>
               </div>
