@@ -336,10 +336,40 @@ const subscribeStockUpdates = async (req, res) => {
 };
 
 
+const getStockEntries = async (req, res) => {
+    try {
+        const providedKey = req.headers['x-admin-key'] || req.query.key;
+        const configuredKey = process.env.ADMIN_API_KEY;
+
+        if (configuredKey && (!providedKey || providedKey !== configuredKey)) {
+            return res.status(401).json({
+                message: 'Unauthorized access to stock entries'
+            });
+        }
+
+        const limit = req.query.limit ? parseInt(req.query.limit, 10) : 100;
+
+        const entries = await StockModel.getRecentStockEntries(limit);
+
+        res.status(200).json({
+            message: 'Stock entries retrieved successfully',
+            data: entries
+        });
+    } catch (error) {
+        console.error('Error in getStockEntries:', error);
+        res.status(500).json({
+            message: 'Failed to retrieve stock entries',
+            error: error.message
+        });
+    }
+};
+
+
 module.exports = {
     adminLogin,
     getReport,
     getStockOverview,
     getStockReports,
-    subscribeStockUpdates
+    subscribeStockUpdates,
+    getStockEntries
 };

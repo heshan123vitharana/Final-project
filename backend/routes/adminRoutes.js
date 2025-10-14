@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { adminLogin, getReport, getStockOverview, getStockReports, subscribeStockUpdates } = require('../controllers/adminController');
+const { adminLogin, getReport, getStockOverview, getStockReports, subscribeStockUpdates, getStockEntries } = require('../controllers/adminController');
 
 // Debug log to check if function is imported correctly
 console.log('adminController import:', { adminLogin, getReport });
@@ -19,5 +19,8 @@ router.get('/stock-stream', subscribeStockUpdates);
 
 // GET route for submitted stock reports
 router.get('/stock-reports', getStockReports);
+
+// GET route for all stock entries (for history view)
+router.get('/stock-entries', getStockEntries);
 
 module.exports = router;
