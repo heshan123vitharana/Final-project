@@ -276,6 +276,8 @@ class StockModel {
 
   static async getAggregatedStockOverview() {
     try {
+      console.log('📊 Starting aggregated stock overview query...');
+      
       const [rows] = await db.execute(`
         SELECT 
           u.id AS mill_id,
@@ -290,6 +292,8 @@ class StockModel {
         WHERE u.business_type IN ('private', 'government')
         GROUP BY u.id, u.business_name, u.business_type, u.mill_district, u.district, u.mill_capacity
       `);
+
+      console.log(`✅ Found ${rows.length} mills in database`);
 
       let latestEntryUpdate = null;
 
@@ -413,6 +417,79 @@ class StockModel {
       return overview;
     } catch (error) {
       console.error('❌ Aggregated stock overview error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      throw error;
+    }
+  }
+
+  static async getRecentStockEntries(limit) {
+    try {
+      // Ensure limit is always a valid integer for MySQL
+      let sanitizedLimit = 10; // default
+      
+      if (limit !== undefined && limit !== null) {
+        const parsed = parseInt(limit, 10);
+        if (!isNaN(parsed) && parsed > 0) {
+          sanitizedLimit = Math.min(Math.max(parsed, 1), 50);
+        }
+      }
+
+      console.log(`📥 Fetching recent stock entries with limit: ${sanitizedLimit} (type: ${typeof sanitizedLimit})`);
+
+      const query = `
+        SELECT 
+          se.id,
+          se.mill_id,
+          se.farmer_name,
+          se.paddy_type,
+          se.paddy_condition,
+          se.quantity,
+          se.region,
+          se.entry_date,
+          se.created_at,
+          se.price_per_kg,
+          se.total_amount,
+          u.business_name,
+          u.business_type,
+          COALESCE(u.mill_district, u.district) AS district
+        FROM stock_entries se
+        JOIN users u ON se.mill_id = u.id
+        ORDER BY se.created_at DESC
+        LIMIT ${sanitizedLimit}
+      `;
+
+      const [rows] = await db.execute(query);
+
+      console.log(`✅ Found ${rows.length} recent stock entries`);
+
+      return rows.map((row) => ({
+        id: row.id,
+        millId: row.mill_id,
+        millName: row.business_name || `Mill ${row.mill_id}`,
+        businessType: row.business_type || 'private',
+        district: row.district || 'Unknown',
+        farmerName: row.farmer_name || null,
+        paddyType: row.paddy_type,
+        paddyCondition: row.paddy_condition,
+        quantity: row.quantity ? parseFloat(row.quantity) : 0,
+        region: row.region || 'Central',
+        entryDate: row.entry_date,
+        createdAt: row.created_at,
+        pricePerKg: row.price_per_kg ? parseFloat(row.price_per_kg) : null,
+        totalAmount: row.total_amount ? parseFloat(row.total_amount) : null
+      }));
+    } catch (error) {
+      console.error('❌ Get recent stock entries error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        sqlState: error.sqlState,
+        sqlMessage: error.sqlMessage
+      });
       throw error;
     }
   }

@@ -77,12 +77,16 @@ const addStock = async (req, res) => {
     const result = await StockModel.addStockEntry(stockData);
 
     try {
-      const overview = await StockModel.getAggregatedStockOverview();
+      const [overview, recentEntries] = await Promise.all([
+        StockModel.getAggregatedStockOverview(),
+        StockModel.getRecentStockEntries(10)
+      ]);
+
       stockUpdateEmitter.emit('update', {
         type: 'stock-update',
         millId: mill_id,
         at: new Date().toISOString(),
-        overview
+        overview: { ...overview, recentEntries }
       });
     } catch (broadcastError) {
       console.error('Broadcast stock update error:', broadcastError);
@@ -183,12 +187,16 @@ const deleteStock = async (req, res) => {
     const result = await StockModel.deleteStockEntry(parseInt(id, 10), mill_id);
 
     try {
-      const overview = await StockModel.getAggregatedStockOverview();
+      const [overview, recentEntries] = await Promise.all([
+        StockModel.getAggregatedStockOverview(),
+        StockModel.getRecentStockEntries(10)
+      ]);
+
       stockUpdateEmitter.emit('update', {
         type: 'stock-update',
         millId: mill_id,
         at: new Date().toISOString(),
-        overview
+        overview: { ...overview, recentEntries }
       });
     } catch (broadcastError) {
       console.error('Broadcast stock update error:', broadcastError);

@@ -196,14 +196,31 @@ const getStockOverview = async (req, res) => {
             });
         }
 
+        console.log('📊 Fetching stock overview...');
+
+        // Fetch overview
         const overview = await StockModel.getAggregatedStockOverview();
+        console.log('✅ Overview fetched successfully');
+
+        // Fetch recent entries with error handling
+        let recentEntries = [];
+        try {
+            recentEntries = await StockModel.getRecentStockEntries(10);
+            console.log(`✅ Recent entries fetched: ${recentEntries.length} items`);
+        } catch (recentError) {
+            console.error('⚠️ Error fetching recent entries:', recentError);
+            // Continue without recent entries rather than failing the entire request
+        }
+
+        overview.recentEntries = recentEntries;
 
         res.status(200).json({
             message: 'Stock overview retrieved successfully',
             data: overview
         });
     } catch (error) {
-        console.error('Error in getStockOverview:', error);
+        console.error('❌ Error in getStockOverview:', error);
+        console.error('Error stack:', error.stack);
         res.status(500).json({
             message: 'Failed to retrieve stock overview',
             error: error.message
@@ -271,8 +288,14 @@ const subscribeStockUpdates = async (req, res) => {
 
         try {
             const overview = payload.overview || await StockModel.getAggregatedStockOverview();
+
+            if (!overview.recentEntries) {
+                overview.recentEntries = await StockModel.getRecentStockEntries(10);
+            }
+
             const data = {
                 overview,
+                recentEntries: overview.recentEntries,
                 timestamp: payload.at || new Date().toISOString(),
                 source: payload.type || 'stock-update'
             };

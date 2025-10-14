@@ -18,6 +18,13 @@ import {
 import toast from 'react-hot-toast';
 import { generatePermitCertificate } from '../utils/certificateGenerator';
 
+// Allow admins to tweak report polling cadence via optional env override
+const REPORT_REFRESH_INTERVAL_MS = (() => {
+  const raw = import.meta.env.VITE_MILL_REPORT_REFRESH_INTERVAL_MS;
+  const parsed = raw ? Number(raw) : 60000;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 60000;
+})();
+
 // Home page component for the Mill Dashboard
 const MillHome = ({ userData }) => {
   const navigate = useNavigate();
@@ -267,6 +274,28 @@ const MillHome = ({ userData }) => {
   useEffect(() => {
     fetchReportHistory();
   }, [fetchReportHistory]);
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        fetchReportHistory();
+      }, REPORT_REFRESH_INTERVAL_MS);
+
+      return () => clearInterval(interval);
+    }, [fetchReportHistory]);
+
+    useEffect(() => {
+      const handleVisibilityChange = () => {
+        if (!document.hidden) {
+          fetchReportHistory();
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }, [fetchReportHistory]);
 
   useEffect(() => {
     if (!licenseData) {

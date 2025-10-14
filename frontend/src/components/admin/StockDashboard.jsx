@@ -25,6 +25,7 @@ const INITIAL_DATA = {
 
 const StockDashboard = () => {
   const [data, setData] = useState(INITIAL_DATA)
+  const [recentEntries, setRecentEntries] = useState([])
   const [lastUpdated, setLastUpdated] = useState(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState(null)
@@ -65,6 +66,7 @@ const StockDashboard = () => {
 
       const updatedTimestamp = overview.lastUpdated || new Date().toISOString()
       setLastUpdated(updatedTimestamp)
+      setRecentEntries(Array.isArray(overview.recentEntries) ? overview.recentEntries : [])
     } catch (fetchError) {
       console.error('Stock overview fetch error:', fetchError)
       setError(fetchError.message || 'Unable to load stock overview.')
@@ -109,6 +111,7 @@ const StockDashboard = () => {
       })
       setLastUpdated(timestamp || new Date().toISOString())
       setError(null)
+      setRecentEntries(Array.isArray(overview.recentEntries) ? overview.recentEntries : [])
     }
 
     const handleUpdate = (event) => {
@@ -118,6 +121,9 @@ const StockDashboard = () => {
           return
         }
         applyOverview(payload.overview, payload.timestamp)
+        if (Array.isArray(payload.recentEntries)) {
+          setRecentEntries(payload.recentEntries)
+        }
         setIsSseConnected(true)
       } catch (parseError) {
         console.error('Failed to parse stock update payload:', parseError)
@@ -161,6 +167,15 @@ const StockDashboard = () => {
   const totalCapacity = data.summary.totalCapacity || 0
   const utilizationRate = data.summary.utilizationRate || 0
   const activeMills = data.summary.activeMills || data.stockByMill.length
+
+  const recentEntriesToShow = Array.isArray(recentEntries) ? recentEntries.slice(0, 10) : []
+
+  const formatDate = (value, withTime = false) => {
+    if (!value) return 'N/A'
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return 'N/A'
+    return withTime ? date.toLocaleString() : date.toLocaleDateString()
+  }
 
   const privateVsGovernmentStock = data.privateVsGovernmentStock.length
     ? data.privateVsGovernmentStock
@@ -353,6 +368,67 @@ const StockDashboard = () => {
             </BarChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">Recent Stock Submissions</h3>
+            <p className="text-sm text-gray-600">Live feed of the latest mill updates across the network.</p>
+          </div>
+          <span className="text-xs text-gray-500">Automatically refreshes via live stream</span>
+        </div>
+
+        {recentEntriesToShow.length === 0 ? (
+          <div className="text-center text-sm text-gray-500 py-6">
+            No recent submissions detected. New stock updates will appear here instantly.
+          </div>
+        ) : (
+          <ul className="divide-y divide-gray-200">
+            {recentEntriesToShow.map((entry) => {
+              const parsedQuantity = Number.isFinite(entry.quantity) ? entry.quantity : Number(entry.quantity || 0)
+              const quantity = Number.isFinite(parsedQuantity) ? parsedQuantity : 0
+              const businessType = (entry.businessType || '').toLowerCase() === 'government' ? 'Government' : 'Private'
+
+              return (
+                <li key={entry.id} className="py-4">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-gray-800">{entry.millName}</p>
+                        <p className="text-xs text-gray-500">
+                          {businessType} · {entry.district || 'Unknown district'}
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          businessType === 'Government'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-green-100 text-green-800'
+                        }`}
+                      >
+                        {businessType}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-gray-700">
+                      <div>
+                        <span className="font-medium">{quantity.toLocaleString(undefined, { maximumFractionDigits: 2 })} MT</span>
+                        <span className="ml-2 text-gray-500">
+                          {(entry.paddyType || 'Unknown type')} · {(entry.paddyCondition || 'Unknown condition')}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 text-right">
+                        <p>Entry date: {formatDate(entry.entryDate)}</p>
+                        <p>Submitted: {formatDate(entry.createdAt, true)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-sm p-6">
