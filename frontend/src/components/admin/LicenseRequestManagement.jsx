@@ -535,14 +535,18 @@ const LicenseRequestManagement = () => {
     const certificateNumber = `PMB/ML/${new Date().getFullYear()}/${request.applicationId}`
 
     try {
-      await updateLicenseStatus(request.applicationId, 'approved', {
+      const updatedRequest = await updateLicenseStatus(request.applicationId, 'approved', {
         certificateNumber,
         approvalComments: 'License approved by admin.',
       })
 
-      setLicenseRequests(prev => prev.filter(req =>
-        req.applicationId !== request.applicationId
+      setLicenseRequests(prev => prev.map(req =>
+        req.applicationId === request.applicationId ? updatedRequest : req
       ))
+
+      setSelectedRequest(prev =>
+        prev && prev.applicationId === request.applicationId ? updatedRequest : prev
+      )
 
       clearViewedFlag(request.applicationId)
 
@@ -567,13 +571,17 @@ const LicenseRequestManagement = () => {
   const confirmReject = async () => {
     if (rejectionReason.trim() && selectedRequest) {
       try {
-        await updateLicenseStatus(selectedRequest.applicationId, 'rejected', {
+        const updatedRequest = await updateLicenseStatus(selectedRequest.applicationId, 'rejected', {
           rejectionReason,
         });
 
-        setLicenseRequests(prev => prev.filter(req =>
-          req.applicationId !== selectedRequest.applicationId
+        setLicenseRequests(prev => prev.map(req =>
+          req.applicationId === selectedRequest.applicationId ? updatedRequest : req
         ));
+
+        setSelectedRequest(prev =>
+          prev && prev.applicationId === selectedRequest.applicationId ? updatedRequest : prev
+        );
 
         clearViewedFlag(selectedRequest.applicationId)
         
