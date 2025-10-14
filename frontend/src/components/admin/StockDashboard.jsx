@@ -7,10 +7,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
+  ResponsiveContainer
 } from 'recharts'
 import { RefreshCw, TrendingUp, TrendingDown, Activity, AlertTriangle } from 'lucide-react'
 
@@ -98,12 +95,6 @@ const StockDashboard = () => {
         { name: 'Private Mills', current: 0, capacity: 0, percentage: 0 },
         { name: 'Government Mills', current: 0, capacity: 0, percentage: 0 }
       ]
-
-  const pieData = privateVsGovernmentStock.map((entry) => ({
-    name: entry.name,
-    value: entry.current,
-    color: entry.name === 'Private Mills' ? '#22C55E' : '#3B82F6'
-  }))
 
   return (
     <div className="space-y-6">
@@ -281,92 +272,6 @@ const StockDashboard = () => {
                 name="Government (MT)"
                 radius={[4, 4, 0, 0]}
               />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Stock Distribution Overview
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => {
-                  const safePercent = Number.isFinite(percent) ? percent * 100 : 0
-                  return `${name}: ${safePercent.toFixed(1)}%`
-                }}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value) => {
-                  const numericValue = Number(value || 0)
-                  return [`${numericValue.toLocaleString()} MT`, 'Stock']
-                }}
-                contentStyle={{
-                  backgroundColor: '#f8f9fa',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '8px'
-                }}
-              />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Mill Utilization Rates
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              data={data.stockByMill}
-              layout="horizontal"
-              margin={{ top: 20, right: 30, left: 80, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis
-                type="number"
-                tick={{ fontSize: 12 }}
-                domain={[0, 100]}
-                tickFormatter={(value) => `${value}%`}
-              />
-              <YAxis
-                type="category"
-                dataKey="mill"
-                tick={{ fontSize: 12 }}
-                width={75}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#f8f9fa',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '8px'
-                }}
-                formatter={(value) => {
-                  const numericValue = Number(value || 0)
-                  return [`${numericValue}%`, 'Utilization']
-                }}
-                labelFormatter={(label) => `Mill: ${label}`}
-              />
-              <Bar dataKey="utilization" radius={[0, 4, 4, 0]}>
-                {data.stockByMill.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.type === 'Private' ? '#22C55E' : '#3B82F6'}
-                  />
-                ))}
-              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
