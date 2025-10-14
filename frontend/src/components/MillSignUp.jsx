@@ -351,7 +351,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                     <span className="font-semibold">Creating Account...</span>
                   </>
                 ) : (
-                  <span className="font-bold tracking-wide">Create Account</span>
+                  <span className="font-bold tracking-wide">Sign up</span>
                 )}
               </button>
 
@@ -364,7 +364,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                     onClick={onBackToLogin}
                     className="font-semibold text-green-600 hover:text-green-500 transition-colors duration-200 tracking-wide"
                   >
-                    Sign in here
+                    Sign in 
                   </button>
                 </p>
               </div>

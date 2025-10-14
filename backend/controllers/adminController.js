@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const db = require('../database');
 const StockModel = require('../models/stockModel');
+const stockUpdateEmitter = require('../utils/stockUpdateEmitter');
 
 const adminLogin = async (req, res) => {
     try {
@@ -186,14 +187,13 @@ const getMockDataForReport = (reportType) => {
 
 const getStockOverview = async (req, res) => {
     try {
+        const providedKey = req.headers['x-admin-key'] || req.query.key;
         const configuredKey = process.env.ADMIN_API_KEY;
-        if (configuredKey) {
-            const providedKey = req.headers['x-admin-key'];
-            if (!providedKey || providedKey !== configuredKey) {
-                return res.status(401).json({
-                    message: 'Unauthorized access to stock overview'
-                });
-            }
+
+        if (configuredKey && (!providedKey || providedKey !== configuredKey)) {
+            return res.status(401).json({
+                message: 'Unauthorized access to stock overview'
+            });
         }
 
         const overview = await StockModel.getAggregatedStockOverview();
@@ -213,14 +213,13 @@ const getStockOverview = async (req, res) => {
 
 const getStockReports = async (req, res) => {
     try {
+        const providedKey = req.headers['x-admin-key'] || req.query.key;
         const configuredKey = process.env.ADMIN_API_KEY;
-        if (configuredKey) {
-            const providedKey = req.headers['x-admin-key'];
-            if (!providedKey || providedKey !== configuredKey) {
-                return res.status(401).json({
-                    message: 'Unauthorized access to stock reports'
-                });
-            }
+
+        if (configuredKey && (!providedKey || providedKey !== configuredKey)) {
+            return res.status(401).json({
+                message: 'Unauthorized access to stock reports'
+            });
         }
 
         const limit = req.query.limit ? parseInt(req.query.limit, 10) : 50;
@@ -244,10 +243,80 @@ const getStockReports = async (req, res) => {
     }
 };
 
+const subscribeStockUpdates = async (req, res) => {
+    const providedKey = req.headers['x-admin-key'] || req.query.key;
+    const configuredKey = process.env.ADMIN_API_KEY;
+
+    if (configuredKey && (!providedKey || providedKey !== configuredKey)) {
+        return res.status(401).json({
+            message: 'Unauthorized access to stock updates'
+        });
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+
+    if (typeof res.flushHeaders === 'function') {
+        res.flushHeaders();
+    }
+
+    let streamOpen = true;
+
+    const pushUpdate = async (payload = {}) => {
+        if (!streamOpen || res.writableEnded) {
+            return;
+        }
+
+        try {
+            const overview = payload.overview || await StockModel.getAggregatedStockOverview();
+            const data = {
+                overview,
+                timestamp: payload.at || new Date().toISOString(),
+                source: payload.type || 'stock-update'
+            };
+
+            res.write('event: stock-update\n');
+            res.write(`data: ${JSON.stringify(data)}\n\n`);
+        } catch (error) {
+            console.error('Error pushing stock update to SSE stream:', error);
+            res.write('event: stock-update-error\n');
+            res.write(`data: ${JSON.stringify({ error: 'Failed to refresh stock overview' })}\n\n`);
+        }
+    };
+
+    // Send initial snapshot
+    pushUpdate({ type: 'initial-sync' }).catch((error) => {
+        console.error('Initial stock overview push failed:', error);
+    });
+
+    const heartbeat = setInterval(() => {
+        if (!streamOpen || res.writableEnded) {
+            return;
+        }
+        res.write('event: heartbeat\n');
+        res.write('data: {}\n\n');
+    }, 25000);
+
+    const listener = (payload) => {
+        pushUpdate(payload);
+    };
+
+    stockUpdateEmitter.on('update', listener);
+
+    req.on('close', () => {
+        streamOpen = false;
+        clearInterval(heartbeat);
+        stockUpdateEmitter.off('update', listener);
+    });
+};
+
 
 module.exports = {
     adminLogin,
     getReport,
     getStockOverview,
-    getStockReports
+    getStockReports,
+    subscribeStockUpdates
 };

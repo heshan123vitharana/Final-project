@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   BarChart,
   Bar,
@@ -28,8 +28,11 @@ const StockDashboard = () => {
   const [lastUpdated, setLastUpdated] = useState(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState(null)
+  const [isSseConnected, setIsSseConnected] = useState(false)
+  const [supportsSse, setSupportsSse] = useState(false)
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
   const adminApiKey = import.meta.env.VITE_ADMIN_API_KEY
+  const eventSourceRef = useRef(null)
 
   const fetchOverview = useCallback(async ({ silent = false } = {}) => {
     if (!silent) {
@@ -77,12 +80,82 @@ const StockDashboard = () => {
   }, [fetchOverview])
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined
+    }
+
+    if (!('EventSource' in window)) {
+      setSupportsSse(false)
+      return undefined
+    }
+
+    setSupportsSse(true)
+
+    const query = adminApiKey ? `?key=${encodeURIComponent(adminApiKey)}` : ''
+    const source = new EventSource(`${apiBaseUrl}/api/admin/stock-stream${query}`)
+    eventSourceRef.current = source
+
+    const applyOverview = (overview, timestamp) => {
+      setData({
+        privateVsGovernmentStock: overview.privateVsGovernmentStock || [],
+        stockByDistrict: overview.stockByDistrict || [],
+        stockByMill: overview.stockByMill || [],
+        summary: {
+          totalStock: overview.summary?.totalStock ?? 0,
+          totalCapacity: overview.summary?.totalCapacity ?? 0,
+          utilizationRate: overview.summary?.utilizationRate ?? 0,
+          activeMills: overview.summary?.activeMills ?? (overview.stockByMill?.length || 0)
+        }
+      })
+      setLastUpdated(timestamp || new Date().toISOString())
+      setError(null)
+    }
+
+    const handleUpdate = (event) => {
+      try {
+        const payload = JSON.parse(event.data || '{}')
+        if (!payload || !payload.overview) {
+          return
+        }
+        applyOverview(payload.overview, payload.timestamp)
+        setIsSseConnected(true)
+      } catch (parseError) {
+        console.error('Failed to parse stock update payload:', parseError)
+      }
+    }
+
+    const handleOpen = () => {
+      setIsSseConnected(true)
+    }
+
+    const handleError = (event) => {
+      console.error('Stock update stream error:', event)
+      setIsSseConnected(false)
+    }
+
+    source.addEventListener('stock-update', handleUpdate)
+    source.addEventListener('open', handleOpen)
+    source.addEventListener('error', handleError)
+
+    return () => {
+      setIsSseConnected(false)
+      source.removeEventListener('stock-update', handleUpdate)
+      source.removeEventListener('open', handleOpen)
+      source.removeEventListener('error', handleError)
+      source.close()
+      eventSourceRef.current = null
+    }
+  }, [adminApiKey, apiBaseUrl])
+
+  useEffect(() => {
     const interval = setInterval(() => {
-      fetchOverview({ silent: true })
+      if (!isSseConnected) {
+        fetchOverview({ silent: true })
+      }
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [fetchOverview])
+  }, [fetchOverview, isSseConnected])
 
   const totalStock = data.summary.totalStock || 0
   const totalCapacity = data.summary.totalCapacity || 0
@@ -107,6 +180,11 @@ const StockDashboard = () => {
                 ? `Last updated: ${new Date(lastUpdated).toLocaleString()}`
                 : 'Awaiting first data sync...'}
             </p>
+            {supportsSse && (
+              <p className="text-xs text-gray-500 mt-1">
+                {isSseConnected ? 'Live updates connected' : 'Live updates reconnecting...'}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 gap-3">

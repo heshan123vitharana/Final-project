@@ -1,5 +1,6 @@
 // controllers/stockController.js
 const StockModel = require('../models/stockModel');
+const stockUpdateEmitter = require('../utils/stockUpdateEmitter');
 
 const validateStockData = (data) => {
   const errors = [];
@@ -74,6 +75,18 @@ const addStock = async (req, res) => {
 
     // Add stock entry
     const result = await StockModel.addStockEntry(stockData);
+
+    try {
+      const overview = await StockModel.getAggregatedStockOverview();
+      stockUpdateEmitter.emit('update', {
+        type: 'stock-update',
+        millId: mill_id,
+        at: new Date().toISOString(),
+        overview
+      });
+    } catch (broadcastError) {
+      console.error('Broadcast stock update error:', broadcastError);
+    }
 
     res.status(201).json({
       message: 'Stock entry added successfully',
@@ -167,7 +180,19 @@ const deleteStock = async (req, res) => {
       });
     }
 
-    const result = await StockModel.deleteStockEntry(parseInt(id), mill_id);
+    const result = await StockModel.deleteStockEntry(parseInt(id, 10), mill_id);
+
+    try {
+      const overview = await StockModel.getAggregatedStockOverview();
+      stockUpdateEmitter.emit('update', {
+        type: 'stock-update',
+        millId: mill_id,
+        at: new Date().toISOString(),
+        overview
+      });
+    } catch (broadcastError) {
+      console.error('Broadcast stock update error:', broadcastError);
+    }
 
     res.json({
       message: 'Stock entry deleted successfully',
