@@ -1,150 +1,238 @@
+const db = require('./database');
 const StockModel = require('./models/stockModel');
 
-async function addSampleStockData() {
-  console.log('📊 Adding sample stock data...');
+const sampleMills = [
+  {
+    key: 'private-colombo',
+    first_name: 'Gayan',
+    last_name: 'Fernando',
+    business_name: 'Colombo Premium Mills',
+    business_type: 'private',
+    phone: '0771234567',
+    email: 'demo-private-colombo@pmb.lk',
+    mill_district: 'Colombo',
+    district: 'Colombo',
+    mill_capacity: '1500',
+  },
+  {
+    key: 'private-galle',
+    first_name: 'Sameera',
+    last_name: 'Silva',
+    business_name: 'Southern Grain Hub',
+    business_type: 'private',
+    phone: '0779876543',
+    email: 'demo-private-galle@pmb.lk',
+    mill_district: 'Galle',
+    district: 'Galle',
+    mill_capacity: '1100',
+  },
+  {
+    key: 'government-kurunegala',
+    first_name: 'Nuwan',
+    last_name: 'Jayasinghe',
+    business_name: 'Kurunegala State Mill',
+    business_type: 'government',
+    phone: '0112345678',
+    email: 'demo-gov-kurunegala@pmb.lk',
+    mill_district: 'Kurunegala',
+    district: 'Kurunegala',
+    mill_capacity: '1800',
+  },
+  {
+    key: 'government-anuradhapura',
+    first_name: 'Ishara',
+    last_name: 'Perera',
+    business_name: 'North Central Farm Services',
+    business_type: 'government',
+    phone: '0118765432',
+    email: 'demo-gov-anuradhapura@pmb.lk',
+    mill_district: 'Anuradhapura',
+    district: 'Anuradhapura',
+    mill_capacity: '1400',
+  },
+];
 
-  const sampleStockEntries = [
-    // Dry paddy entries
-    {
-      mill_id: 1, // Test user ID
-      farmer_id: 'F001',
-      farmer_name: 'Saman Perera',
-      paddy_type: 'Nadu - White',
-      paddy_condition: 'Dry',
-      quantity: 500,
-      region: 'Central',
-      entry_date: '2024-09-10',
-      price_per_kg: 85.50,
-      notes: 'High quality Nadu white paddy from Central province'
-    },
-    {
-      mill_id: 1,
-      farmer_id: 'F002',
-      farmer_name: 'Kamal Silva',
-      paddy_type: 'Samba',
-      paddy_condition: 'Dry',
-      quantity: 750,
-      region: 'South',
-      entry_date: '2024-09-11',
-      price_per_kg: 88.00,
-      notes: 'Premium Samba variety'
-    },
-    {
-      mill_id: 1,
-      farmer_id: 'F003',
-      farmer_name: 'Nimal Fernando',
-      paddy_type: 'Nadu - Red',
-      paddy_condition: 'Dry',
-      quantity: 300,
-      region: 'North',
-      entry_date: '2024-09-12',
-      price_per_kg: 92.25,
-      notes: 'Organic Nadu red paddy'
-    },
-    {
-      mill_id: 1,
-      farmer_id: 'F004',
-      farmer_name: 'Pradeep Jayasinghe',
-      paddy_type: 'Kiri Samba',
-      paddy_condition: 'Dry',
-      quantity: 425,
-      region: 'Central',
-      entry_date: '2024-09-13',
-      price_per_kg: 95.00,
-      notes: 'Premium Kiri Samba variety'
-    },
+const sampleStockEntries = [
+  {
+    millKey: 'private-colombo',
+    farmer_id: 'PC-F001',
+    farmer_name: 'Saman Perera',
+    paddy_type: 'Nadu - White',
+    paddy_condition: 'Dry',
+    quantity: 520,
+    region: 'Western',
+    entry_date: '2025-01-05',
+    price_per_kg: 86.5,
+    notes: 'Fresh Nadu white delivery from Western province',
+  },
+  {
+    millKey: 'private-colombo',
+    farmer_id: 'PC-F002',
+    farmer_name: 'Kamal Silva',
+    paddy_type: 'Samba',
+    paddy_condition: 'Wet',
+    quantity: 480,
+    region: 'Western',
+    entry_date: '2025-01-08',
+    price_per_kg: 81.75,
+    notes: 'Wet Samba batch awaiting drying process',
+  },
+  {
+    millKey: 'private-galle',
+    farmer_id: 'PG-F001',
+    farmer_name: 'Ranjith Kumara',
+    paddy_type: 'Nadu - Red',
+    paddy_condition: 'Dry',
+    quantity: 430,
+    region: 'Southern',
+    entry_date: '2025-01-03',
+    price_per_kg: 89.2,
+    notes: 'Southern province red Nadu variety',
+  },
+  {
+    millKey: 'private-galle',
+    farmer_id: 'PG-F002',
+    farmer_name: 'Sunil Ratnaike',
+    paddy_type: 'Kiri Samba',
+    paddy_condition: 'Wet',
+    quantity: 360,
+    region: 'Southern',
+    entry_date: '2025-01-10',
+    price_per_kg: 92.8,
+    notes: 'Premium Kiri Samba stock',
+  },
+  {
+    millKey: 'government-kurunegala',
+    farmer_id: 'GK-F001',
+    farmer_name: 'Nimal Fernando',
+    paddy_type: 'Nadu - White',
+    paddy_condition: 'Dry',
+    quantity: 680,
+    region: 'North Western',
+    entry_date: '2025-01-06',
+    price_per_kg: 84.9,
+    notes: 'Government collection from North Western',
+  },
+  {
+    millKey: 'government-kurunegala',
+    farmer_id: 'GK-F002',
+    farmer_name: 'Pradeep Jayasinghe',
+    paddy_type: 'Samba',
+    paddy_condition: 'Wet',
+    quantity: 540,
+    region: 'North Western',
+    entry_date: '2025-01-11',
+    price_per_kg: 79.5,
+    notes: 'Wet Samba shipment for drying facilities',
+  },
+  {
+    millKey: 'government-anuradhapura',
+    farmer_id: 'GA-F001',
+    farmer_name: 'Upul Wickramasinghe',
+    paddy_type: 'Nadu - Red',
+    paddy_condition: 'Dry',
+    quantity: 590,
+    region: 'North Central',
+    entry_date: '2025-01-07',
+    price_per_kg: 87.3,
+    notes: 'North Central Nadu red stock',
+  },
+  {
+    millKey: 'government-anuradhapura',
+    farmer_id: 'GA-F002',
+    farmer_name: 'Mahesh Gunasekara',
+    paddy_type: 'Kiri Samba',
+    paddy_condition: 'Wet',
+    quantity: 410,
+    region: 'North Central',
+    entry_date: '2025-01-12',
+    price_per_kg: 90.4,
+    notes: 'Wet Kiri Samba awaiting processing',
+  },
+];
 
-    // Wet paddy entries
-    {
-      mill_id: 1,
-      farmer_id: 'F005',
-      farmer_name: 'Ranjith Kumara',
-      paddy_type: 'Nadu - White',
-      paddy_condition: 'Wet',
-      quantity: 600,
-      region: 'South',
-      entry_date: '2024-09-09',
-      price_per_kg: 78.50,
-      notes: 'Fresh wet Nadu white paddy'
-    },
-    {
-      mill_id: 1,
-      farmer_id: 'F006',
-      farmer_name: 'Sunil Ratnaike',
-      paddy_type: 'Samba',
-      paddy_condition: 'Wet',
-      quantity: 800,
-      region: 'Central',
-      entry_date: '2024-09-10',
-      price_per_kg: 80.75,
-      notes: 'Good quality wet Samba'
-    },
-    {
-      mill_id: 1,
-      farmer_id: 'F007',
-      farmer_name: 'Chaminda Perera',
-      paddy_type: 'Nadu - Red',
-      paddy_condition: 'Wet',
-      quantity: 350,
-      region: 'North',
-      entry_date: '2024-09-11',
-      price_per_kg: 83.25,
-      notes: 'Wet Nadu red variety'
-    },
-    {
-      mill_id: 1,
-      farmer_id: 'F008',
-      farmer_name: 'Mahesh Gunasekara',
-      paddy_type: 'Kiri Samba',
-      paddy_condition: 'Wet',
-      quantity: 275,
-      region: 'South',
-      entry_date: '2024-09-12',
-      price_per_kg: 87.50,
-      notes: 'Premium wet Kiri Samba'
-    },
+async function ensureSampleMills() {
+  const keyToId = new Map();
 
-    // Additional entries for variety
-    {
-      mill_id: 1,
-      farmer_id: 'F009',
-      farmer_name: 'Lalith Mendis',
-      paddy_type: 'Nadu - White',
-      paddy_condition: 'Dry',
-      quantity: 450,
-      region: 'South',
-      entry_date: '2024-09-13',
-      price_per_kg: 86.00,
-      notes: 'Additional Nadu white stock'
-    },
-    {
-      mill_id: 1,
-      farmer_id: 'F010',
-      farmer_name: 'Upul Wickramasinghe',
-      paddy_type: 'Samba',
-      paddy_condition: 'Wet',
-      quantity: 650,
-      region: 'North',
-      entry_date: '2024-09-14',
-      price_per_kg: 81.25,
-      notes: 'Fresh Samba delivery'
+  for (const mill of sampleMills) {
+    const [existing] = await db.execute('SELECT id FROM users WHERE email = ?', [mill.email]);
+
+    let millId;
+    if (existing.length) {
+      millId = existing[0].id;
+      await db.execute(
+        `UPDATE users
+         SET business_type = ?, mill_district = ?, district = ?, mill_capacity = ?, business_name = ?
+         WHERE id = ?`,
+        [mill.business_type, mill.mill_district, mill.district, mill.mill_capacity, mill.business_name, millId]
+      );
+    } else {
+      const [result] = await db.execute(
+        `INSERT INTO users
+          (first_name, last_name, business_name, business_type, phone, email, password, mill_district, district, mill_capacity)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        , [
+          mill.first_name,
+          mill.last_name,
+          mill.business_name,
+          mill.business_type,
+          mill.phone,
+          mill.email,
+          'password123',
+          mill.mill_district,
+          mill.district,
+          mill.mill_capacity,
+        ]
+      );
+      millId = result.insertId;
     }
-  ];
+
+    keyToId.set(mill.key, millId);
+  }
+
+  return keyToId;
+}
+
+async function addSampleStockData() {
+  console.log('📊 Adding sample stock data for multiple mills...');
 
   try {
+    const keyToId = await ensureSampleMills();
+
     for (const entry of sampleStockEntries) {
-      await StockModel.addStockEntry(entry);
-      console.log(`✅ Added stock entry: ${entry.quantity}MT ${entry.paddy_condition} ${entry.paddy_type} from ${entry.farmer_name}`);
+      const millId = keyToId.get(entry.millKey);
+      if (!millId) {
+        console.warn(`⚠️ Skipping entry for ${entry.millKey}; mill not found.`);
+        continue;
+      }
+
+      await StockModel.addStockEntry({
+        ...entry,
+        mill_id: millId,
+      });
+
+      console.log(
+        `✅ Added ${entry.quantity}kg ${entry.paddy_condition} ${entry.paddy_type} to mill ${entry.millKey}`
+      );
     }
 
     console.log('🎉 Sample stock data added successfully!');
-    console.log('📊 Summary:');
+    console.log('📊 Summary by mill:');
 
-    // Get summary to verify
-    const summary = await StockModel.getStockSummary(1);
-    summary.forEach(item => {
-      console.log(`- ${item.paddy_type} (${item.paddy_condition}) - ${item.region}: ${item.total_quantity} MT`);
-    });
+    for (const [key, id] of keyToId.entries()) {
+      const summary = await StockModel.getStockSummary(id);
+      if (!summary.length) {
+        console.log(`  • ${key}: no stock entries recorded.`);
+        continue;
+      }
+
+      console.log(`  • ${key} (ID ${id})`);
+      summary.forEach((item) => {
+        console.log(
+          `     - ${item.paddy_type} (${item.paddy_condition}) - ${item.region}: ${item.total_quantity} MT`
+        );
+      });
+    }
 
     process.exit(0);
   } catch (error) {

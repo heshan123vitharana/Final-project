@@ -12,7 +12,8 @@ import {
   XCircle,
   AlertCircle,
   FileText,
-  ChevronRight
+  ChevronRight,
+  Send
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { generatePermitCertificate } from '../utils/certificateGenerator';
@@ -20,6 +21,7 @@ import { generatePermitCertificate } from '../utils/certificateGenerator';
 // Home page component for the Mill Dashboard
 const MillHome = ({ userData }) => {
   const navigate = useNavigate();
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
   // State to track selected paddy type (dry/wet)
   const [selectedType, setSelectedType] = useState('dry');
@@ -38,6 +40,15 @@ const MillHome = ({ userData }) => {
   const [stockData, setStockData] = useState([]);
   const [loadingStock, setLoadingStock] = useState(false);
   const [stockError, setStockError] = useState(null);
+
+  const [reportHistory, setReportHistory] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(false);
+  const [reportError, setReportError] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportNotes, setReportNotes] = useState('');
+  const [periodStart, setPeriodStart] = useState('');
+  const [periodEnd, setPeriodEnd] = useState('');
+  const [sendingReport, setSendingReport] = useState(false);
 
   const effectiveUserData = useMemo(() => {
     if (userData) return userData;
@@ -68,6 +79,25 @@ const MillHome = ({ userData }) => {
   const currentUserData = useMemo(() => {
     return effectiveUserData || {};
   }, [effectiveUserData]);
+
+  const getAuthToken = useCallback(() => {
+    try {
+      const sessionValue = sessionStorage.getItem('millOwnerData');
+      const localValue = localStorage.getItem('millData');
+
+      const sessionData = sessionValue ? JSON.parse(sessionValue) : {};
+      const localData = localValue ? JSON.parse(localValue) : {};
+
+      return currentUserData?.token
+        || sessionData?.token
+        || localData?.token
+        || sessionStorage.getItem('token')
+        || null;
+    } catch (error) {
+      console.error('Error retrieving mill auth token:', error);
+      return null;
+    }
+  }, [currentUserData]);
 
   // Set page title on mount and when user changes
   useEffect(() => {
@@ -104,6 +134,18 @@ const MillHome = ({ userData }) => {
   // Select chart data based on selected paddy type
   const chartData = processStockData(stockData, selectedType === 'dry' ? 'Dry' : 'Wet');
 
+  const currentStockTotal = useMemo(() => {
+    if (!Array.isArray(stockData) || stockData.length === 0) {
+      return 0;
+    }
+
+    return stockData.reduce((sum, item) => {
+      const rawValue = item?.total_quantity ?? item?.stock ?? 0;
+      const numeric = parseFloat(rawValue);
+      return Number.isFinite(numeric) ? sum + numeric : sum;
+    }, 0);
+  }, [stockData]);
+
   const getCurrentUserId = () => {
     try {
       const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
@@ -114,9 +156,9 @@ const MillHome = ({ userData }) => {
     }
   };
 
-  const loadProfilePhoto = async (userId) => {
+  const loadProfilePhoto = useCallback(async (userId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/profile/photo/${userId}`);
+      const response = await fetch(`${apiBaseUrl}/api/profile/photo/${userId}`);
       if (response.ok) {
         const data = await response.json();
         return data.photoData;
@@ -125,7 +167,7 @@ const MillHome = ({ userData }) => {
     } catch {
       return "";
     }
-  };
+  }, [apiBaseUrl]);
 
   // Fetch stock summary from API
   const fetchStockData = useCallback(async () => {
@@ -133,19 +175,13 @@ const MillHome = ({ userData }) => {
       setLoadingStock(true);
       setStockError(null);
 
-      // Get authentication token from session storage
-      const millOwnerData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
-      const localData = JSON.parse(localStorage.getItem('millData') || '{}');
-      const token = currentUserData?.token
-        || millOwnerData.token
-        || localData.token
-        || sessionStorage.getItem('token');
+      const token = getAuthToken();
 
       if (!token) {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch('http://localhost:5000/api/stock/summary', {
+      const response = await fetch(`${apiBaseUrl}/api/stock/summary`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -163,12 +199,46 @@ const MillHome = ({ userData }) => {
     } catch (error) {
       console.error('Stock data fetch failed:', error);
       setStockError(error.message);
-      // Set empty data so chart shows "No data available"
       setStockData([]);
     } finally {
       setLoadingStock(false);
     }
-  }, [currentUserData?.token]);
+  }, [apiBaseUrl, getAuthToken]);
+
+  const fetchReportHistory = useCallback(async () => {
+    try {
+      setLoadingReports(true);
+      setReportError(null);
+
+      const token = getAuthToken();
+
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${apiBaseUrl}/api/stock/reports?limit=5`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Failed to load submitted reports');
+      }
+
+      const result = await response.json();
+      setReportHistory(Array.isArray(result.data) ? result.data : []);
+    } catch (error) {
+      console.error('Report history fetch failed:', error);
+      setReportError(error.message);
+      setReportHistory([]);
+    } finally {
+      setLoadingReports(false);
+    }
+  }, [apiBaseUrl, getAuthToken]);
 
   useEffect(() => {
     const fetchProfilePhoto = async () => {
@@ -187,12 +257,16 @@ const MillHome = ({ userData }) => {
     };
 
     fetchProfilePhoto();
-  }, [userData?.id]);
+  }, [loadProfilePhoto, userData?.id]);
 
   // Load stock data when component mounts
   useEffect(() => {
     fetchStockData();
   }, [fetchStockData]);
+
+  useEffect(() => {
+    fetchReportHistory();
+  }, [fetchReportHistory]);
 
   useEffect(() => {
     if (!licenseData) {
@@ -220,7 +294,7 @@ const MillHome = ({ userData }) => {
 
     try {
       setLoadingLicense(true);
-      const response = await fetch(`http://localhost:5000/api/licenses/applications/${userId}`);
+  const response = await fetch(`${apiBaseUrl}/api/licenses/applications/${userId}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -235,7 +309,7 @@ const MillHome = ({ userData }) => {
     } finally {
       setLoadingLicense(false);
     }
-  }, [userData]);
+  }, [apiBaseUrl, userData]);
 
   // Load license data when component mounts
   useEffect(() => {
@@ -347,6 +421,73 @@ const MillHome = ({ userData }) => {
     }
   };
 
+  const handleSendReport = async () => {
+    try {
+      setSendingReport(true);
+      setReportError(null);
+
+      const token = getAuthToken();
+
+      if (!token) {
+        throw new Error('Missing authentication token');
+      }
+
+      const payload = {
+        reportType: 'stock-update',
+        periodStart: periodStart || null,
+        periodEnd: periodEnd || null,
+        notes: reportNotes || ''
+      };
+
+      const response = await fetch(`${apiBaseUrl}/api/stock/reports`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Failed to send stock report');
+      }
+
+      await response.json();
+
+      toast.success('Stock report sent to admin successfully.');
+      setShowReportModal(false);
+      setReportNotes('');
+      setPeriodStart('');
+      setPeriodEnd('');
+      fetchReportHistory();
+    } catch (error) {
+      console.error('Send stock report error:', error);
+      setReportError(error.message);
+      toast.error(`Failed to send stock report: ${error.message}`);
+    } finally {
+      setSendingReport(false);
+    }
+  };
+
+  const openReportModal = () => {
+    const today = new Date();
+    const defaultEnd = today.toISOString().slice(0, 10);
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - 7);
+    const defaultStart = startDate.toISOString().slice(0, 10);
+
+    setReportError(null);
+    setPeriodEnd((prev) => prev || defaultEnd);
+    setPeriodStart((prev) => prev || defaultStart);
+    setShowReportModal(true);
+  };
+
+  const closeReportModal = () => {
+    setShowReportModal(false);
+    setReportError(null);
+  };
+
   // Get status icon and color
   const getStatusDisplay = (status) => {
     switch (status) {
@@ -359,6 +500,74 @@ const MillHome = ({ userData }) => {
       default:
         return { icon: AlertCircle, color: 'text-gray-600', bg: 'bg-gray-100', text: 'No Application' };
     }
+  };
+
+  const formatReportType = (type) => {
+    if (!type) return 'Stock Report';
+    return type
+      .split(/[-_\s]/)
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  const getReportStatusStyles = (status) => {
+    switch (status) {
+      case 'acknowledged':
+        return { label: 'Acknowledged', className: 'bg-green-100 text-green-700' };
+      case 'rejected':
+        return { label: 'Rejected', className: 'bg-red-100 text-red-700' };
+      default:
+        return { label: 'Submitted', className: 'bg-blue-100 text-blue-700' };
+    }
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) {
+      return 'Not available';
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return value;
+    }
+
+    return parsed.toLocaleString('en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+  };
+
+  const formatReportPeriod = (report) => {
+    const formatDate = (input) => {
+      if (!input) {
+        return null;
+      }
+
+      const parsed = new Date(input);
+      if (Number.isNaN(parsed.getTime())) {
+        return null;
+      }
+
+      return parsed.toLocaleDateString('en-GB');
+    };
+
+    const startLabel = formatDate(report?.period_start);
+    const endLabel = formatDate(report?.period_end);
+
+    if (startLabel && endLabel) {
+      return `${startLabel} → ${endLabel}`;
+    }
+
+    if (startLabel) {
+      return `From ${startLabel}`;
+    }
+
+    if (endLabel) {
+      return `Up to ${endLabel}`;
+    }
+
+    return 'Latest update';
   };
 
   try {
@@ -649,6 +858,254 @@ const MillHome = ({ userData }) => {
             )}
           </section>
         </div>
+
+        {/* Stock Reporting Section */}
+        <div className="max-w-6xl mx-auto px-4 pb-12">
+          <section className="bg-white rounded-2xl shadow-sm border border-green-100 px-6 py-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-2xl space-y-2">
+                <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <Send className="text-green-600" size={20} />
+                  Share Stock Update with Admin
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Send a snapshot of your latest stock levels to the central administration team. This keeps the district-wide dashboard up to date and helps the PMB respond quickly to stock needs.
+                </p>
+                <ul className="text-sm text-gray-500 space-y-1 list-disc list-inside">
+                  <li>Summary includes total entries, quantity, value, and variety breakdown.</li>
+                  <li>Admin can acknowledge or request follow-up directly from your submission.</li>
+                  <li>Use the note to highlight urgent updates or issues the PMB should know about.</li>
+                </ul>
+              </div>
+              <div className="flex flex-col gap-3 min-w-[230px]">
+                <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Current Total Stock</p>
+                      <p className="text-2xl font-bold text-green-900 mt-1">
+                        {currentStockTotal.toFixed(2)} <span className="text-sm font-semibold text-green-700">MT</span>
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {loadingReports ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={fetchReportHistory}
+                          className="text-xs text-green-700 font-semibold hover:underline"
+                        >
+                          Refresh log
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {reportError && (
+                    <p className="mt-2 text-xs text-red-600">{reportError}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={openReportModal}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+                >
+                  <Send size={16} className="-ml-1" />
+                  Send Stock Report
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide mb-3">Recent submissions</h3>
+              {loadingReports ? (
+                <div className="flex items-center justify-center py-6">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+                  <span className="ml-3 text-sm text-gray-600">Loading report history...</span>
+                </div>
+              ) : reportHistory.length === 0 ? (
+                <div className="border border-dashed border-green-200 rounded-xl p-5 text-center">
+                  <p className="text-sm text-gray-600">No stock reports submitted yet. Send your first report to keep the admin team informed.</p>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {reportHistory.map((report) => {
+                    const statusStyles = getReportStatusStyles(report.status);
+                    const reportSummary = report.summary?.totals || report.totals;
+
+                    return (
+                      <article
+                        key={report.id}
+                        className="rounded-xl border border-green-100 bg-white px-4 py-4 shadow-sm"
+                      >
+                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold text-gray-900">
+                              {formatReportType(report.report_type)}
+                              <span className="ml-2 text-xs font-medium text-gray-500">
+                                {formatReportPeriod(report)}
+                              </span>
+                            </p>
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                              <span className="inline-flex items-center gap-1">
+                                <span className="font-semibold text-gray-700">Quantity:</span>
+                                {reportSummary?.quantityKg?.toFixed ? reportSummary.quantityKg.toFixed(2) : Number(reportSummary?.quantityKg || 0).toFixed(2)} MT
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <span className="font-semibold text-gray-700">Entries:</span>
+                                {reportSummary?.entries ?? 0}
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <span className="font-semibold text-gray-700">Submitted:</span>
+                                {formatDateTime(report.created_at)}
+                              </span>
+                            </div>
+                            {report.notes && (
+                              <p className="text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                <span className="font-semibold text-gray-700 mr-2">Note:</span>
+                                {report.notes}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusStyles.className}`}>
+                              {statusStyles.label}
+                            </span>
+                            {report.updated_at && (
+                              <span className="text-[11px] text-gray-400">Updated {formatDateTime(report.updated_at)}</span>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* Report Submission Modal */}
+        {showReportModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
+              <header className="flex items-start justify-between border-b border-gray-100 px-6 py-5">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                    <Send className="text-green-600" size={18} />
+                    Submit Stock Report to Admin
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Review your reporting window and add an optional note before sending.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeReportModal}
+                  className="text-gray-400 transition-colors hover:text-gray-600"
+                >
+                  <X size={22} />
+                </button>
+              </header>
+
+              <form
+                className="px-6 py-5 space-y-5"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleSendReport();
+                }}
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="flex flex-col gap-2 text-sm text-gray-700">
+                    <span className="font-semibold">Period start</span>
+                    <input
+                      type="date"
+                      value={periodStart}
+                      max={periodEnd || undefined}
+                      onChange={(event) => setPeriodStart(event.target.value)}
+                      className="rounded-lg border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm text-gray-700">
+                    <span className="font-semibold">Period end</span>
+                    <input
+                      type="date"
+                      value={periodEnd}
+                      min={periodStart || undefined}
+                      onChange={(event) => setPeriodEnd(event.target.value)}
+                      className="rounded-lg border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                    />
+                  </label>
+                </div>
+
+                <div>
+                  <label className="flex flex-col gap-2 text-sm text-gray-700">
+                    <span className="font-semibold">Add note (optional)</span>
+                    <textarea
+                      rows={4}
+                      value={reportNotes}
+                      onChange={(event) => setReportNotes(event.target.value)}
+                      placeholder="Highlight urgent updates, quality issues, or requests for transport."
+                      className="rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                    />
+                  </label>
+                  <p className="mt-2 text-xs text-gray-500">
+                    The generated report already includes totals and variety stats. Use this note to provide extra context for the admin team.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-700">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="font-semibold text-gray-800">What will be shared:</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-600 border border-gray-200">
+                      • Total entries per paddy type & condition
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-600 border border-gray-200">
+                      • Overall quantity & value totals
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-600 border border-gray-200">
+                      • Mill profile & capacity snapshot
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-500">A copy of this submission will show up in your recent reports list above.</span>
+                </div>
+
+                {reportError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {reportError}
+                  </div>
+                )}
+
+                <footer className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end border-t border-gray-100 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeReportModal}
+                    className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100"
+                    disabled={sendingReport}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className={`inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2 text-sm font-semibold text-white transition-colors ${sendingReport ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
+                    disabled={sendingReport}
+                  >
+                    {sendingReport ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} className="-ml-1" />
+                        Send report now
+                      </>
+                    )}
+                  </button>
+                </footer>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* License Details Modal */}
       {showLicenseDetailsModal && licenseData && (

@@ -14,6 +14,9 @@ router.use(requireAuth);
 // POST /api/stock - Add new stock entry
 router.post('/', stockController.addStock);
 
+// POST /api/stock/reports - Submit stock report to admin
+router.post('/reports', stockController.submitStockReport);
+
 // GET /api/stock/entries - Get all stock entries with optional filters
 router.get('/entries', stockController.getStockEntries);
 
@@ -22,6 +25,9 @@ router.get('/summary', stockController.getStockSummary);
 
 // GET /api/stock/stats - Get stock statistics
 router.get('/stats', stockController.getStockStats);
+
+// GET /api/stock/reports - Get submitted reports for the current mill
+router.get('/reports', stockController.getSubmittedReports);
 
 // DELETE /api/stock/:id - Delete stock entry
 router.delete('/:id', stockController.deleteStock);

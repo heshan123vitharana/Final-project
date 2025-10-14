@@ -93,18 +93,22 @@ Make sure you have the following software installed:
      npm install
      ```
 
-   * Create a `.env` file in the `backend` directory and add your MySQL database connection details. It should look like this:
-
-     ```env
-     DB_USER=your_mysql_username
-     DB_HOST=localhost
-     DB_DATABASE=your_database_name
-     DB_PASSWORD=your_mysql_password
-     DB_PORT=3306
-     PORT=5000
-     ```
+   * Copy `.env.example` to `.env` and update the values for your environment. At minimum you will need valid database credentials, a `JWT_SECRET`, and `ADMIN_API_KEY` (used by the live stock dashboard).
 
    * Set up your MySQL database. You can use the `.sql` files in the `backend` directory to create the necessary tables and add sample data.
+
+   * (Optional) Run the mill data audit helper to verify that every mill has a district, business type, and numeric capacity:
+
+     ```bash
+     node scripts/auditMillData.js
+     ```
+
+   * (Optional) Seed realistic demo stock records across multiple districts:
+
+     ```bash
+     node add-sample-stock-data.js
+     ```
+
    * Start the backend server:
 
      ```bash
@@ -125,6 +129,8 @@ Make sure you have the following software installed:
      ```bash
      npm install
      ```
+
+   * Copy `.env.example` to `.env` (or `.env.local`) and provide values for `VITE_API_BASE_URL`, `VITE_ADMIN_API_KEY`, and any other keys you need (for example the Google Maps key). Make sure `VITE_ADMIN_API_KEY` matches the backend `ADMIN_API_KEY` when the secure header is enabled.
 
    * Start the frontend development server:
 

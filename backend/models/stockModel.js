@@ -41,6 +41,26 @@ class StockModel {
         )
       `);
 
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS stock_reports (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          mill_id INT NOT NULL,
+          report_type VARCHAR(50) NOT NULL,
+          period_start DATE,
+          period_end DATE,
+          summary_payload LONGTEXT,
+          total_entries INT DEFAULT 0,
+          total_quantity DECIMAL(12,2) DEFAULT 0,
+          total_value DECIMAL(14,2) DEFAULT 0,
+          notes TEXT,
+          status ENUM('submitted', 'acknowledged', 'rejected') DEFAULT 'submitted',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (mill_id) REFERENCES users(id) ON DELETE CASCADE,
+          INDEX idx_stock_reports_mill_created (mill_id, created_at)
+        )
+      `);
+
       console.log('✅ Stock tables initialized successfully');
     } catch (error) {
       console.error('❌ Stock table initialization error:', error);
@@ -237,6 +257,341 @@ class StockModel {
       return { message: 'Stock entry deleted successfully' };
     } catch (error) {
       console.error('❌ Delete stock entry error:', error);
+      throw error;
+    }
+  }
+
+  static parseCapacity(value) {
+    if (!value) return 0;
+
+    const asString = String(value).trim();
+    if (!asString) return 0;
+
+    const match = asString.replace(',', '').match(/\d+(\.\d+)?/);
+    if (!match) return 0;
+
+    const parsed = parseFloat(match[0]);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  static async getAggregatedStockOverview() {
+    try {
+      const [rows] = await db.execute(`
+        SELECT 
+          u.id AS mill_id,
+          u.business_name,
+          u.business_type,
+          COALESCE(u.mill_district, u.district, 'Unknown') AS district,
+          u.mill_capacity,
+          COALESCE(SUM(ss.total_quantity), 0) AS total_quantity,
+          MAX(ss.last_updated) AS last_updated
+        FROM users u
+        LEFT JOIN stock_summary ss ON ss.mill_id = u.id
+        WHERE u.business_type IN ('private', 'government')
+        GROUP BY u.id, u.business_name, u.business_type, u.mill_district, u.district, u.mill_capacity
+      `);
+
+      let latestEntryUpdate = null;
+
+      try {
+        const [latestUpdateResult] = await db.execute(`
+          SELECT MAX(updated_at) AS last_updated
+          FROM stock_entries
+        `);
+
+        latestEntryUpdate = latestUpdateResult?.[0]?.last_updated || null;
+      } catch (innerError) {
+        console.warn('⚠️ Unable to retrieve last stock entry update:', innerError.message);
+      }
+
+      const overview = {
+        privateVsGovernmentStock: [
+          { name: 'Private Mills', current: 0, capacity: 0, percentage: 0 },
+          { name: 'Government Mills', current: 0, capacity: 0, percentage: 0 }
+        ],
+        stockByDistrict: [],
+        stockByMill: [],
+        summary: {
+          totalStock: 0,
+          totalCapacity: 0,
+          utilizationRate: 0,
+          activeMills: 0
+        },
+        lastUpdated: latestEntryUpdate
+      };
+
+      if (!rows || rows.length === 0) {
+        return overview;
+      }
+
+      const districtMap = new Map();
+
+      rows.forEach((row) => {
+        const quantity = parseFloat(row.total_quantity) || 0;
+        const capacity = StockModel.parseCapacity(row.mill_capacity);
+        const type = (row.business_type || '').toLowerCase();
+        const district = row.district || 'Unknown';
+
+        if (type === 'private') {
+          overview.privateVsGovernmentStock[0].current += quantity;
+          overview.privateVsGovernmentStock[0].capacity += capacity;
+        } else if (type === 'government') {
+          overview.privateVsGovernmentStock[1].current += quantity;
+          overview.privateVsGovernmentStock[1].capacity += capacity;
+        }
+
+        overview.summary.totalStock += quantity;
+        overview.summary.totalCapacity += capacity;
+
+        if (quantity > 0) {
+          overview.summary.activeMills += 1;
+        }
+
+        if (!districtMap.has(district)) {
+          districtMap.set(district, {
+            district,
+            private: 0,
+            government: 0,
+            total: 0
+          });
+        }
+
+        const districtTotals = districtMap.get(district);
+        if (type === 'private') {
+          districtTotals.private += quantity;
+        } else if (type === 'government') {
+          districtTotals.government += quantity;
+        }
+        districtTotals.total += quantity;
+
+        const utilization = capacity > 0 ? Math.round((quantity / capacity) * 100) : 0;
+
+        overview.stockByMill.push({
+          mill: row.business_name || `Mill ${row.mill_id}`,
+          stock: Math.round(quantity * 100) / 100,
+          capacity: capacity ? Math.round(capacity * 100) / 100 : 0,
+          utilization,
+          type: type === 'government' ? 'Government' : 'Private'
+        });
+      });
+
+      overview.privateVsGovernmentStock = overview.privateVsGovernmentStock.map((entry) => ({
+        ...entry,
+        current: Math.round(entry.current * 100) / 100,
+        capacity: Math.round(entry.capacity * 100) / 100,
+        percentage: entry.capacity > 0 ? Math.round((entry.current / entry.capacity) * 100) : 0
+      }));
+
+      overview.summary.totalStock = Math.round(overview.summary.totalStock * 100) / 100;
+      overview.summary.totalCapacity = Math.round(overview.summary.totalCapacity * 100) / 100;
+      overview.summary.utilizationRate = overview.summary.totalCapacity > 0
+        ? Math.round((overview.summary.totalStock / overview.summary.totalCapacity) * 100)
+        : 0;
+
+      overview.stockByDistrict = Array.from(districtMap.values())
+        .filter((district) => district.total > 0)
+        .sort((a, b) => b.total - a.total)
+        .map((district) => ({
+          ...district,
+          private: Math.round(district.private * 100) / 100,
+          government: Math.round(district.government * 100) / 100,
+          total: Math.round(district.total * 100) / 100
+        }));
+
+      overview.stockByMill.sort((a, b) => b.stock - a.stock);
+
+      if (!overview.lastUpdated) {
+        const maxLastUpdated = rows.reduce((latest, row) => {
+          const current = row.last_updated ? new Date(row.last_updated) : null;
+          if (!current) return latest;
+          return !latest || current > latest ? current : latest;
+        }, null);
+
+        overview.lastUpdated = maxLastUpdated ? maxLastUpdated.toISOString() : null;
+      }
+
+      return overview;
+    } catch (error) {
+      console.error('❌ Aggregated stock overview error:', error);
+      throw error;
+    }
+  }
+
+  static safeParseJson(value) {
+    if (!value) return null;
+
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      console.warn('⚠️ Failed to parse JSON payload:', error.message);
+      return null;
+    }
+  }
+
+  static async getMillBasicInfo(mill_id) {
+    const [rows] = await db.execute(`
+      SELECT 
+        id,
+        business_name,
+        business_type,
+        COALESCE(mill_district, district) AS district,
+        mill_capacity
+      FROM users
+      WHERE id = ?
+      LIMIT 1
+    `, [mill_id]);
+
+    return rows.length ? rows[0] : null;
+  }
+
+  static async createStockReport({
+    mill_id,
+    report_type,
+    period_start = null,
+    period_end = null,
+    summary,
+    totals,
+    notes = null
+  }) {
+    try {
+      const payloadString = summary ? JSON.stringify(summary) : null;
+      const totalEntries = totals?.entries ? parseInt(totals.entries, 10) : 0;
+      const totalQuantity = totals?.quantityKg ? parseFloat(totals.quantityKg) : 0;
+      const totalValue = totals?.value ? parseFloat(totals.value) : 0;
+
+      const [result] = await db.execute(`
+        INSERT INTO stock_reports
+          (mill_id, report_type, period_start, period_end, summary_payload, total_entries, total_quantity, total_value, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        mill_id,
+        report_type,
+        period_start,
+        period_end,
+        payloadString,
+        totalEntries,
+        totalQuantity,
+        totalValue,
+        notes && notes.trim() ? notes.trim() : null
+      ]);
+
+      const insertedId = result.insertId;
+
+      const [rows] = await db.execute(`
+        SELECT 
+          sr.*,
+          u.business_name,
+          u.business_type,
+          COALESCE(u.mill_district, u.district) AS district
+        FROM stock_reports sr
+        JOIN users u ON sr.mill_id = u.id
+        WHERE sr.id = ?
+        LIMIT 1
+      `, [insertedId]);
+
+      if (rows.length > 0) {
+        return StockModel.formatReportRow(rows[0]);
+      }
+
+      return {
+        id: insertedId,
+        mill_id,
+        report_type,
+        period_start,
+        period_end,
+        summary: summary || null,
+        totals: {
+          entries: totalEntries,
+          quantityKg: totalQuantity,
+          value: totalValue
+        },
+        notes: notes || null,
+        status: 'submitted'
+      };
+    } catch (error) {
+      console.error('❌ Create stock report error:', error);
+      throw error;
+    }
+  }
+
+  static formatReportRow(row) {
+    return {
+      id: row.id,
+      mill_id: row.mill_id,
+      mill_name: row.business_name || null,
+      district: row.district || null,
+      business_type: row.business_type || null,
+      report_type: row.report_type,
+      period_start: row.period_start,
+      period_end: row.period_end,
+      summary: StockModel.safeParseJson(row.summary_payload),
+      totals: {
+        entries: row.total_entries || 0,
+        quantityKg: row.total_quantity ? parseFloat(row.total_quantity) : 0,
+        value: row.total_value ? parseFloat(row.total_value) : 0
+      },
+      notes: row.notes,
+      status: row.status,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    };
+  }
+
+  static async getReportsForMill(mill_id, limit = 10) {
+    try {
+      const sanitizedLimit = Number.isFinite(limit)
+        ? Math.min(Math.max(parseInt(limit, 10), 1), 100)
+        : 10;
+
+      const [rows] = await db.execute(`
+        SELECT 
+          sr.*,
+          u.business_name,
+          COALESCE(u.mill_district, u.district) AS district,
+          u.business_type
+        FROM stock_reports sr
+        JOIN users u ON sr.mill_id = u.id
+        WHERE sr.mill_id = ?
+        ORDER BY sr.created_at DESC
+        LIMIT ${sanitizedLimit}
+      `, [mill_id]);
+
+      return rows.map(StockModel.formatReportRow);
+    } catch (error) {
+      console.error('❌ Get stock reports for mill error:', error);
+      throw error;
+    }
+  }
+
+  static async getAllStockReports({ limit = 50, district } = {}) {
+    try {
+      const sanitizedLimit = Number.isFinite(limit)
+        ? Math.min(Math.max(parseInt(limit, 10), 1), 200)
+        : 50;
+
+      let query = `
+        SELECT 
+          sr.*,
+          u.business_name,
+          u.business_type,
+          COALESCE(u.mill_district, u.district) AS district
+        FROM stock_reports sr
+        JOIN users u ON sr.mill_id = u.id
+      `;
+
+      const params = [];
+
+      if (district) {
+        query += ' WHERE COALESCE(u.mill_district, u.district) = ?';
+        params.push(district);
+      }
+
+      query += ` ORDER BY sr.created_at DESC LIMIT ${sanitizedLimit}`;
+
+      const [rows] = await db.execute(query, params);
+      return rows.map(StockModel.formatReportRow);
+    } catch (error) {
+      console.error('❌ Get all stock reports error:', error);
       throw error;
     }
   }

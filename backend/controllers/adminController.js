@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const db = require('../database');
+const StockModel = require('../models/stockModel');
 
 const adminLogin = async (req, res) => {
     try {
@@ -183,8 +184,70 @@ const getMockDataForReport = (reportType) => {
     return mockReportData[reportType];
 };
 
+const getStockOverview = async (req, res) => {
+    try {
+        const configuredKey = process.env.ADMIN_API_KEY;
+        if (configuredKey) {
+            const providedKey = req.headers['x-admin-key'];
+            if (!providedKey || providedKey !== configuredKey) {
+                return res.status(401).json({
+                    message: 'Unauthorized access to stock overview'
+                });
+            }
+        }
+
+        const overview = await StockModel.getAggregatedStockOverview();
+
+        res.status(200).json({
+            message: 'Stock overview retrieved successfully',
+            data: overview
+        });
+    } catch (error) {
+        console.error('Error in getStockOverview:', error);
+        res.status(500).json({
+            message: 'Failed to retrieve stock overview',
+            error: error.message
+        });
+    }
+};
+
+const getStockReports = async (req, res) => {
+    try {
+        const configuredKey = process.env.ADMIN_API_KEY;
+        if (configuredKey) {
+            const providedKey = req.headers['x-admin-key'];
+            if (!providedKey || providedKey !== configuredKey) {
+                return res.status(401).json({
+                    message: 'Unauthorized access to stock reports'
+                });
+            }
+        }
+
+        const limit = req.query.limit ? parseInt(req.query.limit, 10) : 50;
+        const district = req.query.district || null;
+
+        const reports = await StockModel.getAllStockReports({
+            limit: Number.isFinite(limit) ? limit : 50,
+            district: district && district !== 'All' ? district : null
+        });
+
+        res.status(200).json({
+            message: 'Stock reports retrieved successfully',
+            data: reports
+        });
+    } catch (error) {
+        console.error('Error in getStockReports:', error);
+        res.status(500).json({
+            message: 'Failed to retrieve stock reports',
+            error: error.message
+        });
+    }
+};
+
 
 module.exports = {
     adminLogin,
-    getReport
+    getReport,
+    getStockOverview,
+    getStockReports
 };

@@ -187,10 +187,116 @@ const deleteStock = async (req, res) => {
   }
 };
 
+const submitStockReport = async (req, res) => {
+  try {
+    const mill_id = req.user.sub;
+    const {
+      reportType = 'stock-update',
+      periodStart = null,
+      periodEnd = null,
+      notes = ''
+    } = req.body || {};
+
+    const [summary, stats, millInfo] = await Promise.all([
+      StockModel.getStockSummary(mill_id),
+      StockModel.getStockStats(mill_id),
+      StockModel.getMillBasicInfo(mill_id)
+    ]);
+
+    const generalStats = stats?.general || {};
+
+    const totals = {
+      entries: generalStats.total_entries ? parseInt(generalStats.total_entries, 10) : 0,
+      quantityKg: generalStats.total_quantity ? parseFloat(generalStats.total_quantity) : 0,
+      value: generalStats.total_value ? parseFloat(generalStats.total_value) : 0
+    };
+
+    const breakdown = Array.isArray(summary)
+      ? summary.map((item) => ({
+          paddyType: item.paddy_type,
+          condition: item.paddy_condition,
+          region: item.region,
+          quantity: item.total_quantity ? parseFloat(item.total_quantity) : 0,
+          lastUpdated: item.last_updated
+        }))
+      : [];
+
+    const varietyStats = Array.isArray(stats?.breakdown)
+      ? stats.breakdown.map((item) => ({
+          paddyType: item.paddy_type,
+          condition: item.paddy_condition,
+          quantity: item.quantity ? parseFloat(item.quantity) : 0
+        }))
+      : [];
+
+    const summaryPayload = {
+      generatedAt: new Date().toISOString(),
+      period: {
+        start: periodStart,
+        end: periodEnd
+      },
+      mill: millInfo
+        ? {
+            id: millInfo.id,
+            name: millInfo.business_name,
+            businessType: millInfo.business_type,
+            district: millInfo.district,
+            capacity: StockModel.parseCapacity(millInfo.mill_capacity)
+          }
+        : { id: mill_id },
+      totals,
+      breakdown,
+      varietyStats
+    };
+
+    const reportRecord = await StockModel.createStockReport({
+      mill_id,
+      report_type: reportType,
+      period_start: periodStart || null,
+      period_end: periodEnd || null,
+      summary: summaryPayload,
+      totals,
+      notes
+    });
+
+    res.status(201).json({
+      message: 'Stock report sent to admin successfully',
+      data: reportRecord
+    });
+  } catch (error) {
+    console.error('Submit stock report error:', error);
+    res.status(500).json({
+      message: 'Failed to submit stock report',
+      error: error.message
+    });
+  }
+};
+
+const getSubmittedReports = async (req, res) => {
+  try {
+    const mill_id = req.user.sub;
+    const limit = req.query.limit ? parseInt(req.query.limit, 10) : 10;
+    const reports = await StockModel.getReportsForMill(mill_id, Number.isFinite(limit) ? limit : 10);
+
+    res.json({
+      message: 'Stock reports retrieved successfully',
+      data: reports
+    });
+  } catch (error) {
+    console.error('Get submitted reports error:', error);
+    res.status(500).json({
+      message: 'Failed to retrieve stock reports',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   addStock,
   getStockEntries,
   getStockSummary,
   getStockStats,
-  deleteStock
+  deleteStock,
+  submitStockReport,
+  getSubmittedReports
 };
