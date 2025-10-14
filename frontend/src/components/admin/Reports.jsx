@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Download,
   FileText,
@@ -7,8 +7,49 @@ import {
   BarChart3,
   TrendingUp,
   Users,
-  Package
+  Package,
+  Eye
 } from 'lucide-react'
+
+const REGION_OPTIONS = [
+  'All Regions',
+  'Western Province',
+  'Central Province',
+  'Southern Province',
+  'Northern Province',
+  'Eastern Province',
+  'North Western Province',
+  'North Central Province',
+  'Uva Province',
+  'Sabaragamuwa Province'
+]
+
+const normalizeRegionLabel = (value) => {
+  if (!value || value === 'all' || value === 'All' || value === 'all-regions') {
+    return 'All Regions'
+  }
+  const normalized = value.toLowerCase()
+  const match = REGION_OPTIONS.find(region => region.toLowerCase().replace(/\s+/g, '-') === normalized)
+  if (match) {
+    return match
+  }
+  return value.replace(/-/g, ' ').replace(/\b\w/g, char => char.toUpperCase())
+}
+
+const STOCK_VARIANT_LABELS = {
+  total: 'Stock Report - Total Stock',
+  private: 'Stock Report - Private Mills',
+  government: 'Stock Report - Government Mills',
+  'by-district': 'Stock Report - District Breakdown',
+  combined: 'Stock Report - Complete Overview'
+}
+
+const resolveReportDisplayName = (type, variant, reportTypes) => {
+  if (type === 'stock') {
+    return STOCK_VARIANT_LABELS[variant] || 'Stock Levels Report'
+  }
+  return reportTypes.find(r => r.id === type)?.name || type
+}
 
 // Mock report data for fallback - moved outside component to prevent re-creation on re-renders
 const mockReportData = {
@@ -64,124 +105,337 @@ const Reports = () => {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [reportData, setReportData] = useState(mockReportData)
   const [loading, setLoading] = useState(false)
+  const [generatedReports, setGeneratedReports] = useState([])
 
-  const regions = [
-    'All Regions',
-    'Western Province',
-    'Central Province',
-    'Southern Province',
-    'Northern Province',
-    'Eastern Province',
-    'North Western Province',
-    'North Central Province',
-    'Uva Province',
-    'Sabaragamuwa Province'
-  ]
+  const regions = REGION_OPTIONS
 
-  const reportTypes = [
+  const reportTypes = useMemo(() => ([
     { id: 'stock', name: 'Stock Levels Report', icon: Package },
     { id: 'production', name: 'Production Report', icon: BarChart3 },
     { id: 'financial', name: 'Financial Report', icon: TrendingUp },
     { id: 'mills', name: 'Mill Performance Report', icon: Users },
     { id: 'licenses', name: 'License Status Report', icon: FileText }
-  ]
+  ]), [])
 
-  const handleGenerateReport = useCallback(async () => {
+  const addGeneratedReport = useCallback((entry) => {
+    setGeneratedReports(prev => [entry, ...prev])
+  }, [])
+
+  const showSuccessNotification = useCallback((message) => {
+    // Create and show success notification
+    const notification = document.createElement('div')
+    notification.innerHTML = `
+      <div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300">
+        <div class="flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+          </svg>
+          ${message}
+        </div>
+      </div>
+    `
+    document.body.appendChild(notification)
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        document.body.removeChild(notification)
+      }
+    }, 3000)
+  }, [])
+
+  const handleGenerateStockReport = async (stockReportType) => {
     setLoading(true);
     try {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const adminApiKey = import.meta.env.VITE_ADMIN_API_KEY;
+        const regionLabel = normalizeRegionLabel(selectedRegion);
+        
         const params = new URLSearchParams({
-            reportType: reportType,
-            from: dateRange.from,
-            to: dateRange.to,
-            region: selectedRegion
+            reportType: stockReportType
         });
 
-        const response = await fetch(`http://localhost:5000/api/admin/reports?${params.toString()}`);
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch report data: ${response.statusText}`);
+        // Add district filter if selected
+    if (regionLabel && regionLabel !== 'All Regions') {
+      params.append('district', regionLabel);
         }
 
-        const data = await response.json();
+        const headers = adminApiKey ? { 'x-admin-key': adminApiKey } : {};
+        const response = await fetch(`${apiBaseUrl}/api/admin/generate-stock-report?${params.toString()}`, { headers });
+
+        if (!response.ok) {
+            throw new Error(`Failed to generate stock report: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+    const generatedAt = result.generatedAt || new Date().toISOString();
+    const baseEntry = {
+      reportType: 'stock',
+      variant: stockReportType,
+      filters: {
+        dateRange: null,
+        region: selectedRegion,
+        regionLabel,
+        millType: selectedMillType
+      },
+      generatedAt
+    };
         
-        // Update only the specific report type, preserving others
-        setReportData(prevData => ({
-            ...prevData,
-            [reportType]: data
-        }));
+        // Format the data for display
+        if (stockReportType === 'combined') {
+            // For combined report, show all data sections
+            const formattedData = {
+                summary: {
+                    totalStock: result.data.total.summary.totalStock || 0,
+                    privateStock: result.data.private.summary.totalStock || 0,
+                    governmentStock: result.data.government.summary.totalStock || 0,
+                    totalDistricts: result.data.byDistrict.summary.totalDistricts || 0,
+                    totalMills: result.data.total.summary.totalMills || 0
+                },
+                breakdown: [
+                    {
+                        category: 'Total Stock',
+                        value: result.data.total.summary.totalStock || 0,
+                        percentage: 100
+                    },
+                    {
+                        category: 'Private Mills Stock',
+                        value: result.data.private.summary.totalStock || 0,
+                        percentage: result.data.total.summary.totalStock > 0 
+                            ? ((result.data.private.summary.totalStock / result.data.total.summary.totalStock) * 100).toFixed(2)
+                            : 0
+                    },
+                    {
+                        category: 'Government Mills Stock',
+                        value: result.data.government.summary.totalStock || 0,
+                        percentage: result.data.total.summary.totalStock > 0 
+                            ? ((result.data.government.summary.totalStock / result.data.total.summary.totalStock) * 100).toFixed(2)
+                            : 0
+                    },
+                    ...result.data.byDistrict.breakdown.map(d => ({
+                        category: d.district,
+                        value: parseFloat(d.totalStock || 0),
+                        percentage: result.data.byDistrict.summary.totalStock > 0
+                            ? ((d.totalStock / result.data.byDistrict.summary.totalStock) * 100).toFixed(2)
+                            : 0
+                    }))
+                ]
+            };
+            
+            setReportData(prevData => ({
+                ...prevData,
+                stock: formattedData
+            }));
+            
+            // Show success notification
+            showSuccessNotification(`Complete stock report generated successfully! Generated at: ${new Date(generatedAt).toLocaleString()}`);
+
+      addGeneratedReport({
+        id: Date.now(),
+        name: resolveReportDisplayName('stock', stockReportType, reportTypes),
+                data: formattedData,
+                ...baseEntry
+            });
+        } else if (stockReportType === 'by-district') {
+            const formattedData = {
+                summary: result.data.summary,
+                breakdown: result.data.breakdown.map(d => ({
+                    category: d.district,
+                    value: parseFloat(d.totalStock || 0),
+                    percentage: result.data.summary.totalStock > 0
+                        ? ((d.totalStock / result.data.summary.totalStock) * 100).toFixed(2)
+                        : 0,
+                    mills: d.totalMills,
+                    privateStock: parseFloat(d.privateStock || 0),
+                    governmentStock: parseFloat(d.governmentStock || 0)
+                }))
+            };
+            
+            setReportData(prevData => ({
+                ...prevData,
+                stock: formattedData
+            }));
+            
+            showSuccessNotification(`District-wise stock report generated successfully!`);
+
+      addGeneratedReport({
+        id: Date.now(),
+        name: resolveReportDisplayName('stock', stockReportType, reportTypes),
+                data: formattedData,
+                ...baseEntry
+            });
+        } else {
+            // For single category reports (total, private, government)
+            const formattedData = {
+                summary: result.data.summary,
+                breakdown: [
+                    {
+                        category: stockReportType.charAt(0).toUpperCase() + stockReportType.slice(1) + ' Stock',
+                        value: result.data.summary.totalStock || 0,
+                        percentage: 100
+                    }
+                ]
+            };
+            
+            setReportData(prevData => ({
+                ...prevData,
+                stock: formattedData
+            }));
+            
+            showSuccessNotification(`${stockReportType.charAt(0).toUpperCase() + stockReportType.slice(1)} stock report generated successfully!`);
+
+      addGeneratedReport({
+        id: Date.now(),
+        name: resolveReportDisplayName('stock', stockReportType, reportTypes),
+                data: formattedData,
+                ...baseEntry
+            });
+        }
 
     } catch (error) {
-        console.error('Error generating report:', error);
-        // On error, revert to mock data for that specific report type
-        setReportData(prevData => ({
-            ...prevData,
-            [reportType]: mockReportData[reportType]
-        }));
+        console.error('Error generating stock report:', error);
+        alert(`Error generating stock report: ${error.message}`);
     } finally {
         setLoading(false);
     }
-  }, [reportType, dateRange.from, dateRange.to, selectedRegion]);
+  };
 
   useEffect(() => {
-    // Fetch data when report criteria change
-    handleGenerateReport();
-  }, [handleGenerateReport]);
+    let isActive = true
 
-  const generatePDFReport = async () => {
-    // Dynamic import to ensure autoTable plugin is loaded
+    const fetchReport = async () => {
+      setLoading(true)
+      try {
+          const regionLabel = normalizeRegionLabel(selectedRegion)
+        const params = new URLSearchParams({
+          reportType,
+          from: dateRange.from,
+          to: dateRange.to,
+          region: regionLabel
+        })
+
+        const response = await fetch(`http://localhost:5000/api/admin/reports?${params.toString()}`)
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch report data: ${response.statusText}`)
+        }
+
+        const data = await response.json()
+
+        if (!isActive) {
+          return
+        }
+
+        setReportData(prevData => ({
+          ...prevData,
+          [reportType]: data
+        }))
+
+        const generatedAt = new Date().toISOString()
+        const newReportEntry = {
+          id: Date.now(),
+          name: resolveReportDisplayName(reportType, null, reportTypes),
+          reportType,
+          variant: null,
+          data,
+          filters: {
+            dateRange: { from: dateRange.from, to: dateRange.to },
+            region: selectedRegion,
+            regionLabel,
+            millType: selectedMillType
+          },
+          generatedAt
+        }
+        addGeneratedReport(newReportEntry)
+        showSuccessNotification(`${newReportEntry.name} generated successfully!`)
+      } catch (error) {
+        console.error('Error generating report:', error)
+        if (!isActive) {
+          return
+        }
+        setReportData(prevData => ({
+          ...prevData,
+          [reportType]: mockReportData[reportType]
+        }))
+      } finally {
+        if (isActive) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchReport()
+
+    return () => {
+      isActive = false
+    }
+  }, [reportType, dateRange.from, dateRange.to, selectedRegion, selectedMillType, addGeneratedReport, reportTypes, showSuccessNotification])
+
+  const generatePDFReport = async (options = {}) => {
     const { jsPDF } = await import('jspdf')
     await import('jspdf-autotable')
 
     const doc = new jsPDF()
 
-    // Ensure autoTable is available
     if (typeof doc.autoTable !== 'function') {
       console.error('autoTable plugin not loaded properly')
       return
     }
-    const currentData = (reportData && reportData[reportType]) ? reportData[reportType] : { summary: {}, breakdown: [] };
-    
-    // Header with PMB branding
-    doc.setFillColor(34, 197, 94) // Green color
+
+    const { customData, customReportType, customFilters, customTitle, variant, generatedAt } = options
+    const targetReportType = customReportType || reportType
+    const fallbackData = (reportData && reportData[targetReportType]) ? reportData[targetReportType] : { summary: {}, breakdown: [] }
+    const currentData = customData || fallbackData
+    const filters = customFilters || {
+      dateRange: { from: dateRange.from, to: dateRange.to },
+      region: selectedRegion,
+  regionLabel: normalizeRegionLabel(selectedRegion),
+      millType: selectedMillType
+    }
+  const reportName = customTitle || resolveReportDisplayName(targetReportType, variant, reportTypes)
+    const periodFrom = filters?.dateRange?.from || ''
+    const periodTo = filters?.dateRange?.to || ''
+  const regionDisplay = filters?.regionLabel || normalizeRegionLabel(filters?.region)
+    const millTypeDisplay = filters?.millType || 'All'
+    const generatedDisplay = generatedAt ? new Date(generatedAt).toLocaleString() : `${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`
+
+    doc.setFillColor(34, 197, 94)
     doc.rect(0, 0, 210, 25, 'F')
-    
+
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(24)
     doc.text('PMB ADMIN DASHBOARD', 14, 18)
-    
+
     doc.setTextColor(0, 0, 0)
     doc.setFontSize(16)
     doc.text('Paddy Marketing Board - Sri Lanka', 14, 35)
-    
-    // Report details
+
     doc.setFontSize(12)
-    const reportName = reportTypes.find(r => r.id === reportType)?.name || reportType
     doc.text(`Report: ${reportName}`, 14, 50)
-    doc.text(`Period: ${dateRange.from} to ${dateRange.to}`, 14, 60)
-    doc.text(`Region: ${selectedRegion.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`, 14, 70)
-    doc.text(`Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 14, 80)
-    
-    // Add a line separator
+    doc.text(`Period: ${periodFrom && periodTo ? `${periodFrom} to ${periodTo}` : 'N/A'}`, 14, 60)
+    doc.text(`Region: ${regionDisplay}`, 14, 70)
+    doc.text(`Mill Type: ${millTypeDisplay}`, 14, 80)
+    doc.text(`Generated: ${generatedDisplay}`, 14, 90)
+
     doc.setLineWidth(0.5)
-    doc.line(14, 85, 196, 85)
-    
-    let yPosition = 95
-    
-    // Summary Section with better styling
+    doc.line(14, 95, 196, 95)
+
+    let yPosition = 105
+
     doc.setFontSize(16)
     doc.setTextColor(34, 197, 94)
     doc.text('EXECUTIVE SUMMARY', 14, yPosition)
     doc.setTextColor(0, 0, 0)
     yPosition += 10
-    
+
     if (currentData && currentData.summary) {
       doc.setFontSize(11)
       Object.entries(currentData.summary).forEach(([key, value]) => {
         const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-        const formattedValue = typeof value === 'number' && value > 1000 
-          ? value.toLocaleString() 
+        const formattedValue = typeof value === 'number' && value > 1000
+          ? value.toLocaleString()
           : value
-        
+
         doc.setFont(undefined, 'bold')
         doc.text(`${formattedKey}:`, 14, yPosition)
         doc.setFont(undefined, 'normal')
@@ -189,31 +443,30 @@ const Reports = () => {
         yPosition += 8
       })
     }
-    
+
     yPosition += 10
-    
-    // Detailed breakdown with enhanced table using autoTable
+
     if (currentData && currentData.breakdown && currentData.breakdown.length > 0) {
       doc.setFontSize(16)
       doc.setTextColor(34, 197, 94)
       doc.text('DETAILED ANALYSIS', 14, yPosition)
       doc.setTextColor(0, 0, 0)
       yPosition += 5
-      
-      const tableData = currentData.breakdown.map(item => [
-        item.category || item.name || item.mill || item.district || 'N/A',
-        typeof item.value === 'number' ? item.value.toLocaleString() : (item.value || 'N/A'),
-        item.percentage ? `${item.percentage}%` : (item.utilization ? `${item.utilization}%` : 'N/A')
-      ])
-      
+
+      const breakdownHeaders = ['Category', 'Value', 'Percentage/Rate']
+      const tableData = currentData.breakdown.map(item => {
+        const valueDisplay = typeof item.value === 'number' ? item.value.toLocaleString() : (item.value || 'N/A')
+        const percentageDisplay = item.percentage ? `${item.percentage}%` : (item.utilization ? `${item.utilization}%` : 'N/A')
+        return [item.category || item.name || item.mill || item.district || 'N/A', valueDisplay, percentageDisplay]
+      })
+
       try {
-        // Using autoTable method
         doc.autoTable({
           startY: yPosition + 5,
-          head: [['Category', 'Value', 'Percentage/Rate']],
+          head: [breakdownHeaders],
           body: tableData,
           theme: 'striped',
-          headStyles: { 
+          headStyles: {
             fillColor: [34, 197, 94],
             textColor: [255, 255, 255],
             fontSize: 12,
@@ -234,18 +487,15 @@ const Reports = () => {
         })
       } catch (autoTableError) {
         console.error('AutoTable error:', autoTableError)
-        // Fallback to basic table if autoTable fails
         doc.setFontSize(10)
         let tableY = yPosition + 15
-        
-        // Header
+
         doc.setFont(undefined, 'bold')
         doc.text('Category', 14, tableY)
         doc.text('Value', 80, tableY)
         doc.text('Percentage/Rate', 140, tableY)
         tableY += 10
-        
-        // Data rows
+
         doc.setFont(undefined, 'normal')
         tableData.forEach(row => {
           doc.text(row[0] || '', 14, tableY)
@@ -255,23 +505,20 @@ const Reports = () => {
         })
       }
     }
-    
-    // Footer
+
     const pageCount = doc.internal.getNumberOfPages()
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i)
-      
-      // Footer background
       doc.setFillColor(248, 250, 252)
       doc.rect(0, doc.internal.pageSize.height - 20, 210, 20, 'F')
-      
+
       doc.setFontSize(8)
       doc.setTextColor(100, 100, 100)
       doc.text('Paddy Marketing Board (PMB) - Official Report', 14, doc.internal.pageSize.height - 10)
       doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 10)
-      doc.text(`Generated on ${new Date().toLocaleDateString()}`, doc.internal.pageSize.width - 60, doc.internal.pageSize.height - 5)
+      doc.text(`Generated on ${generatedDisplay}`, doc.internal.pageSize.width - 70, doc.internal.pageSize.height - 5)
     }
-    
+
     return doc
   }
 
@@ -365,46 +612,138 @@ const Reports = () => {
     }
   }
 
-  const showSuccessNotification = (message) => {
-    // Create and show success notification
-    const notification = document.createElement('div')
-    notification.innerHTML = `
-      <div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300">
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-          </svg>
-          ${message}
-        </div>
-      </div>
-    `
-    document.body.appendChild(notification)
-    
-    // Remove notification after 3 seconds
-    setTimeout(() => {
-      if (notification.parentNode) {
-        document.body.removeChild(notification)
+
+  const generateCSVContent = (options = {}) => {
+    const { customData, customReportType, customFilters, variant } = options
+    const activeReportType = customReportType || reportType
+    const data = customData || ((reportData && reportData[activeReportType]) ? reportData[activeReportType] : { summary: {}, breakdown: [] })
+    const filters = customFilters || {
+      dateRange: { from: dateRange.from, to: dateRange.to },
+      region: selectedRegion,
+  regionLabel: normalizeRegionLabel(selectedRegion),
+      millType: selectedMillType
+    }
+  const reportName = resolveReportDisplayName(activeReportType, variant, reportTypes)
+    const periodFrom = filters?.dateRange?.from || ''
+    const periodTo = filters?.dateRange?.to || ''
+  const regionText = filters?.regionLabel || normalizeRegionLabel(filters?.region)
+    const millTypeText = filters?.millType || 'All'
+
+    const escapeCsvValue = (value) => {
+      if (value === null || value === undefined) {
+        return '""'
       }
-    }, 3000)
+      return `"${String(value).replace(/"/g, '""')}"`
+    }
+
+    let csv = `Report Name,${escapeCsvValue(reportName)}\n`
+    csv += `Period,${escapeCsvValue(periodFrom && periodTo ? `${periodFrom} to ${periodTo}` : 'N/A')}\n`
+    csv += `Region,${escapeCsvValue(regionText)}\n`
+    csv += `Mill Type,${escapeCsvValue(millTypeText)}\n\n`
+
+    csv += 'Summary Metrics\n'
+    Object.entries(data.summary || {}).forEach(([key, value]) => {
+      csv += `${escapeCsvValue(key)},${escapeCsvValue(value)}\n`
+    })
+
+    const breakdown = data.breakdown || []
+    if (breakdown.length > 0) {
+      const fields = []
+      breakdown.forEach(item => {
+        Object.keys(item).forEach(field => {
+          if (!fields.includes(field)) {
+            fields.push(field)
+          }
+        })
+      })
+      const orderedFields = ['category', 'value', 'percentage', ...fields.filter(field => !['category', 'value', 'percentage'].includes(field))]
+      csv += '\nBreakdown\n'
+      csv += orderedFields.map(escapeCsvValue).join(',') + '\n'
+      breakdown.forEach(item => {
+        const row = orderedFields.map(field => escapeCsvValue(item[field] ?? ''))
+        csv += row.join(',') + '\n'
+      })
+    }
+
+    return csv
   }
 
-  const generateCSVContent = () => {
-    const data = (reportData && reportData[reportType]) ? reportData[reportType] : { summary: {}, breakdown: [] };
-    let csv = 'Report Type,Date Range,Region,Mill Type\n'
-    csv += `${reportType},${dateRange.from} to ${dateRange.to},${selectedRegion},${selectedMillType}\n\n`
-    
-    csv += 'Summary Metrics\n'
-    Object.entries(data.summary).forEach(([key, value]) => {
-      csv += `${key},${value}\n`
-    })
-    
-    csv += '\nBreakdown\n'
-    csv += 'Category,Value,Percentage\n'
-    data.breakdown.forEach(item => {
-      csv += `${item.category},${item.value},${item.percentage}\n`
-    })
-    
-    return csv
+  const handleViewGeneratedReport = (savedReport) => {
+    if (!savedReport) {
+      return
+    }
+    if (savedReport.filters?.dateRange) {
+      setDateRange(savedReport.filters.dateRange)
+    }
+    if (typeof savedReport.filters?.region !== 'undefined') {
+      setSelectedRegion(savedReport.filters.region)
+    }
+    if (typeof savedReport.filters?.millType !== 'undefined') {
+      setSelectedMillType(savedReport.filters.millType)
+    }
+    setReportType(savedReport.reportType)
+    setReportData(prev => ({
+      ...prev,
+      [savedReport.reportType]: savedReport.data
+    }))
+    showSuccessNotification(`Loaded ${savedReport.name}`)
+  }
+
+  const handleDownloadGeneratedReport = async (savedReport, format) => {
+    if (!savedReport) {
+      return
+    }
+    const fileNameBase = savedReport.name.replace(/[^a-z0-9]+/gi, '_').replace(/_{2,}/g, '_').replace(/^_+|_+$/g, '') || 'report'
+
+    if (format === 'pdf') {
+      setIsGeneratingPDF(true)
+      try {
+        const doc = await generatePDFReport({
+          customData: savedReport.data,
+          customReportType: savedReport.reportType,
+          customFilters: savedReport.filters,
+          customTitle: savedReport.name,
+          variant: savedReport.variant,
+          generatedAt: savedReport.generatedAt
+        })
+        if (doc) {
+          doc.save(`${fileNameBase}.pdf`)
+          showSuccessNotification('PDF downloaded successfully!')
+        }
+      } catch (error) {
+        console.error('Error generating saved PDF:', error)
+        alert('Error generating PDF for saved report. Please try again.')
+      } finally {
+        setIsGeneratingPDF(false)
+      }
+    }
+
+    if (format === 'csv') {
+      try {
+        const csvContent = generateCSVContent({
+          customData: savedReport.data,
+          customReportType: savedReport.reportType,
+          customFilters: savedReport.filters,
+          variant: savedReport.variant
+        })
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const link = document.createElement('a')
+        if (link.download !== undefined) {
+          const url = URL.createObjectURL(blob)
+          link.setAttribute('href', url)
+          link.setAttribute('download', `${fileNameBase}.csv`)
+          link.style.visibility = 'hidden'
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+          showSuccessNotification('CSV downloaded successfully!')
+        }
+      } catch (error) {
+        console.error('Error generating saved CSV:', error)
+        alert('Error generating CSV for saved report. Please try again.')
+      }
+    }
   }
 
   const currentReportData = (reportData && reportData[reportType]) ? reportData[reportType] : { summary: {}, breakdown: [] };
@@ -458,11 +797,14 @@ const Reports = () => {
               onChange={(e) => setSelectedRegion(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
-              {regions.map(region => (
-                <option key={region} value={region.toLowerCase().replace(/\s+/g, '-')}>
-                  {region}
-                </option>
-              ))}
+              {regions.map(region => {
+                const optionValue = region === 'All Regions' ? 'all' : region.toLowerCase().replace(/\s+/g, '-')
+                return (
+                  <option key={region} value={optionValue}>
+                    {region}
+                  </option>
+                )
+              })}
             </select>
           </div>
 
@@ -564,6 +906,97 @@ const Reports = () => {
         </div>
       </div>
 
+      {/* Custom Stock Report Generator - Only show when stock report is selected */}
+      {reportType === 'stock' && (
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg shadow-sm p-6 border-2 border-green-200">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+            <Package className="w-5 h-5 mr-2 text-green-600" />
+            Custom Stock Report Generator
+          </h3>
+          
+          <div className="bg-white rounded-lg p-6 space-y-4">
+            <p className="text-sm text-gray-600 mb-4">
+              Generate detailed stock reports with custom filters and breakdowns
+            </p>
+            
+            {/* Stock Report Options */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <button
+                onClick={() => handleGenerateStockReport('total')}
+                className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex flex-col items-center space-y-2"
+              >
+                <Package className="w-8 h-8" />
+                <span className="font-medium">Total Stock</span>
+                <span className="text-xs opacity-90">All mills combined</span>
+              </button>
+              
+              <button
+                onClick={() => handleGenerateStockReport('private')}
+                className="p-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex flex-col items-center space-y-2"
+              >
+                <Users className="w-8 h-8" />
+                <span className="font-medium">Private Mills</span>
+                <span className="text-xs opacity-90">Private sector only</span>
+              </button>
+              
+              <button
+                onClick={() => handleGenerateStockReport('government')}
+                className="p-4 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex flex-col items-center space-y-2"
+              >
+                <BarChart3 className="w-8 h-8" />
+                <span className="font-medium">Government Mills</span>
+                <span className="text-xs opacity-90">Government sector only</span>
+              </button>
+              
+              <button
+                onClick={() => handleGenerateStockReport('by-district')}
+                className="p-4 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex flex-col items-center space-y-2"
+              >
+                <Filter className="w-8 h-8" />
+                <span className="font-medium">By District</span>
+                <span className="text-xs opacity-90">District breakdown</span>
+              </button>
+            </div>
+            
+            {/* District Filter for Stock Reports */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Filter by District (Optional)
+              </label>
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className="w-full md:w-1/2 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="all">All Districts</option>
+                {regions.filter(r => r !== 'All Regions').map(region => {
+                  const optionValue = region.toLowerCase().replace(/\s+/g, '-')
+                  return (
+                    <option key={region} value={optionValue}>
+                      {region}
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
+
+            {/* Combined Report Button */}
+            <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
+              <button
+                onClick={() => handleGenerateStockReport('combined')}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition-colors font-semibold flex items-center justify-center space-x-2"
+              >
+                <BarChart3 className="w-5 h-5" />
+                <span>Generate Complete Stock Report (All Categories)</span>
+              </button>
+              <p className="text-xs text-indigo-600 mt-2 text-center">
+                Includes: Total Stock + Private + Government + District Breakdown
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Report Preview */}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
@@ -633,30 +1066,57 @@ const Reports = () => {
 
       {/* Recent Reports */}
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Reports</h3>
-        <div className="space-y-3">
-          {[
-            { name: 'Monthly Stock Report - January 2025', date: '2025-01-31', type: 'Stock', size: '2.4 MB' },
-            { name: 'Mill Performance Review - Q4 2024', date: '2025-01-15', type: 'Performance', size: '1.8 MB' },
-            { name: 'Financial Summary - December 2024', date: '2025-01-01', type: 'Financial', size: '3.1 MB' },
-            { name: 'License Applications Report - January 2025', date: '2025-01-30', type: 'License', size: '1.2 MB' }
-          ].map((report, index) => (
-            <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-              <div className="flex items-center space-x-3">
-                <FileText className="w-5 h-5 text-gray-400" />
-                <div>
-                  <h4 className="text-sm font-medium text-gray-800">{report.name}</h4>
-                  <p className="text-xs text-gray-600">
-                    {report.type} • {report.date} • {report.size}
-                  </p>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Generated Reports</h3>
+        {generatedReports.length === 0 ? (
+          <div className="p-4 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500">
+            Generate a report to see it listed here for quick viewing and downloads.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {generatedReports.map(report => {
+              const label = resolveReportDisplayName(report.reportType, report.variant, reportTypes)
+              const generatedTime = report.generatedAt ? new Date(report.generatedAt).toLocaleString() : ''
+              const regionText = report.filters?.regionLabel || normalizeRegionLabel(report.filters?.region)
+              const periodText = report.filters?.dateRange ? `${report.filters.dateRange.from} to ${report.filters.dateRange.to}` : 'Live snapshot'
+              return (
+                <div key={report.id} className="flex flex-col md:flex-row md:items-center md:justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                  <div className="flex items-start space-x-3">
+                    <FileText className="w-5 h-5 text-gray-400 mt-1" />
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-800">{report.name}</h4>
+                      <p className="text-xs text-gray-600">
+                        {label} • {periodText} • {regionText} • {generatedTime}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3 md:mt-0">
+                    <button
+                      onClick={() => handleViewGeneratedReport(report)}
+                      className="px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 flex items-center"
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </button>
+                    <button
+                      onClick={() => handleDownloadGeneratedReport(report, 'pdf')}
+                      className="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 flex items-center"
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      PDF
+                    </button>
+                    <button
+                      onClick={() => handleDownloadGeneratedReport(report, 'csv')}
+                      className="px-3 py-1.5 text-xs font-medium text-green-600 border border-green-200 rounded-lg hover:bg-green-50 flex items-center"
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      CSV
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <button className="text-green-600 hover:text-green-800 text-sm font-medium">
-                Download
-              </button>
-            </div>
-          ))}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

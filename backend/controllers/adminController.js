@@ -77,40 +77,49 @@ const getReport = async (req, res) => {
             return res.status(400).json({ message: 'Missing required query parameters: reportType, from, to' });
         }
 
-        let query = '';
-        const params = [from, to];
+    let query = '';
+    let params = [];
 
         switch (reportType) {
             case 'licenses':
                 query = `
                     SELECT 
-                        status, 
+                        ml.status, 
                         COUNT(*) as value,
-                        (SELECT COUNT(*) FROM licenses WHERE application_date BETWEEN ? AND ?) as total
-                    FROM licenses 
-                    WHERE application_date BETWEEN ? AND ?
+                        (SELECT COUNT(*) FROM mill_licenses WHERE applied_date BETWEEN ? AND ?) as total
+                    FROM mill_licenses ml
+                    WHERE ml.applied_date BETWEEN ? AND ?
                 `;
-                params.push(from, to, from, to);
+                params = [from, to, from, to];
 
-                if (region && region !== 'All Regions') {
-                    query += ' AND district = ?';
-                    params.push(region.replace(' Province', ''));
+                const normalizedRegion = region ? region.toLowerCase() : null;
+                if (normalizedRegion && normalizedRegion !== 'all' && normalizedRegion !== 'all-regions' && normalizedRegion !== 'all regions') {
+                    query += ' AND EXISTS (SELECT 1 FROM users u WHERE u.id = ml.user_id AND u.district = ?)';
+                    const districtFilter = region.replace(/ Province$/i, '');
+                    params.push(districtFilter);
                 }
-                query += ' GROUP BY status';
+                query += ' GROUP BY ml.status';
                 break;
             
             case 'stock':
                 query = `
                     SELECT 
-                        s.paddy_type as category, 
-                        SUM(s.quantity) as value,
-                        (SELECT SUM(quantity) FROM stock WHERE last_updated BETWEEN ? AND ?) as total
-                    FROM stock s
-                    WHERE s.last_updated BETWEEN ? AND ?
+                        se.paddy_type as category, 
+                        SUM(se.quantity) as value,
+                        (SELECT SUM(quantity) FROM stock_entries WHERE created_at BETWEEN ? AND ?) as total
+                    FROM stock_entries se
+                    WHERE se.created_at BETWEEN ? AND ?
                 `;
-                params.push(from, to, from, to);
-                // Region filtering for stock would require joins, simplified for now
-                query += ' GROUP BY s.paddy_type';
+                params = [from, to, from, to];
+
+                const normalizedRegionStock = region ? region.toLowerCase() : null;
+                if (normalizedRegionStock && normalizedRegionStock !== 'all' && normalizedRegionStock !== 'all-regions' && normalizedRegionStock !== 'all regions') {
+                    query += ' AND EXISTS (SELECT 1 FROM users u WHERE u.id = se.mill_id AND u.district = ?)';
+                    const districtFilter = region.replace(/ Province$/i, '');
+                    params.push(districtFilter);
+                }
+                
+                query += ' GROUP BY se.paddy_type';
                 break;
 
             default: {
@@ -146,10 +155,13 @@ const getReport = async (req, res) => {
         res.status(200).json({ summary, breakdown });
 
     } catch (error) {
-        console.error('Error in getReport:', error);
+        console.error('❌ Error in getReport:', error);
+        console.error('Query details:', { reportType: req.query.reportType, from: req.query.from, to: req.query.to, region: req.query.region });
+        console.error('Error stack:', error.stack);
         res.status(500).json({
             message: 'Failed to generate report',
-            error: error.message
+            error: error.message,
+            details: error.sqlMessage || error.toString()
         });
     }
 };
@@ -364,6 +376,215 @@ const getStockEntries = async (req, res) => {
     }
 };
 
+// Generate comprehensive stock report
+const generateStockReport = async (req, res) => {
+    try {
+        const apiKey = req.headers['x-admin-key'];
+        if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
+            return res.status(403).json({
+                message: 'Unauthorized access to stock reports'
+            });
+        }
+
+        const { reportType = 'total', district } = req.query;
+        const normalizedDistrict = district ? district.toLowerCase() : null;
+        const shouldFilterByDistrict = normalizedDistrict && normalizedDistrict !== 'all' && normalizedDistrict !== 'all districts';
+        const districtFilterValue = shouldFilterByDistrict
+            ? district.replace(/ District$/i, '').replace(/ Province$/i, '')
+            : null;
+
+        let query = '';
+        let params = [];
+
+        switch (reportType) {
+            case 'total':
+                // Current total stock across all mills
+                query = `
+                    SELECT 
+                        SUM(se.quantity) as totalStock,
+                        COUNT(DISTINCT se.mill_id) as totalMills,
+                        SUM(se.total_amount) as totalValue,
+                        COUNT(se.id) as totalEntries
+                    FROM stock_entries se
+                    JOIN users u ON se.mill_id = u.id
+                    WHERE LOWER(u.business_type) IN ('private', 'government')
+                `;
+                
+                if (districtFilterValue) {
+                    query += ' AND COALESCE(u.mill_district, u.district) = ?';
+                    params.push(districtFilterValue);
+                }
+                break;
+
+            case 'private':
+                // Current total private stock
+                query = `
+                    SELECT 
+                        SUM(se.quantity) as totalStock,
+                        COUNT(DISTINCT se.mill_id) as totalMills,
+                        SUM(se.total_amount) as totalValue,
+                        COUNT(se.id) as totalEntries
+                    FROM stock_entries se
+                    JOIN users u ON se.mill_id = u.id
+                    WHERE LOWER(u.business_type) = 'private'
+                `;
+                
+                if (districtFilterValue) {
+                    query += ' AND COALESCE(u.mill_district, u.district) = ?';
+                    params.push(districtFilterValue);
+                }
+                break;
+
+            case 'government':
+                // Current total government stock
+                query = `
+                    SELECT 
+                        SUM(se.quantity) as totalStock,
+                        COUNT(DISTINCT se.mill_id) as totalMills,
+                        SUM(se.total_amount) as totalValue,
+                        COUNT(se.id) as totalEntries
+                    FROM stock_entries se
+                    JOIN users u ON se.mill_id = u.id
+                    WHERE LOWER(u.business_type) = 'government'
+                `;
+                
+                if (districtFilterValue) {
+                    query += ' AND COALESCE(u.mill_district, u.district) = ?';
+                    params.push(districtFilterValue);
+                }
+                break;
+
+            case 'by-district':
+                // Stock by district
+                query = `
+                    SELECT 
+                        COALESCE(u.mill_district, u.district, 'Unknown') as district,
+                        SUM(se.quantity) as totalStock,
+                        COUNT(DISTINCT se.mill_id) as totalMills,
+                        SUM(se.total_amount) as totalValue,
+                        COUNT(se.id) as totalEntries,
+                        SUM(CASE WHEN LOWER(u.business_type) = 'private' THEN se.quantity ELSE 0 END) as privateStock,
+                        SUM(CASE WHEN LOWER(u.business_type) = 'government' THEN se.quantity ELSE 0 END) as governmentStock
+                    FROM stock_entries se
+                    JOIN users u ON se.mill_id = u.id
+                    WHERE LOWER(u.business_type) IN ('private', 'government')
+                `;
+                
+                if (districtFilterValue) {
+                    query += ' AND COALESCE(u.mill_district, u.district) = ?';
+                    params.push(districtFilterValue);
+                }
+                
+                query += ' GROUP BY COALESCE(u.mill_district, u.district, \'Unknown\') ORDER BY totalStock DESC';
+                break;
+
+            case 'combined':
+                // Get all reports in one response
+                const [totalResult] = await db.execute(`
+                    SELECT 
+                        SUM(se.quantity) as totalStock,
+                        COUNT(DISTINCT se.mill_id) as totalMills,
+                        SUM(se.total_amount) as totalValue
+                    FROM stock_entries se
+                    JOIN users u ON se.mill_id = u.id
+                    WHERE LOWER(u.business_type) IN ('private', 'government')
+                `);
+
+                const [privateResult] = await db.execute(`
+                    SELECT 
+                        SUM(se.quantity) as totalStock,
+                        COUNT(DISTINCT se.mill_id) as totalMills,
+                        SUM(se.total_amount) as totalValue
+                    FROM stock_entries se
+                    JOIN users u ON se.mill_id = u.id
+                    WHERE LOWER(u.business_type) = 'private'
+                `);
+
+                const [governmentResult] = await db.execute(`
+                    SELECT 
+                        SUM(se.quantity) as totalStock,
+                        COUNT(DISTINCT se.mill_id) as totalMills,
+                        SUM(se.total_amount) as totalValue
+                    FROM stock_entries se
+                    JOIN users u ON se.mill_id = u.id
+                    WHERE LOWER(u.business_type) = 'government'
+                `);
+
+                const [districtResult] = await db.execute(`
+                    SELECT 
+                        COALESCE(u.mill_district, u.district, 'Unknown') as district,
+                        SUM(se.quantity) as totalStock,
+                        COUNT(DISTINCT se.mill_id) as totalMills,
+                        SUM(se.total_amount) as totalValue,
+                        SUM(CASE WHEN LOWER(u.business_type) = 'private' THEN se.quantity ELSE 0 END) as privateStock,
+                        SUM(CASE WHEN LOWER(u.business_type) = 'government' THEN se.quantity ELSE 0 END) as governmentStock
+                    FROM stock_entries se
+                    JOIN users u ON se.mill_id = u.id
+                    WHERE LOWER(u.business_type) IN ('private', 'government')
+                    GROUP BY COALESCE(u.mill_district, u.district, 'Unknown')
+                    ORDER BY totalStock DESC
+                `);
+
+                return res.status(200).json({
+                    message: 'Combined stock report generated successfully',
+                    data: {
+                        total: {
+                            summary: totalResult[0] || {},
+                            breakdown: []
+                        },
+                        private: {
+                            summary: privateResult[0] || {},
+                            breakdown: []
+                        },
+                        government: {
+                            summary: governmentResult[0] || {},
+                            breakdown: []
+                        },
+                        byDistrict: {
+                            summary: {
+                                totalDistricts: districtResult.length,
+                                totalStock: districtResult.reduce((sum, d) => sum + parseFloat(d.totalStock || 0), 0)
+                            },
+                            breakdown: districtResult
+                        }
+                    },
+                    generatedAt: new Date().toISOString()
+                });
+
+            default:
+                return res.status(400).json({
+                    message: 'Invalid report type. Use: total, private, government, by-district, or combined'
+                });
+        }
+
+        const [rows] = await db.execute(query, params);
+
+        const summary = reportType === 'by-district' ? {
+            totalDistricts: rows.length,
+            totalStock: rows.reduce((sum, row) => sum + parseFloat(row.totalStock || 0), 0),
+            totalMills: rows.reduce((sum, row) => sum + parseInt(row.totalMills || 0, 10), 0)
+        } : (rows[0] || {});
+
+        const breakdown = reportType === 'by-district' ? rows : [];
+
+        res.status(200).json({
+            message: 'Stock report generated successfully',
+            data: {
+                summary,
+                breakdown
+            },
+            generatedAt: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('Error in generateStockReport:', error);
+        res.status(500).json({
+            message: 'Failed to generate stock report',
+            error: error.message
+        });
+    }
+};
+
 
 module.exports = {
     adminLogin,
@@ -371,5 +592,6 @@ module.exports = {
     getStockOverview,
     getStockReports,
     subscribeStockUpdates,
-    getStockEntries
+    getStockEntries,
+    generateStockReport
 };
