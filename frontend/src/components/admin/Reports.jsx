@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import {
   Download,
   FileText,
@@ -378,35 +380,14 @@ const Reports = () => {
   }, [reportType, dateRange.from, dateRange.to, selectedRegion, selectedMillType, addGeneratedReport, reportTypes, showSuccessNotification])
 
   const generatePDFReport = async (options = {}) => {
-    const jsPDFModule = await import('jspdf')
-    const autoTableModule = await import('jspdf-autotable')
-
-    const JsPDFConstructor = jsPDFModule.jsPDF || jsPDFModule.default
-
-    if (!JsPDFConstructor) {
-      console.error('jsPDF module did not expose a constructor')
+    if (typeof jsPDF !== 'function') {
+      console.error('jsPDF constructor not available')
       return null
     }
 
-    const doc = new JsPDFConstructor()
-    const autoTable = autoTableModule.default || autoTableModule
+    const doc = new jsPDF()
 
     const applyAutoTable = (tableOptions) => {
-      if (typeof autoTable === 'function') {
-        try {
-          if (autoTable.length >= 2) {
-            autoTable(doc, tableOptions)
-            return true
-          }
-          autoTable(doc, tableOptions)
-          if (typeof doc.autoTable === 'function') {
-            return true
-          }
-        } catch (pluginError) {
-          console.warn('Primary autoTable invocation failed, falling back to doc.autoTable', pluginError)
-        }
-      }
-
       if (typeof doc.autoTable === 'function') {
         if (doc.autoTable.length <= 1) {
           doc.autoTable(tableOptions)
@@ -415,6 +396,15 @@ const Reports = () => {
           doc.autoTable(head, body, legacyOptions)
         }
         return true
+      }
+
+      if (typeof autoTable === 'function') {
+        try {
+          autoTable(doc, tableOptions)
+          return true
+        } catch (invokeError) {
+          console.warn('Direct autoTable invocation failed', invokeError)
+        }
       }
 
       console.error('autoTable plugin not loaded properly')
@@ -721,27 +711,76 @@ const Reports = () => {
     return csv
   }
 
-  const handleViewGeneratedReport = (savedReport) => {
+  const handleViewGeneratedReport = async (savedReport) => {
     if (!savedReport) {
       return
     }
-    skipNextFetchRef.current = true
-    setLoading(false)
-    if (savedReport.filters?.dateRange) {
-      setDateRange(savedReport.filters.dateRange)
+    const filters = savedReport.filters || {}
+    const hasCachedData = Boolean(savedReport.data)
+    skipNextFetchRef.current = hasCachedData
+
+    if (!hasCachedData) {
+      setLoading(true)
     }
-    if (typeof savedReport.filters?.region !== 'undefined') {
-      setSelectedRegion(savedReport.filters.region)
+
+    if (filters.dateRange) {
+      setDateRange(filters.dateRange)
     }
-    if (typeof savedReport.filters?.millType !== 'undefined') {
-      setSelectedMillType(savedReport.filters.millType)
+    if (typeof filters.region !== 'undefined') {
+      setSelectedRegion(filters.region)
     }
+    if (typeof filters.millType !== 'undefined') {
+      setSelectedMillType(filters.millType)
+    }
+
     setReportType(savedReport.reportType)
+
+    const fallbackData = savedReport.data || mockReportData[savedReport.reportType] || { summary: {}, breakdown: [] }
     setReportData(prev => ({
       ...prev,
-      [savedReport.reportType]: savedReport.data
+      [savedReport.reportType]: fallbackData
     }))
+
     showSuccessNotification(`Loaded ${savedReport.name}`)
+
+    try {
+      setIsGeneratingPDF(true)
+      const doc = await generatePDFReport({
+        customData: fallbackData,
+        customReportType: savedReport.reportType,
+        customFilters: filters,
+        customTitle: savedReport.name,
+        variant: savedReport.variant,
+        generatedAt: savedReport.generatedAt
+      })
+
+      if (!doc) {
+        alert('Unable to generate preview for this report right now. Please try again later.')
+        return
+      }
+
+      const pdfBlob = doc.output('blob')
+      const pdfUrl = URL.createObjectURL(pdfBlob)
+      const newWindow = window.open(pdfUrl, '_blank', 'width=900,height=700,scrollbars=yes,resizable=yes')
+
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        const safeName = savedReport.name ? savedReport.name.replace(/[^a-z0-9]+/gi, '_') : 'report'
+        const link = document.createElement('a')
+        link.href = pdfUrl
+        link.download = `${safeName || 'report'}_preview.pdf`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        alert('PDF preview downloaded (popup may have been blocked by your browser).')
+      }
+
+      setTimeout(() => URL.revokeObjectURL(pdfUrl), 15000)
+    } catch (error) {
+      console.error('Error previewing saved report:', error)
+      alert('Error opening saved report preview. Please try again.')
+    } finally {
+      setIsGeneratingPDF(false)
+    }
   }
 
   const handleDownloadGeneratedReport = async (savedReport, format) => {
