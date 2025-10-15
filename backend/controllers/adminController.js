@@ -549,6 +549,91 @@ const generateStockReport = async (req, res) => {
     }
 };
 
+const getApprovedMills = async (req, res) => {
+    try {
+        const { businessType, district } = req.query;
+
+        let query = `
+            SELECT 
+                u.id,
+                u.business_name,
+                u.business_type,
+                COALESCE(u.mill_district, u.district) AS district,
+                u.mill_location,
+                u.mill_capacity,
+                u.phone,
+                u.email,
+                u.mill_latitude,
+                u.mill_longitude,
+                ml.license_number,
+                ml.approved_date
+            FROM mill_licenses ml
+            JOIN users u ON ml.user_id = u.id
+            WHERE ml.status = 'approved'
+              AND u.mill_latitude IS NOT NULL
+              AND u.mill_longitude IS NOT NULL
+        `;
+
+        const params = [];
+
+        if (businessType && businessType !== 'all') {
+            query += ' AND LOWER(u.business_type) = ?';
+            params.push(String(businessType).toLowerCase());
+        }
+
+        if (district && district !== 'all') {
+            query += ' AND LOWER(COALESCE(u.mill_district, u.district)) = ?';
+            params.push(String(district).toLowerCase());
+        }
+
+    query += ' ORDER BY (ml.approved_date IS NULL), ml.approved_date DESC, u.business_name ASC';
+
+        const [rows] = await db.execute(query, params);
+
+        const mills = rows
+            .map((row) => {
+                const latitude = typeof row.mill_latitude === 'string'
+                    ? Number.parseFloat(row.mill_latitude)
+                    : row.mill_latitude;
+                const longitude = typeof row.mill_longitude === 'string'
+                    ? Number.parseFloat(row.mill_longitude)
+                    : row.mill_longitude;
+
+                if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                    return null;
+                }
+
+                return {
+                    id: row.id,
+                    name: row.business_name,
+                    businessType: row.business_type,
+                    district: row.district,
+                    millLocation: row.mill_location,
+                    millCapacity: row.mill_capacity,
+                    phone: row.phone,
+                    email: row.email,
+                    latitude,
+                    longitude,
+                    licenseNumber: row.license_number,
+                    approvedDate: row.approved_date,
+                };
+            })
+            .filter(Boolean);
+
+        res.status(200).json({
+            message: 'Approved mills retrieved successfully',
+            count: mills.length,
+            mills,
+        });
+    } catch (error) {
+        console.error('Error fetching approved mills:', error);
+        res.status(500).json({
+            message: 'Failed to fetch approved mills',
+            error: error.message,
+        });
+    }
+};
+
 
 module.exports = {
     adminLogin,
@@ -557,5 +642,6 @@ module.exports = {
     getStockReports,
     subscribeStockUpdates,
     getStockEntries,
-    generateStockReport
+    generateStockReport,
+    getApprovedMills
 };

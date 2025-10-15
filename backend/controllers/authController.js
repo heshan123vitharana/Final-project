@@ -179,8 +179,10 @@ const login = async (req, res) => {
     const fullUser = await getUserWithProfilePhoto(user.id);
 
     // Check if this is a first-time login (missing profile fields)
-    const isFirstLogin = !fullUser.address || !fullUser.city || !fullUser.district ||
-                        !fullUser.mill_capacity || !fullUser.mill_location;
+  const isFirstLogin = !fullUser.address || !fullUser.city || !fullUser.district ||
+            !fullUser.mill_capacity || !fullUser.mill_location ||
+            fullUser.mill_latitude === null || fullUser.mill_latitude === undefined ||
+            fullUser.mill_longitude === null || fullUser.mill_longitude === undefined;
 
     return res.json({
       message: 'Login successful',
@@ -201,6 +203,8 @@ const login = async (req, res) => {
         postal_code: fullUser.postal_code,
         mill_capacity: fullUser.mill_capacity,
         mill_location: fullUser.mill_location,
+  mill_latitude: fullUser.mill_latitude,
+  mill_longitude: fullUser.mill_longitude,
         registration_date: fullUser.created_at,
         has_photo: !!fullUser.has_photo,
         profile_photo: fullUser.photo_data ? `data:${fullUser.mime_type || 'image/png'};base64,${fullUser.photo_data}` : null

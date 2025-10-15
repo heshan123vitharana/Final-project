@@ -106,6 +106,8 @@ const initializeTables = async () => {
         postal_code VARCHAR(10),
         mill_capacity VARCHAR(100),
         mill_location VARCHAR(255),
+        mill_latitude DECIMAL(10, 7),
+        mill_longitude DECIMAL(10, 7),
         license_number VARCHAR(100),
         registration_date DATE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -121,6 +123,8 @@ const initializeTables = async () => {
       'postal_code VARCHAR(10)',
       'mill_capacity VARCHAR(100)',
       'mill_location VARCHAR(255)',
+      'mill_latitude DECIMAL(10, 7)',
+      'mill_longitude DECIMAL(10, 7)',
       'license_number VARCHAR(100)',
       'registration_date DATE'
     ];

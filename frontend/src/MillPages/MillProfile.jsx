@@ -77,6 +77,8 @@ const emptyProfile = {
   millCapacity: "",
   millLocation: "",
   millDistrict: "",
+  millLatitude: "",
+  millLongitude: "",
   registrationDate: "",
   profilePhoto: "",
   password: "",
@@ -162,6 +164,8 @@ const MillProfile = ({ userData }) => {
           millLocation: currentUserData.mill_location || "",
           // Always map millDistrict from mill_district (snake_case) in backend
           millDistrict: currentUserData.mill_district || currentUserData.millDistrict || "",
+          millLatitude: currentUserData.mill_latitude ?? currentUserData.millLatitude ?? "",
+          millLongitude: currentUserData.mill_longitude ?? currentUserData.millLongitude ?? "",
           registrationDate: currentUserData.registration_date ?
             new Date(currentUserData.registration_date).toISOString().split('T')[0] :
             (currentUserData.created_at ? new Date(currentUserData.created_at).toISOString().split('T')[0] : ""),
@@ -183,6 +187,8 @@ const MillProfile = ({ userData }) => {
               email: currentUserData.email || savedData.email || "",
               businessName: currentUserData.business_name || savedData.businessName || "",
               businessType: currentUserData.business_type || savedData.businessType || "private",
+              millLatitude: currentUserData.mill_latitude ?? savedData.millLatitude ?? "",
+              millLongitude: currentUserData.mill_longitude ?? savedData.millLongitude ?? "",
               registrationDate: currentUserData.registration_date ?
                 new Date(currentUserData.registration_date).toISOString().split('T')[0] :
                 (currentUserData.created_at ? new Date(currentUserData.created_at).toISOString().split('T')[0] : savedData.registrationDate || ""),
@@ -207,6 +213,18 @@ const MillProfile = ({ userData }) => {
 
       setFormData(initialData);
       setOriginalData(initialData);
+
+      if (initialData.millLatitude && initialData.millLongitude) {
+        const latNum = Number.parseFloat(initialData.millLatitude);
+        const lngNum = Number.parseFloat(initialData.millLongitude);
+        if (Number.isFinite(latNum) && Number.isFinite(lngNum)) {
+          setSelectedMillLocation({
+            lat: latNum,
+            lng: lngNum,
+            address: initialData.millLocation || '',
+          });
+        }
+      }
 
     };
 
@@ -243,7 +261,20 @@ const MillProfile = ({ userData }) => {
   // Handle mill location selection from map
   const handleMillLocationSelect = (location) => {
     setSelectedMillLocation(location);
-    setFormData(prev => ({ ...prev, millLocation: location.address }));
+
+    const formatCoordinate = (value) => {
+      if (value === undefined || value === null) return '';
+      const num = typeof value === 'number' ? value : Number.parseFloat(value);
+      if (!Number.isFinite(num)) return '';
+      return num.toFixed(6);
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      millLocation: location.address || prev.millLocation,
+      millLatitude: formatCoordinate(location.lat) || prev.millLatitude,
+      millLongitude: formatCoordinate(location.lng) || prev.millLongitude
+    }));
     showSuccessToast('🏭 Mill location added to your profile!');
   };
 
@@ -419,6 +450,8 @@ const MillProfile = ({ userData }) => {
         millCapacity: formData.millCapacity,
         millLocation: formData.millLocation,
         millDistrict: formData.millDistrict,
+        millLatitude: formData.millLatitude,
+        millLongitude: formData.millLongitude,
         registrationDate: formData.registrationDate
       };
 
@@ -930,6 +963,37 @@ const MillProfile = ({ userData }) => {
                         </button>
                       </div>
                     </div>
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Latitude *</label>
+                        <input
+                          type="number"
+                          name="millLatitude"
+                          step="any"
+                          value={formData.millLatitude}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                          placeholder="e.g., 7.873100"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Longitude *</label>
+                        <input
+                          type="number"
+                          name="millLongitude"
+                          step="any"
+                          value={formData.millLongitude}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                          placeholder="e.g., 80.771800"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500 bg-green-50 border border-green-100 rounded-md px-3 py-2">
+                      Use the map picker or manual entry to capture precise GPS coordinates. These values power the admin mill map.
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Mill District *</label>

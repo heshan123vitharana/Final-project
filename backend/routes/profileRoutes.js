@@ -35,6 +35,27 @@ const normalizeDate = (value) => {
     return normalized;
 };
 
+const normalizeCoordinate = (value) => {
+    if (value === undefined || value === null) {
+        return null;
+    }
+
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? Number(value.toFixed(8)) : null;
+    }
+
+    if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed === '') {
+            return null;
+        }
+        const parsed = Number.parseFloat(trimmed);
+        return Number.isFinite(parsed) ? Number(parsed.toFixed(8)) : null;
+    }
+
+    return null;
+};
+
 // Test route
 router.get('/test', (_req, res) => {
   console.log('📸 Profile test route hit!');
@@ -215,6 +236,8 @@ router.put('/update/:userId', async (req, res) => {
             millCapacity,
             millLocation,
             millDistrict,
+            millLatitude,
+            millLongitude,
             registrationDate
         } = req.body;
 
@@ -240,6 +263,8 @@ router.put('/update/:userId', async (req, res) => {
             millCapacity: normalizeValue(millCapacity),
             millLocation: normalizeValue(millLocation),
             millDistrict: normalizeValue(millDistrict),
+            millLatitude: normalizeCoordinate(millLatitude),
+            millLongitude: normalizeCoordinate(millLongitude),
             registrationDate: normalizeDate(registrationDate)
         };
 
@@ -251,7 +276,7 @@ router.put('/update/:userId', async (req, res) => {
             UPDATE users
             SET first_name = ?, last_name = ?, nic = ?, email = ?, phone = ?,
                 address = ?, city = ?, district = ?, postal_code = ?,
-                business_name = ?, business_type = ?, mill_capacity = ?, mill_location = ?, mill_district = ?, registration_date = ?
+                business_name = ?, business_type = ?, mill_capacity = ?, mill_location = ?, mill_district = ?, mill_latitude = ?, mill_longitude = ?, registration_date = ?
             WHERE id = ?
         `, [
             normalizedValues.firstName,
@@ -268,6 +293,8 @@ router.put('/update/:userId', async (req, res) => {
             normalizedValues.millCapacity,
             normalizedValues.millLocation,
             normalizedValues.millDistrict,
+            normalizedValues.millLatitude,
+            normalizedValues.millLongitude,
             normalizedValues.registrationDate,
             userId
         ]);
@@ -296,6 +323,8 @@ router.put('/update/:userId', async (req, res) => {
                 millCapacity: normalizedValues.millCapacity,
                 millLocation: normalizedValues.millLocation,
                 millDistrict: normalizedValues.millDistrict,
+                millLatitude: normalizedValues.millLatitude,
+                millLongitude: normalizedValues.millLongitude,
                 registrationDate: normalizedValues.registrationDate
             }
         });
@@ -336,8 +365,16 @@ router.get('/user/:userId', async (req, res) => {
                 lastName: user.last_name,
                 email: user.email,
                 phone: user.phone,
+                address: user.address,
+                city: user.city,
+                district: user.district,
+                postalCode: user.postal_code,
                 businessName: user.business_name,
                 businessType: user.business_type,
+                millLocation: user.mill_location,
+                millDistrict: user.mill_district,
+                millLatitude: user.mill_latitude,
+                millLongitude: user.mill_longitude,
                 hasPhoto: !!user.has_photo,
                 createdAt: user.created_at
             }
@@ -386,6 +423,10 @@ router.get('/completeness/:userId', async (req, res) => {
             business_type: user.business_type,
             mill_capacity: user.mill_capacity,
             mill_location: user.mill_location,
+            mill_latitude: user.mill_latitude,
+                millLatitude: user.mill_latitude,
+                millLongitude: user.mill_longitude,
+            mill_longitude: user.mill_longitude,
             registration_date: user.registration_date
         }, null, 2));
 
@@ -409,6 +450,8 @@ router.get('/completeness/:userId', async (req, res) => {
             { field: user.business_type, name: 'Business Type' },
             { field: user.mill_capacity, name: 'Mill Capacity' },
             { field: user.mill_location, name: 'Mill Location' },
+            { field: user.mill_latitude, name: 'Mill Latitude' },
+            { field: user.mill_longitude, name: 'Mill Longitude' },
             { field: user.mill_district, name: 'Mill District' },
             { field: user.registration_date, name: 'Registration Date' }
         ];
@@ -455,12 +498,14 @@ router.get('/completeness/:userId', async (req, res) => {
         // Get missing fields
         const missingFields = [];
         personalFields.forEach(item => {
-            if (!item.field || item.field.toString().trim() === '') {
+            if (item.field === null || item.field === undefined ||
+                (typeof item.field === 'string' && item.field.trim() === '')) {
                 missingFields.push(item.name);
             }
         });
         businessFields.forEach(item => {
-            if (!item.field || item.field.toString().trim() === '') {
+            if (item.field === null || item.field === undefined ||
+                (typeof item.field === 'string' && item.field.trim() === '')) {
                 missingFields.push(item.name);
             }
         });
@@ -469,7 +514,7 @@ router.get('/completeness/:userId', async (req, res) => {
 
         // Create field status for frontend display
         const fieldStatus = {
-            totalCount: 15, // Updated: 9 personal + 6 business = 15 fields (added NIC and Mill District)
+            totalCount: personalFields.length + businessFields.length,
             completedCount: filledPersonalFields.length + filledBusinessFields.length,
             personalCompleteness,
             businessCompleteness,
@@ -489,6 +534,8 @@ router.get('/completeness/:userId', async (req, res) => {
                 businessType: !!(user.business_type && user.business_type.toString().trim() !== ''),
                 millCapacity: !!(user.mill_capacity && user.mill_capacity.toString().trim() !== ''),
                 millLocation: !!(user.mill_location && user.mill_location.toString().trim() !== ''),
+                millLatitude: Number.isFinite(Number.parseFloat(user.mill_latitude)),
+                millLongitude: Number.isFinite(Number.parseFloat(user.mill_longitude)),
                 millDistrict: !!(user.mill_district && user.mill_district.toString().trim() !== ''),
                 registrationDate: !!(user.registration_date && user.registration_date.toString().trim() !== '')
             }
@@ -518,8 +565,17 @@ router.get('/completeness/:userId', async (req, res) => {
                 lastName: user.last_name,
                 email: user.email,
                 phone: user.phone,
+                address: user.address,
+                city: user.city,
+                district: user.district,
+                postalCode: user.postal_code,
                 businessName: user.business_name,
                 businessType: user.business_type,
+                millLocation: user.mill_location,
+                millDistrict: user.mill_district,
+                millLatitude: user.mill_latitude,
+                millLongitude: user.mill_longitude,
+                registrationDate: user.registration_date,
                 hasPhoto: !!user.has_photo,
                 createdAt: user.created_at
             },
@@ -546,7 +602,8 @@ router.get('/clear-test-user-fields', async (_req, res) => {
         await pool.execute(`
             UPDATE users 
             SET address = NULL, city = NULL, district = NULL, postal_code = NULL,
-                mill_capacity = NULL, mill_location = NULL, license_number = NULL, registration_date = NULL
+                mill_capacity = NULL, mill_location = NULL, mill_latitude = NULL, mill_longitude = NULL,
+                license_number = NULL, registration_date = NULL
             WHERE id = 1
         `);
 
@@ -592,6 +649,8 @@ router.get('/debug/:userId', async (req, res) => {
             business_type: user.business_type,
             mill_capacity: user.mill_capacity,
             mill_location: user.mill_location,
+            mill_latitude: user.mill_latitude,
+            mill_longitude: user.mill_longitude,
             registration_date: user.registration_date
         }, null, 2));
 
@@ -614,6 +673,8 @@ router.get('/debug/:userId', async (req, res) => {
             { field: user.business_type, name: 'Business Type' },
             { field: user.mill_capacity, name: 'Mill Capacity' },
             { field: user.mill_location, name: 'Mill Location' },
+            { field: user.mill_latitude, name: 'Mill Latitude' },
+            { field: user.mill_longitude, name: 'Mill Longitude' },
             { field: user.mill_district, name: 'Mill District' },
             { field: user.registration_date, name: 'Registration Date' }
         ];

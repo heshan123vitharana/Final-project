@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { adminLogin, getReport, getStockOverview, getStockReports, subscribeStockUpdates, getStockEntries, generateStockReport } = require('../controllers/adminController');
+const { adminLogin, getReport, getStockOverview, getStockReports, subscribeStockUpdates, getStockEntries, generateStockReport, getApprovedMills } = require('../controllers/adminController');
 
 // Debug log to check if function is imported correctly
 console.log('adminController import:', { adminLogin, getReport });
@@ -10,6 +10,9 @@ router.post('/login', adminLogin);
 
 // GET route for reports
 router.get('/reports', getReport);
+
+// GET route for approved mills map data
+router.get('/approved-mills', getApprovedMills);
 
 // GET route for live stock overview
 router.get('/stock-overview', getStockOverview);

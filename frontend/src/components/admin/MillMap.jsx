@@ -1,394 +1,346 @@
-import { useState } from 'react'
-import { MapPin, Factory, Package, Info, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { MapPin, Factory, Info, RefreshCw, Phone, Mail, Ruler } from 'lucide-react'
+import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
+import L from 'leaflet'
 
-// Mock data for mill locations in Sri Lanka
-const millLocations = [
-  {
-    id: 1,
-    name: 'Green Valley Rice Mill',
-    district: 'Colombo',
-    coordinates: { x: 45, y: 75 }, // Relative position on SVG map
-    currentStock: 1200,
-    capacity: 1500,
-    emptyCapacity: 300,
-    type: 'Private',
-    status: 'Active',
-    contact: '+94771234567'
-  },
-  {
-    id: 2,
-    name: 'Sri Lanka Rice Processing',
-    district: 'Kurunegala',
-    coordinates: { x: 40, y: 55 },
-    currentStock: 950,
-    capacity: 1200,
-    emptyCapacity: 250,
-    type: 'Government',
-    status: 'Active',
-    contact: '+94777654321'
-  },
-  {
-    id: 3,
-    name: 'Golden Grain Mills',
-    district: 'Anuradhapura',
-    coordinates: { x: 45, y: 35 },
-    currentStock: 800,
-    capacity: 1000,
-    emptyCapacity: 200,
-    type: 'Private',
-    status: 'Active',
-    contact: '+94712345678'
-  },
-  {
-    id: 4,
-    name: 'National Paddy Mill',
-    district: 'Polonnaruwa',
-    coordinates: { x: 55, y: 40 },
-    currentStock: 750,
-    capacity: 900,
-    emptyCapacity: 150,
-    type: 'Government',
-    status: 'Active',
-    contact: '+94751234567'
-  },
-  {
-    id: 5,
-    name: 'Paddy Processing Center',
-    district: 'Gampaha',
-    coordinates: { x: 42, y: 70 },
-    currentStock: 650,
-    capacity: 800,
-    emptyCapacity: 150,
-    type: 'Private',
-    status: 'Active',
-    contact: '+94761234567'
-  },
-  {
-    id: 6,
-    name: 'Central Rice Mill',
-    district: 'Kandy',
-    coordinates: { x: 50, y: 60 },
-    currentStock: 550,
-    capacity: 700,
-    emptyCapacity: 150,
-    type: 'Government',
-    status: 'Maintenance',
-    contact: '+94781234567'
-  },
-  {
-    id: 7,
-    name: 'Southern Rice Complex',
-    district: 'Galle',
-    coordinates: { x: 38, y: 85 },
-    currentStock: 420,
-    capacity: 600,
-    emptyCapacity: 180,
-    type: 'Private',
-    status: 'Active',
-    contact: '+94791234567'
-  },
-  {
-    id: 8,
-    name: 'Eastern Mill Corporation',
-    district: 'Batticaloa',
-    coordinates: { x: 65, y: 50 },
-    currentStock: 380,
-    capacity: 500,
-    emptyCapacity: 120,
-    type: 'Government',
-    status: 'Active',
-    contact: '+94701234567'
-  }
-]
+const createMarkerIcon = (hexColor = '#16a34a') =>
+  L.divIcon({
+    className: 'mill-marker',
+    html: `<span style="background:${hexColor};border:2px solid #fff;border-radius:9999px;display:block;height:18px;width:18px;box-shadow:0 0 0 2px rgba(0,0,0,0.15);"></span>`,
+    iconSize: [18, 18]
+  })
+
+const MAP_CENTER = [7.8731, 80.7718]
+const MAP_ZOOM = 7.3
+
+const getTypeColor = (type) => {
+  if (!type) return '#6b7280'
+  return type.toLowerCase() === 'government' ? '#2563eb' : '#16a34a'
+}
 
 const MillMap = () => {
-  const [selectedMill, setSelectedMill] = useState(null)
-  const [showModal, setShowModal] = useState(false)
+  const [mills, setMills] = useState([])
+  const [selectedMillId, setSelectedMillId] = useState(null)
   const [filterType, setFilterType] = useState('all')
-  const [mills] = useState(millLocations)
+  const [filterDistrict, setFilterDistrict] = useState('all')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-  const filteredMills = mills.filter(mill => 
-    filterType === 'all' || mill.type.toLowerCase() === filterType
+  const selectedMill = useMemo(
+    () => mills.find((mill) => mill.id === selectedMillId) || null,
+    [mills, selectedMillId]
   )
 
-  const handleMillClick = (mill) => {
-    setSelectedMill(mill)
-    setShowModal(true)
+  const districts = useMemo(() => {
+    const unique = new Set()
+    mills.forEach((mill) => {
+      if (mill.district) {
+        unique.add(mill.district)
+      }
+    })
+    return Array.from(unique).sort((a, b) => a.localeCompare(b))
+  }, [mills])
+
+  const filteredMills = useMemo(() => {
+    return mills.filter((mill) => {
+      const typeMatches =
+        filterType === 'all' || (mill.businessType || '').toLowerCase() === filterType
+      const districtMatches =
+        filterDistrict === 'all' || (mill.district || '').toLowerCase() === filterDistrict
+      return typeMatches && districtMatches
+    })
+  }, [mills, filterType, filterDistrict])
+
+  const fetchMills = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const params = new URLSearchParams()
+      if (filterType !== 'all') params.append('businessType', filterType)
+      if (filterDistrict !== 'all') params.append('district', filterDistrict)
+
+      const query = params.toString()
+      const response = await fetch(
+        query
+          ? `http://localhost:5000/api/admin/approved-mills?${query}`
+          : 'http://localhost:5000/api/admin/approved-mills'
+      )
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Approved mills API not found. Restart the backend after updating routes.')
+        }
+        throw new Error('Failed to load mills')
+      }
+
+      const data = await response.json()
+      if (Array.isArray(data.mills)) {
+        setMills(data.mills)
+      } else {
+        setMills([])
+      }
+    } catch (err) {
+      console.error('Error fetching approved mills:', err)
+      setError(err.message || 'Unable to load mills')
+      setMills([])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const getMillColor = (mill) => {
-    if (mill.status === 'Maintenance') return '#EF4444' // Red
-    return mill.type === 'Private' ? '#22C55E' : '#3B82F6' // Green for Private, Blue for Government
-  }
+  useEffect(() => {
+    fetchMills()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  const getUtilizationPercentage = (mill) => {
-    return Math.round((mill.currentStock / mill.capacity) * 100)
-  }
+  useEffect(() => {
+    fetchMills()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterType, filterDistrict])
 
+  const handleMarkerClick = (millId) => {
+    setSelectedMillId(millId)
+  }
 
   return (
     <div className="space-y-6">
-      {/* Map Controls */}
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">Mill Locations Map</h2>
-            <p className="text-sm text-gray-600">Interactive map of rice mills across Sri Lanka</p>
+            <h2 className="text-xl font-semibold text-gray-800">Approved Mill Locator</h2>
+            <p className="text-sm text-gray-600">
+              Live map of mills with approved licenses. Filters update the data feed automatically.
+            </p>
           </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700">Filter by Type:</label>
+
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700" htmlFor="typeFilter">
+                Type
+              </label>
               <select
+                id="typeFilter"
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
-                <option value="all">All Mills</option>
-                <option value="private">Private Mills</option>
-                <option value="government">Government Mills</option>
+                <option value="all">All</option>
+                <option value="private">Private</option>
+                <option value="government">Government</option>
               </select>
             </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700" htmlFor="districtFilter">
+                District
+              </label>
+              <select
+                id="districtFilter"
+                value={filterDistrict}
+                onChange={(e) => setFilterDistrict(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="all">All</option>
+                {districts.map((district) => (
+                  <option key={district} value={district.toLowerCase()}>
+                    {district}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={fetchMills}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 transition-colors hover:border-green-400 hover:text-green-600"
+            >
+              <RefreshCw size={16} />
+              Refresh
+            </button>
           </div>
         </div>
-        
-        {/* Legend */}
-        <div className="mt-4 flex flex-wrap items-center space-x-6">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">Private Mills</span>
+
+        <div className="mt-4 flex flex-wrap items-center gap-6 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <span
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: getTypeColor('private') }}
+            ></span>
+            Private Mills
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">Government Mills</span>
+          <div className="flex items-center gap-2">
+            <span
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: getTypeColor('government') }}
+            ></span>
+            Government Mills
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <span className="text-sm text-gray-600">Under Maintenance</span>
+          <div className="flex items-center gap-2 text-gray-500">
+            <Info size={16} />
+            Markers show approved mills with valid coordinates only
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Map Section */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-6">
-          <div className="relative">
-            {/* Simplified Sri Lanka Map SVG */}
-            <svg 
-              viewBox="0 0 100 100" 
-              className="w-full h-96 border border-gray-200 rounded-lg bg-blue-50"
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="h-[480px]">
+            <MapContainer
+              center={MAP_CENTER}
+              zoom={MAP_ZOOM}
+              scrollWheelZoom
+              className="h-full w-full"
             >
-              {/* Sri Lanka outline (simplified) */}
-              <path
-                d="M30,20 L35,15 L45,12 L55,15 L65,18 L70,25 L72,35 L70,45 L68,55 L65,65 L60,75 L55,85 L50,90 L45,88 L40,85 L35,80 L32,70 L30,60 L28,50 L30,40 L30,30 Z"
-                fill="#E0F2FE"
-                stroke="#0369A1"
-                strokeWidth="1"
+              <TileLayer
+                attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              
-              {/* Mill locations */}
-              {filteredMills.map((mill) => (
-                <g key={mill.id}>
-                  <circle
-                    cx={mill.coordinates.x}
-                    cy={mill.coordinates.y}
-                    r="3"
-                    fill={getMillColor(mill)}
-                    stroke="white"
-                    strokeWidth="2"
-                    className="cursor-pointer hover:r-4 transition-all duration-200"
-                    onClick={() => handleMillClick(mill)}
-                  />
-                  
-                  {/* Mill name on hover */}
-                  <text
-                    x={mill.coordinates.x}
-                    y={mill.coordinates.y - 6}
-                    textAnchor="middle"
-                    className="text-xs fill-gray-700 opacity-0 hover:opacity-100 transition-opacity pointer-events-none"
-                    fontSize="3"
-                  >
-                    {mill.name}
-                  </text>
-                </g>
-              ))}
-            </svg>
-            
-            {/* Overlay instructions */}
-            <div className="absolute bottom-4 left-4 bg-white bg-opacity-90 rounded-lg p-3 text-sm text-gray-600">
-              <div className="flex items-center space-x-2">
-                <Info size={16} />
-                <span>Click on mill markers to view details</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Mill List */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Mill Directory ({filteredMills.length})
-          </h3>
-          
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {filteredMills.map((mill) => (
-              <div
-                key={mill.id}
-                onClick={() => handleMillClick(mill)}
-                className="border border-gray-200 rounded-lg p-3 hover:border-green-300 hover:bg-green-50 cursor-pointer transition-colors"
-              >
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
-                    <div
-                      className="w-3 h-3 rounded-full mt-1"
-                      style={{ backgroundColor: getMillColor(mill) }}
-                    ></div>
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-gray-800 truncate">
-                      {mill.name}
-                    </h4>
-                    <p className="text-xs text-gray-500">{mill.district}</p>
-                    <div className="text-xs text-gray-600 mt-1">
-                      <div className="flex justify-between">
-                        <span>Stock:</span>
-                        <span className="font-medium">{mill.currentStock} MT</span>
+              {filteredMills.map((mill) => (
+                <Marker
+                  key={mill.id}
+                  position={[mill.latitude, mill.longitude]}
+                  icon={createMarkerIcon(getTypeColor(mill.businessType))}
+                  eventHandlers={{ click: () => handleMarkerClick(mill.id) }}
+                >
+                  <Popup className="w-64">
+                    <div className="space-y-2">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-800">{mill.name}</h3>
+                        <p className="text-xs text-gray-500">{mill.district || 'Unknown District'}</p>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Utilization:</span>
-                        <span className="font-medium">{getUtilizationPercentage(mill)}%</span>
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-green-700">
+                          {mill.businessType || 'Unknown'}
+                        </span>
+                        {mill.licenseNumber && (
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-700">
+                            {mill.licenseNumber}
+                          </span>
+                        )}
+                      </div>
+                      {mill.millCapacity && (
+                        <p className="flex items-center gap-2 text-xs text-gray-600">
+                          <Ruler size={14} /> {mill.millCapacity}
+                        </p>
+                      )}
+                      <div className="space-y-1 text-xs text-gray-600">
+                        <p className="flex items-center gap-2">
+                          <MapPin size={14} />
+                          <span>{mill.millLocation || 'Exact address not provided'}</span>
+                        </p>
+                        <p>
+                          Coordinates: {mill.latitude.toFixed(5)}, {mill.longitude.toFixed(5)}
+                        </p>
+                        {mill.approvedDate && (
+                          <p>
+                            Approved:{' '}
+                            {new Date(mill.approvedDate).toLocaleDateString('en-GB', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-1 text-xs text-gray-600">
+                        {mill.phone && (
+                          <p className="flex items-center gap-2">
+                            <Phone size={14} /> {mill.phone}
+                          </p>
+                        )}
+                        {mill.email && (
+                          <p className="flex items-center gap-2">
+                            <Mail size={14} /> {mill.email}
+                          </p>
+                        )}
                       </div>
                     </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
+          {isLoading && (
+            <div className="flex items-center justify-center gap-2 border-t border-gray-200 bg-white py-3 text-sm text-gray-500">
+              <RefreshCw className="animate-spin" size={16} /> Loading mills...
+            </div>
+          )}
+          {error && (
+            <div className="border-t border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Mill Directory ({filteredMills.length})
+            </h3>
+            <span className="text-xs text-gray-500">Click a row to focus the marker</span>
+          </div>
+
+          <div className="space-y-3 overflow-y-auto">
+            {filteredMills.map((mill) => (
+              <button
+                key={mill.id}
+                type="button"
+                onClick={() => setSelectedMillId(mill.id)}
+                className={`w-full rounded-lg border px-3 py-3 text-left transition-colors ${
+                  selectedMillId === mill.id
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <Factory
+                    className="mt-0.5 h-4 w-4"
+                    color={getTypeColor(mill.businessType)}
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-sm font-medium text-gray-800">
+                        {mill.name}
+                      </p>
+                      <span className="text-xs text-gray-500">
+                        {(mill.district || 'Unknown').toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-green-700">
+                        {mill.businessType || 'Unknown'}
+                      </span>
+                      {mill.licenseNumber && (
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-700">
+                          {mill.licenseNumber}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Lat {mill.latitude.toFixed(5)} • Lng {mill.longitude.toFixed(5)}
+                    </p>
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
+
+            {!filteredMills.length && !isLoading && !error && (
+              <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-500">
+                No mills match the current filters.
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Mill Details Modal */}
-      {showModal && selectedMill && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Mill Details</h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              {/* Mill Header */}
-              <div className="border-b border-gray-200 pb-4">
-                <div className="flex items-center space-x-3">
-                  <Factory className="w-8 h-8 text-green-600" />
-                  <div>
-                    <h4 className="font-semibold text-gray-800">{selectedMill.name}</h4>
-                    <p className="text-sm text-gray-600">{selectedMill.district} District</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-4 mt-3">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    selectedMill.type === 'Private' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {selectedMill.type}
-                  </span>
-                  
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    selectedMill.status === 'Active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {selectedMill.status}
-                  </span>
-                </div>
-              </div>
-
-              {/* Stock Information */}
-              <div>
-                <h5 className="font-medium text-gray-800 mb-3 flex items-center">
-                  <Package className="w-4 h-4 mr-2" />
-                  Stock Information
-                </h5>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Current Stock:</span>
-                    <span className="font-medium text-gray-800">{selectedMill.currentStock} MT</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Total Capacity:</span>
-                    <span className="font-medium text-gray-800">{selectedMill.capacity} MT</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Empty Capacity:</span>
-                    <span className="font-medium text-green-600">{selectedMill.emptyCapacity} MT</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Utilization Rate:</span>
-                    <span className={`font-medium ${
-                      getUtilizationPercentage(selectedMill) > 85 ? 'text-red-600' : 
-                      getUtilizationPercentage(selectedMill) > 70 ? 'text-yellow-600' : 'text-green-600'
-                    }`}>
-                      {getUtilizationPercentage(selectedMill)}%
-                    </span>
-                  </div>
-                  
-                  {/* Utilization Bar */}
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div
-                      className="h-2 rounded-full transition-all duration-300"
-                      style={{ 
-                        width: `${getUtilizationPercentage(selectedMill)}%`,
-                        backgroundColor: getMillColor(selectedMill)
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact Information */}
-              <div>
-                <h5 className="font-medium text-gray-800 mb-3 flex items-center">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Contact Information
-                </h5>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Phone:</span>
-                    <span className="font-medium text-gray-800">{selectedMill.contact}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Location:</span>
-                    <span className="font-medium text-gray-800">{selectedMill.district}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex space-x-3 pt-4 border-t border-gray-200">
-                <button className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
-                  View Reports
-                </button>
-                <button className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                  Contact Mill
-                </button>
-              </div>
-            </div>
-          </div>
+      {selectedMill && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-900">
+          <p className="font-medium">Selected Mill Snapshot</p>
+          <p>Name: {selectedMill.name}</p>
+          <p>District: {selectedMill.district || 'Unknown'}</p>
+          <p>
+            Coordinates: {selectedMill.latitude.toFixed(5)}, {selectedMill.longitude.toFixed(5)}
+          </p>
         </div>
       )}
     </div>
