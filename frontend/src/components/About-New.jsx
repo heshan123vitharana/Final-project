@@ -154,7 +154,6 @@ export default function AboutNew() {
             ) : sortedLeaders.length > 0 ? (
               sortedLeaders.map((leader) => {
                 const imageSrc = leader.image_url ? `${API_BASE_URL}${leader.image_url}` : null;
-                const description = leader.bio || leader.description || leader.summary || '';
 
                 return (
                   <div key={`leader-${leader.id}`} className="group text-center">
@@ -178,14 +177,9 @@ export default function AboutNew() {
                       <h3 className="text-2xl font-medium text-gray-900 mb-2">
                         {leader.name}
                       </h3>
-                      <div className="text-lg text-gray-500 mb-4 font-normal">
+                      <div className="text-lg text-gray-500 font-normal">
                         {leader.position}
                       </div>
-                      {description ? (
-                        <p className="text-gray-600 leading-relaxed text-base font-light max-w-xs mx-auto">
-                          {description}
-                        </p>
-                      ) : null}
                     </div>
                   </div>
                 );
