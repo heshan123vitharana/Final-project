@@ -92,6 +92,36 @@ const addStock = async (req, res) => {
       console.error('Broadcast stock update error:', broadcastError);
     }
 
+    // Send notification to admin about new stock entry
+    try {
+      const { createNotification } = require('./notificationController');
+      const db = require('../database');
+      
+      // Get mill info
+      const [millRows] = await db.execute('SELECT business_name FROM users WHERE id = ?', [mill_id]);
+      const millName = millRows[0]?.business_name || `Mill #${mill_id}`;
+      
+      // Get all admin users
+      const [adminRows] = await db.execute('SELECT id FROM admin WHERE status = "active"');
+      
+      // Create notification for each admin
+      for (const admin of adminRows) {
+        await createNotification({
+          user_id: admin.id,
+          user_type: 'admin',
+          title: '📦 New Stock Entry Added',
+          message: `${millName} added new stock: ${stockData.quantity}kg of ${stockData.paddy_type} (${stockData.paddy_condition}) at LKR ${stockData.price_per_kg}/kg`,
+          type: 'stock_update',
+          related_id: result.insertId || result.id,
+          related_type: 'stock_entry'
+        });
+      }
+      console.log(`✅ Notifications sent to admins about new stock entry`);
+    } catch (notifError) {
+      console.error('⚠️ Failed to send admin notifications:', notifError);
+      // Don't fail the stock addition if notifications fail
+    }
+
     res.status(201).json({
       message: 'Stock entry added successfully',
       data: result
@@ -184,6 +214,21 @@ const deleteStock = async (req, res) => {
       });
     }
 
+    // Get stock entry details before deletion for notification
+    let stockDetails = null;
+    try {
+      const db = require('../database');
+      const [stockRows] = await db.execute(
+        'SELECT paddy_type, paddy_condition, quantity FROM stock_entries WHERE id = ? AND mill_id = ?',
+        [id, mill_id]
+      );
+      if (stockRows.length > 0) {
+        stockDetails = stockRows[0];
+      }
+    } catch (err) {
+      console.error('Error fetching stock details:', err);
+    }
+
     const result = await StockModel.deleteStockEntry(parseInt(id, 10), mill_id);
 
     try {
@@ -200,6 +245,38 @@ const deleteStock = async (req, res) => {
       });
     } catch (broadcastError) {
       console.error('Broadcast stock update error:', broadcastError);
+    }
+
+    // Send notification to admin about stock deletion
+    if (stockDetails) {
+      try {
+        const { createNotification } = require('./notificationController');
+        const db = require('../database');
+        
+        // Get mill info
+        const [millRows] = await db.execute('SELECT business_name FROM users WHERE id = ?', [mill_id]);
+        const millName = millRows[0]?.business_name || `Mill #${mill_id}`;
+        
+        // Get all admin users
+        const [adminRows] = await db.execute('SELECT id FROM admin WHERE status = "active"');
+        
+        // Create notification for each admin
+        for (const admin of adminRows) {
+          await createNotification({
+            user_id: admin.id,
+            user_type: 'admin',
+            title: '🗑️ Stock Entry Deleted',
+            message: `${millName} deleted stock entry: ${stockDetails.quantity}kg of ${stockDetails.paddy_type} (${stockDetails.paddy_condition})`,
+            type: 'stock_update',
+            related_id: null,
+            related_type: 'stock_entry'
+          });
+        }
+        console.log(`✅ Notifications sent to admins about stock deletion`);
+      } catch (notifError) {
+        console.error('⚠️ Failed to send admin notifications:', notifError);
+        // Don't fail the deletion if notifications fail
+      }
     }
 
     res.json({

@@ -280,7 +280,7 @@ const updatePrice = async (req, res) => {
     }
 
     // First get the current price to set as previous
-    const getCurrentQuery = 'SELECT price_per_kg FROM paddy_prices WHERE id = ?';
+    const getCurrentQuery = 'SELECT price_per_kg, district, variety, type FROM paddy_prices WHERE id = ?';
     const [currentRows] = await db.execute(getCurrentQuery, [id]);
 
     if (currentRows.length === 0) {
@@ -294,6 +294,7 @@ const updatePrice = async (req, res) => {
     const newPrice = parseFloat(price);
     const priceChange = newPrice - currentPrice;
     const trend = priceChange > 0 ? 'up' : priceChange < 0 ? 'down' : 'flat';
+    const { district, variety, type } = currentRows[0];
 
     const updateQuery = `
       UPDATE paddy_prices 
@@ -302,6 +303,33 @@ const updatePrice = async (req, res) => {
     `;
 
     const [result] = await db.execute(updateQuery, [newPrice, currentPrice, priceChange, trend, id]);
+    
+    // Create notifications for all mills about price update
+    console.log('🔔 Starting notification creation process...');
+    try {
+      const { createNotificationForAllMills } = require('./notificationController');
+      console.log('✅ Notification controller loaded');
+      
+      const trendEmoji = trend === 'up' ? '📈' : trend === 'down' ? '📉' : '➡️';
+      const priceChangeText = priceChange > 0 ? `+${priceChange.toFixed(2)}` : priceChange.toFixed(2);
+      
+      const notificationData = {
+        title: `${trendEmoji} Paddy Price Updated`,
+        message: `${variety} (${type}) price in ${district} updated from LKR ${currentPrice.toFixed(2)} to LKR ${newPrice.toFixed(2)} (${priceChangeText} LKR/kg)`,
+        type: 'price_update',
+        related_id: id,
+        related_type: 'paddy_price'
+      };
+      console.log('📧 Notification data prepared:', JSON.stringify(notificationData, null, 2));
+      
+      await createNotificationForAllMills(notificationData);
+      console.log(`✅ Notifications sent to all mills about price update`);
+    } catch (notifError) {
+      console.error('⚠️ Failed to send notifications:');
+      console.error('Error message:', notifError.message);
+      console.error('Error stack:', notifError.stack);
+      // Don't fail the price update if notifications fail
+    }
     
     res.json({
       success: true,
