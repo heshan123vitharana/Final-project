@@ -631,14 +631,6 @@ const LivePaddyPrices = () => {
                     <span className="text-emerald-200">🌾 Variety:</span>
                     <span className="text-white font-semibold">{price.variety}</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-emerald-200">⭐ Grade:</span>
-                    <span className="text-white font-semibold">{price.qualityGrade}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-emerald-200">🏢 Center:</span>
-                    <span className="text-white font-semibold text-xs">{price.collectionCenter}</span>
-                  </div>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-emerald-400/20">
