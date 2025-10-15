@@ -178,6 +178,9 @@ const MillProfile = ({ userData }) => {
         if (savedProfile) {
           try {
             const savedData = JSON.parse(savedProfile);
+            if (savedData && typeof savedData === 'object' && 'profilePhoto' in savedData) {
+              delete savedData.profilePhoto;
+            }
             initialData = {
               ...savedData,
               // Always use current user's identity data
@@ -476,16 +479,27 @@ const MillProfile = ({ userData }) => {
         ...formData,
         lastUpdated: new Date().toISOString()
       };
-      
-      sessionStorage.setItem("profileData", JSON.stringify(updatedProfile));
+
+  const { profilePhoto: _profilePhoto, ...storageSafeProfile } = updatedProfile;
+
+      try {
+        sessionStorage.setItem("profileData", JSON.stringify(storageSafeProfile));
+      } catch (storageError) {
+        console.warn('Unable to cache profileData in sessionStorage:', storageError);
+      }
+
       setOriginalData(updatedProfile);
       setPasswords({ current: "", new: "", confirm: "" });
       setIsEditing(false);
       
       showSuccessToast('Profile updated successfully!');
       
-    } catch {
-      showErrorToast('Failed to update profile. Please try again.');
+    } catch (error) {
+      const fallbackMessage = 'Failed to update profile. Please try again.';
+      const errorMessage = typeof error?.message === 'string' && error.message.trim().length > 0
+        ? error.message
+        : fallbackMessage;
+      showErrorToast(errorMessage);
     } finally {
       setIsLoading(false);
     }
