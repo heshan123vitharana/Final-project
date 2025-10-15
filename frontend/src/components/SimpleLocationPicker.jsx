@@ -6,17 +6,18 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
   const [selectedLocation, setSelectedLocation] = useState(initialLocation || null);
   const [manualInput, setManualInput] = useState({
     address: initialLocation?.address || '',
-    lat: initialLocation?.lat || '',
-    lng: initialLocation?.lng || ''
+    lat: '',
+    lng: ''
   });
+  const [isResolving, setIsResolving] = useState(false);
 
   useEffect(() => {
     if (initialLocation) {
       setSelectedLocation(initialLocation);
       setManualInput({
         address: initialLocation.address || '',
-        lat: initialLocation.lat || '',
-        lng: initialLocation.lng || ''
+        lat: '',
+        lng: ''
       });
     }
   }, [initialLocation]);
@@ -25,7 +26,7 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
     setManualInput(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSetLocation = () => {
+  const handleSetLocation = async () => {
     const { address, lat, lng } = manualInput;
 
     if (!address.trim()) {
@@ -58,12 +59,56 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
       location.lat = latNum;
       location.lng = lngNum;
     } else {
-      // If no coordinates, set Sri Lanka center as default
-      location.lat = 7.8731;
-      location.lng = 80.7718;
+      try {
+        setIsResolving(true);
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&countrycodes=lk&q=${encodeURIComponent(address.trim())}`,
+          {
+            headers: { 'Accept-Language': 'en' }
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Geocoding request failed');
+        }
+
+        const results = await response.json();
+
+        if (!Array.isArray(results) || results.length === 0) {
+          alert('We could not locate that address automatically. Please add latitude and longitude manually.');
+          return;
+        }
+
+        const bestMatch = results[0];
+        const latNum = Number.parseFloat(bestMatch.lat);
+        const lngNum = Number.parseFloat(bestMatch.lon);
+
+        if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+          alert('The location lookup returned invalid coordinates. Please enter them manually.');
+          return;
+        }
+
+        location = {
+          address: bestMatch.display_name || address.trim(),
+          lat: latNum,
+          lng: lngNum
+        };
+      } catch (error) {
+        console.error('Address geocoding failed:', error);
+        alert('Unable to automatically locate that address. Please provide latitude and longitude manually.');
+        return;
+      } finally {
+        setIsResolving(false);
+      }
     }
 
     setSelectedLocation(location);
+    setManualInput(prev => ({
+      ...prev,
+      lat: '',
+      lng: '',
+      address: location.address
+    }));
   };
 
   const defaultLocation = {
@@ -76,8 +121,8 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
     setSelectedLocation(location);
     setManualInput({
       address: location.address || '',
-      lat: location.lat?.toString() || '',
-      lng: location.lng?.toString() || ''
+      lat: '',
+      lng: ''
     });
   };
 
@@ -140,8 +185,8 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
     setSelectedLocation(location);
     setManualInput({
       address: location.address,
-      lat: location.lat.toString(),
-      lng: location.lng.toString()
+      lat: '',
+      lng: ''
     });
   };
 
@@ -221,9 +266,10 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
             <div className="flex gap-3">
               <button
                 onClick={handleSetLocation}
-                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                disabled={isResolving}
+                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Set Location
+                {isResolving ? 'Resolving...' : 'Set Location'}
               </button>
               <button
                 onClick={handleGetCurrentLocation}
@@ -284,14 +330,14 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
           </button>
           <button
             onClick={handleConfirm}
-            disabled={!selectedLocation}
+            disabled={!selectedLocation || isResolving}
             className={`px-6 py-2 rounded-lg transition-all duration-200 ${
-              selectedLocation
+              selectedLocation && !isResolving
                 ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg animate-bounce'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            {selectedLocation ? '✅ Confirm Location' : 'Enter a Location First'}
+            {isResolving ? 'Please wait...' : (selectedLocation ? '✅ Confirm Location' : 'Enter a Location First')}
           </button>
         </div>
       </div>
