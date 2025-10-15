@@ -102,13 +102,7 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
       }
     }
 
-    setSelectedLocation(location);
-    setManualInput(prev => ({
-      ...prev,
-      lat: '',
-      lng: '',
-      address: location.address
-    }));
+    applyLocation(location);
   };
 
   const defaultLocation = {
@@ -119,11 +113,11 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
 
   const applyLocation = (location) => {
     setSelectedLocation(location);
-    setManualInput({
-      address: location.address || '',
-      lat: '',
-      lng: ''
-    });
+    setManualInput(prev => ({
+      address: location.address || prev.address || '',
+      lat: typeof location.lat === 'number' ? location.lat.toString() : '',
+      lng: typeof location.lng === 'number' ? location.lng.toString() : ''
+    }));
   };
 
   const handleGetCurrentLocation = () => {
@@ -182,12 +176,7 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
   ];
 
   const handleQuickSelect = (location) => {
-    setSelectedLocation(location);
-    setManualInput({
-      address: location.address,
-      lat: '',
-      lng: ''
-    });
+    applyLocation(location);
   };
 
   if (!isOpen) return null;
