@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit, Trash, Save, X, User, Upload } from 'lucide-react';
+import { Plus, Edit, Trash, Save, X, User, Upload, ArrowUpDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const LeadershipManagement = () => {
@@ -31,6 +31,11 @@ const LeadershipManagement = () => {
   }, [fetchLeaders]);
 
   const handleCreate = () => {
+    // Calculate the next unique order number based on existing leaders
+    const maxOrder = leaders.length > 0 
+      ? Math.max(...leaders.map(leader => leader.order_index || 0)) 
+      : 0;
+    
     setEditingLeader({
       name: '',
       role: '',
@@ -39,7 +44,7 @@ const LeadershipManagement = () => {
       twitter_url: '',
       image_file: null,
       is_active: true,
-      order_index: leaders.length + 1,
+      order_index: maxOrder + 1,
     });
     setIsCreating(true);
   };
@@ -56,6 +61,18 @@ const LeadershipManagement = () => {
 
   const handleSave = async () => {
     if (!editingLeader) return;
+
+    // Validate that order_index is unique (excluding current leader if editing)
+    const duplicateOrder = leaders.find(
+      leader => 
+        leader.order_index === editingLeader.order_index && 
+        leader.id !== editingLeader.id
+    );
+
+    if (duplicateOrder) {
+      toast.error(`Order number ${editingLeader.order_index} is already used by ${duplicateOrder.name}. Please choose a unique order number.`);
+      return;
+    }
 
     const formData = new FormData();
     Object.keys(editingLeader).forEach(key => {
@@ -123,6 +140,28 @@ const LeadershipManagement = () => {
     }));
   };
 
+  const handleAutoReorder = async () => {
+    if (!window.confirm('This will automatically reassign order numbers (1, 2, 3...) to all leaders based on their current order. Continue?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/api/leadership/reorder', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reorder leaders.');
+      }
+
+      const data = await response.json();
+      toast.success(`Successfully reordered ${data.updated} leaders!`);
+      fetchLeaders();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center p-8">Loading leadership team...</div>;
   }
@@ -136,13 +175,23 @@ const LeadershipManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Manage Leadership Team</h1>
         {!editingLeader && (
-          <button
-            onClick={handleCreate}
-            className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition-colors"
-          >
-            <Plus size={20} className="mr-2" />
-            Add Member
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleAutoReorder}
+              className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-700 transition-colors"
+              title="Automatically fix duplicate order numbers"
+            >
+              <ArrowUpDown size={20} className="mr-2" />
+              Auto-Reorder
+            </button>
+            <button
+              onClick={handleCreate}
+              className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition-colors"
+            >
+              <Plus size={20} className="mr-2" />
+              Add Member
+            </button>
+          </div>
         )}
       </div>
 
@@ -164,9 +213,16 @@ const LeadershipManagement = () => {
 
 const LeaderList = ({ leaders, onEdit, onDelete }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {leaders.map(leader => (
-      <div key={leader.id} className="bg-white p-4 rounded-lg shadow-md flex flex-col">
-        <div className="flex-grow flex items-center">
+    {leaders
+      .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
+      .map(leader => (
+      <div key={leader.id} className="bg-white p-4 rounded-lg shadow-md flex flex-col relative">
+        {/* Order Badge */}
+        <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+          Order: {leader.order_index || 0}
+        </div>
+        
+        <div className="flex-grow flex items-center mt-2">
           <div className="w-24 h-24 rounded-full overflow-hidden mr-4 flex-shrink-0 bg-gray-200">
             {leader.image_url ? (
               <img
@@ -256,14 +312,21 @@ const EditForm = ({ leader, onSave, onCancel, onInputChange, onFileChange, isCre
         placeholder="Twitter URL"
         className="p-2 border rounded w-full"
       />
-      <input
-        type="number"
-        name="order_index"
-        value={leader.order_index}
-        onChange={onInputChange}
-        placeholder="Order"
-        className="p-2 border rounded w-full"
-      />
+      <div className="md:col-span-2">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Display Order</label>
+        <input
+          type="number"
+          name="order_index"
+          value={leader.order_index}
+          onChange={onInputChange}
+          placeholder="Order"
+          min="1"
+          className="p-2 border rounded w-full"
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Lower numbers appear first. Each leader should have a unique order number.
+        </p>
+      </div>
       <div className="md:col-span-2 flex items-center space-x-4">
         <label className="flex items-center cursor-pointer">
           <input

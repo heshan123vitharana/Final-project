@@ -19,7 +19,8 @@ import {
   ArrowUp,
   ArrowDown,
   Users,
-  EyeOff
+  EyeOff,
+  ArrowUpDown
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import LeadershipGrid from './LeadershipGrid'
@@ -635,6 +636,29 @@ const ImageGalleryManager = () => {
     }
   }
 
+  const handleAutoReorder = async () => {
+    if (!confirm('This will automatically reassign order numbers (1, 2, 3...) to all leaders based on their current order. Continue?')) {
+      return
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/api/leadership/reorder', {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to reorder leaders.')
+      }
+
+      const data = await response.json()
+      toast.success(`Successfully reordered ${data.updated} leaders!`)
+      fetchLeadership() // Refresh the leadership list
+    } catch (error) {
+      console.error('Reorder error:', error)
+      toast.error(error.message || 'Failed to reorder leaders')
+    }
+  }
+
   const closeLeadershipModal = () => {
     setLeaderModalOpen(false)
     setEditingLeader(null)
@@ -807,6 +831,14 @@ const ImageGalleryManager = () => {
                   >
                     <RefreshCw className="h-4 w-4" />
                     <span>Refresh</span>
+                  </button>
+                  <button
+                    onClick={handleAutoReorder}
+                    className="px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center space-x-2"
+                    title="Automatically fix duplicate order numbers"
+                  >
+                    <ArrowUpDown className="h-4 w-4" />
+                    <span>Auto-Reorder</span>
                   </button>
                   <button
                     onClick={() => openLeadershipModal()}

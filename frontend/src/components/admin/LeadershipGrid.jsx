@@ -2,7 +2,12 @@ import { Users, Edit, Trash2, CheckCircle, AlertCircle, Plus } from 'lucide-reac
 
 const LeadershipCard = ({ leader, onEdit, onDelete }) => {
   return (
-    <div className="bg-white border rounded-lg p-4 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300">
+    <div className="bg-white border rounded-lg p-4 flex flex-col justify-between hover:shadow-lg transition-shadow duration-300 relative">
+      {/* Order Badge - Prominent Display */}
+      <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+        #{leader.order_index || 0}
+      </div>
+      
       <div>
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-4">
@@ -18,7 +23,7 @@ const LeadershipCard = ({ leader, onEdit, onDelete }) => {
               <p className="text-sm text-green-700 font-semibold">{leader.position}</p>
             </div>
           </div>
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 ml-2">
             {leader.is_active ? (
               <CheckCircle className="h-5 w-5 text-green-500" title="Active" />
             ) : (
@@ -55,7 +60,7 @@ const LeadershipCard = ({ leader, onEdit, onDelete }) => {
 
         <div className="border-t pt-3 flex justify-between items-center">
           <span className="text-xs text-gray-500">
-            Order: <span className="font-semibold">{leader.order_index || 'N/A'}</span>
+            Display Order: <span className="font-semibold text-blue-600">#{leader.order_index || 'N/A'}</span>
           </span>
           <div className="flex space-x-2">
             <button

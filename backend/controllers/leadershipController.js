@@ -302,11 +302,57 @@ const deleteLeadership = async (req, res) => {
   }
 };
 
+// Automatically reorder all leadership members sequentially
+const reorderLeadership = async (req, res) => {
+  try {
+    console.log('🔄 Leadership API: Reordering all leadership members');
+
+    // Fetch all leadership members sorted by current order_index, then by id as fallback
+    const [leaders] = await req.db.execute(
+      'SELECT id, name, order_index FROM leadership ORDER BY order_index ASC, id ASC'
+    );
+
+    if (leaders.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No leadership members to reorder',
+        updated: 0
+      });
+    }
+
+    console.log('📋 Found', leaders.length, 'leaders to reorder');
+
+    // Update each leader with sequential order numbers (1, 2, 3, ...)
+    for (let i = 0; i < leaders.length; i++) {
+      const newOrder = i + 1;
+      await req.db.execute(
+        'UPDATE leadership SET order_index = ? WHERE id = ?',
+        [newOrder, leaders[i].id]
+      );
+      console.log(`✅ Updated ${leaders[i].name} (ID: ${leaders[i].id}) from order ${leaders[i].order_index} to ${newOrder}`);
+    }
+
+    res.json({
+      success: true,
+      message: 'Leadership members reordered successfully',
+      updated: leaders.length
+    });
+  } catch (error) {
+    console.error('❌ Error reordering leadership members:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reorder leadership members',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllLeadership,
   getLeadershipById,
   addLeadership,
   updateLeadership,
   deleteLeadership,
+  reorderLeadership,
   upload
 };
