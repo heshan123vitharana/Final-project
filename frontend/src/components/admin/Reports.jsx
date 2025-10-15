@@ -25,6 +25,9 @@ const REGION_OPTIONS = [
   'Sabaragamuwa Province'
 ]
 
+const REPORTS_WITH_EMPTY_STATE = ['production', 'financial', 'mills', 'licenses']
+const MANUAL_REPORT_TYPES = new Set(['production', 'financial', 'mills', 'licenses'])
+
 const normalizeRegionLabel = (value) => {
   if (!value || value === 'all' || value === 'All' || value === 'all-regions') {
     return 'All Regions'
@@ -45,6 +48,39 @@ const STOCK_VARIANT_LABELS = {
   combined: 'Stock Report - Complete Overview'
 }
 
+const STOCK_REPORT_OPTIONS = [
+  {
+    id: 'total',
+    label: 'Total Stock',
+    description: 'All mills combined',
+    icon: Package
+  },
+  {
+    id: 'private',
+    label: 'Private Mills',
+    description: 'Private sector only',
+    icon: Users
+  },
+  {
+    id: 'government',
+    label: 'Government Mills',
+    description: 'Government sector only',
+    icon: BarChart3
+  },
+  {
+    id: 'by-district',
+    label: 'By District',
+    description: 'District breakdown',
+    icon: Filter
+  },
+  {
+    id: 'combined',
+    label: 'Complete Overview',
+    description: 'Includes all categories in a single report',
+    icon: TrendingUp
+  }
+]
+
 const resolveReportDisplayName = (type, variant, reportTypes) => {
   if (type === 'stock') {
     return STOCK_VARIANT_LABELS[variant] || 'Stock Levels Report'
@@ -55,45 +91,26 @@ const resolveReportDisplayName = (type, variant, reportTypes) => {
 // Mock report data for fallback - moved outside component to prevent re-creation on re-renders
 const mockReportData = {
   stock: {
-    summary: { totalStock: 20700, totalCapacity: 25000, utilizationRate: 83, activeMills: 8 },
-    breakdown: [
-      { category: 'Private Mills', value: 12500, percentage: 60 },
-      { category: 'Government Mills', value: 8200, percentage: 40 }
-    ]
+    summary: {},
+    breakdown: []
   },
   production: {
-    summary: { monthlyProduction: 5240, dailyAverage: 169, targetAchievement: 87, qualityGrade: 'A+' },
-    breakdown: [
-      { category: 'Premium Grade', value: 2100, percentage: 40 },
-      { category: 'Standard Grade', value: 2040, percentage: 39 },
-      { category: 'Commercial Grade', value: 1100, percentage: 21 }
-    ]
+    summary: {},
+    breakdown: []
   },
   financial: {
-    summary: { totalRevenue: 2450000, totalCosts: 1890000, profit: 560000, profitMargin: 23 },
-    breakdown: [
-      { category: 'Processing Revenue', value: 1470000, percentage: 60 },
-      { category: 'Storage Revenue', value: 735000, percentage: 30 },
-      { category: 'Other Revenue', value: 245000, percentage: 10 }
-    ]
+    summary: {},
+    breakdown: []
   },
   mills: {
-    summary: { totalMills: 8, activeMills: 7, averageUtilization: 83, topPerformer: 'Green Valley Rice Mill' },
-    breakdown: [
-      { category: 'High Performance (>85%)', value: 3, percentage: 38 },
-      { category: 'Good Performance (70-85%)', value: 4, percentage: 50 },
-      { category: 'Low Performance (<70%)', value: 1, percentage: 12 }
-    ]
+    summary: {},
+    breakdown: []
   },
   licenses: {
-    summary: { totalApplications: 15, approved: 8, pending: 5, rejected: 2 },
-    breakdown: [
-      { category: 'Approved', value: 8, percentage: 53 },
-      { category: 'Pending', value: 5, percentage: 33 },
-      { category: 'Rejected', value: 2, percentage: 14 }
-    ]
+    summary: {},
+    breakdown: []
   }
-};
+}
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState({
@@ -103,6 +120,7 @@ const Reports = () => {
   const [selectedRegion, setSelectedRegion] = useState('all')
   const [selectedMillType, setSelectedMillType] = useState('all')
   const [reportType, setReportType] = useState('licenses')
+  const [selectedStockVariant, setSelectedStockVariant] = useState('combined')
   const [, setIsGeneratingPDF] = useState(false)
   const [reportData, setReportData] = useState(mockReportData)
   const [loading, setLoading] = useState(false)
@@ -110,6 +128,11 @@ const Reports = () => {
   const skipNextFetchRef = useRef(false)
 
   const regions = REGION_OPTIONS
+
+  const selectedStockOption = useMemo(() => {
+    return STOCK_REPORT_OPTIONS.find(option => option.id === selectedStockVariant) || null
+  }, [selectedStockVariant])
+  const SelectedStockIcon = selectedStockOption?.icon || BarChart3
 
   const reportTypes = useMemo(() => ([
     { id: 'stock', name: 'Stock Levels Report', icon: Package },
@@ -145,6 +168,90 @@ const Reports = () => {
       }
     }, 3000)
   }, [])
+
+  const fetchReportData = useCallback(async (type, options = {}) => {
+    const {
+      dateRange: customDateRange,
+      region: customRegion,
+      millType: customMillType,
+      addToGenerated = true,
+      showToast = true
+    } = options
+
+    setLoading(true)
+
+    try {
+      const effectiveDateRange = customDateRange || dateRange
+      const effectiveRegion = typeof customRegion !== 'undefined' ? customRegion : selectedRegion
+      const effectiveMillType = typeof customMillType !== 'undefined' ? customMillType : selectedMillType
+      const regionLabel = normalizeRegionLabel(effectiveRegion)
+
+      const params = new URLSearchParams({
+        reportType: type,
+        from: effectiveDateRange?.from || '',
+        to: effectiveDateRange?.to || '',
+        region: regionLabel
+      })
+
+      const response = await fetch(`http://localhost:5000/api/admin/reports?${params.toString()}`)
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch report data: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+
+      setReportData(prevData => ({
+        ...prevData,
+        [type]: data
+      }))
+
+      const generatedAt = new Date().toISOString()
+      const reportName = resolveReportDisplayName(type, null, reportTypes)
+
+      if (addToGenerated) {
+        addGeneratedReport({
+          id: Date.now(),
+          name: reportName,
+          reportType: type,
+          variant: null,
+          data,
+          filters: {
+            dateRange: effectiveDateRange,
+            region: effectiveRegion,
+            regionLabel,
+            millType: effectiveMillType
+          },
+          generatedAt
+        })
+      }
+
+      if (showToast) {
+        showSuccessNotification(`${reportName} generated successfully!`)
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error generating report:', error)
+      setReportData(prevData => ({
+        ...prevData,
+        [type]: mockReportData[type] || { summary: {}, breakdown: [] }
+      }))
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [dateRange, selectedRegion, selectedMillType, addGeneratedReport, reportTypes, showSuccessNotification])
+
+  const handleManualReportGenerate = useCallback(async () => {
+    if (!reportType) {
+      return
+    }
+    const data = await fetchReportData(reportType)
+    if (data === null) {
+      alert('Unable to generate this report right now. Please try again later.')
+    }
+  }, [fetchReportData, reportType])
 
   const handleGenerateStockReport = async (stockReportType) => {
     setLoading(true);
@@ -182,6 +289,7 @@ const Reports = () => {
       },
       generatedAt
     };
+    const toastLabel = resolveReportDisplayName('stock', stockReportType, reportTypes)
         
         // Format the data for display
         if (stockReportType === 'combined') {
@@ -229,8 +337,7 @@ const Reports = () => {
                 stock: formattedData
             }));
             
-            // Show success notification
-            showSuccessNotification(`Complete stock report generated successfully! Generated at: ${new Date(generatedAt).toLocaleString()}`);
+            showSuccessNotification(`${toastLabel} generated successfully!`);
 
       addGeneratedReport({
         id: Date.now(),
@@ -258,7 +365,7 @@ const Reports = () => {
                 stock: formattedData
             }));
             
-            showSuccessNotification(`District-wise stock report generated successfully!`);
+            showSuccessNotification(`${toastLabel} generated successfully!`);
 
       addGeneratedReport({
         id: Date.now(),
@@ -284,7 +391,7 @@ const Reports = () => {
                 stock: formattedData
             }));
             
-            showSuccessNotification(`${stockReportType.charAt(0).toUpperCase() + stockReportType.slice(1)} stock report generated successfully!`);
+            showSuccessNotification(`${toastLabel} generated successfully!`);
 
       addGeneratedReport({
         id: Date.now(),
@@ -303,80 +410,23 @@ const Reports = () => {
   };
 
   useEffect(() => {
+    if (reportType === 'stock') {
+      setSelectedStockVariant('combined')
+    }
+  }, [reportType])
+
+  useEffect(() => {
     if (skipNextFetchRef.current) {
       skipNextFetchRef.current = false
       return
     }
 
-    let isActive = true
-
-    const fetchReport = async () => {
-      setLoading(true)
-      try {
-          const regionLabel = normalizeRegionLabel(selectedRegion)
-        const params = new URLSearchParams({
-          reportType,
-          from: dateRange.from,
-          to: dateRange.to,
-          region: regionLabel
-        })
-
-        const response = await fetch(`http://localhost:5000/api/admin/reports?${params.toString()}`)
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch report data: ${response.statusText}`)
-        }
-
-        const data = await response.json()
-
-        if (!isActive) {
-          return
-        }
-
-        setReportData(prevData => ({
-          ...prevData,
-          [reportType]: data
-        }))
-
-        const generatedAt = new Date().toISOString()
-        const newReportEntry = {
-          id: Date.now(),
-          name: resolveReportDisplayName(reportType, null, reportTypes),
-          reportType,
-          variant: null,
-          data,
-          filters: {
-            dateRange: { from: dateRange.from, to: dateRange.to },
-            region: selectedRegion,
-            regionLabel,
-            millType: selectedMillType
-          },
-          generatedAt
-        }
-        addGeneratedReport(newReportEntry)
-        showSuccessNotification(`${newReportEntry.name} generated successfully!`)
-      } catch (error) {
-        console.error('Error generating report:', error)
-        if (!isActive) {
-          return
-        }
-        setReportData(prevData => ({
-          ...prevData,
-          [reportType]: mockReportData[reportType]
-        }))
-      } finally {
-        if (isActive) {
-          setLoading(false)
-        }
-      }
+    if (reportType === 'stock' || MANUAL_REPORT_TYPES.has(reportType)) {
+      return
     }
 
-    fetchReport()
-
-    return () => {
-      isActive = false
-    }
-  }, [reportType, dateRange.from, dateRange.to, selectedRegion, selectedMillType, addGeneratedReport, reportTypes, showSuccessNotification])
+    fetchReportData(reportType)
+  }, [reportType, fetchReportData])
 
   const generatePDFReport = async (options = {}) => {
     if (typeof jsPDF !== 'function') {
@@ -620,10 +670,6 @@ const Reports = () => {
     const hasCachedData = Boolean(savedReport.data)
     skipNextFetchRef.current = hasCachedData
 
-    if (!hasCachedData) {
-      setLoading(true)
-    }
-
     if (filters.dateRange) {
       setDateRange(filters.dateRange)
     }
@@ -643,6 +689,16 @@ const Reports = () => {
     }))
 
     showSuccessNotification(`Loaded ${savedReport.name}`)
+
+    if (!hasCachedData) {
+      await fetchReportData(savedReport.reportType, {
+        dateRange: filters.dateRange,
+        region: filters.region,
+        millType: filters.millType,
+        addToGenerated: false,
+        showToast: false
+      })
+    }
 
     try {
       setIsGeneratingPDF(true)
@@ -743,7 +799,12 @@ const Reports = () => {
     }
   }
 
-  const currentReportData = (reportData && reportData[reportType]) ? reportData[reportType] : { summary: {}, breakdown: [] };
+  const currentReportData = (reportData && reportData[reportType]) ? reportData[reportType] : { summary: {}, breakdown: [] }
+  const summaryEntries = Object.entries(currentReportData.summary || {})
+  const breakdownItems = currentReportData.breakdown || []
+  const shouldRenderEmptyState = REPORTS_WITH_EMPTY_STATE.includes(reportType)
+  const hasSummaryData = summaryEntries.length > 0
+  const hasBreakdownData = breakdownItems.length > 0
 
   if (loading) {
     return (
@@ -794,42 +855,29 @@ const Reports = () => {
             </p>
             
             {/* Stock Report Options */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <button
-                onClick={() => handleGenerateStockReport('total')}
-                className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex flex-col items-center space-y-2"
-              >
-                <Package className="w-8 h-8" />
-                <span className="font-medium">Total Stock</span>
-                <span className="text-xs opacity-90">All mills combined</span>
-              </button>
-              
-              <button
-                onClick={() => handleGenerateStockReport('private')}
-                className="p-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex flex-col items-center space-y-2"
-              >
-                <Users className="w-8 h-8" />
-                <span className="font-medium">Private Mills</span>
-                <span className="text-xs opacity-90">Private sector only</span>
-              </button>
-              
-              <button
-                onClick={() => handleGenerateStockReport('government')}
-                className="p-4 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex flex-col items-center space-y-2"
-              >
-                <BarChart3 className="w-8 h-8" />
-                <span className="font-medium">Government Mills</span>
-                <span className="text-xs opacity-90">Government sector only</span>
-              </button>
-              
-              <button
-                onClick={() => handleGenerateStockReport('by-district')}
-                className="p-4 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex flex-col items-center space-y-2"
-              >
-                <Filter className="w-8 h-8" />
-                <span className="font-medium">By District</span>
-                <span className="text-xs opacity-90">District breakdown</span>
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {STOCK_REPORT_OPTIONS.map(option => {
+                const IconComponent = option.icon
+                const isActive = selectedStockVariant === option.id
+                return (
+                  <button
+                    type="button"
+                    key={option.id}
+                    onClick={() => setSelectedStockVariant(option.id)}
+                    className={`p-4 rounded-lg border-2 text-left transition-colors flex flex-col space-y-2 ${
+                      isActive
+                        ? 'border-green-500 bg-green-50 text-green-700 shadow-sm'
+                        : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
+                    }`}
+                  >
+                    <IconComponent className={`w-8 h-8 ${isActive ? 'text-green-600' : 'text-gray-500'}`} />
+                    <span className="font-medium">{option.label}</span>
+                    <span className={`text-xs ${isActive ? 'text-green-600' : 'text-gray-600'}`}>
+                      {option.description}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
             
             {/* District Filter for Stock Reports */}
@@ -857,14 +905,15 @@ const Reports = () => {
             {/* Combined Report Button */}
             <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
               <button
-                onClick={() => handleGenerateStockReport('combined')}
+                type="button"
+                onClick={() => handleGenerateStockReport(selectedStockVariant)}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition-colors font-semibold flex items-center justify-center space-x-2"
               >
-                <BarChart3 className="w-5 h-5" />
-                <span>Generate Complete Stock Report (All Categories)</span>
+                <SelectedStockIcon className="w-5 h-5" />
+                <span>Generate Report</span>
               </button>
               <p className="text-xs text-indigo-600 mt-2 text-center">
-                Includes: Total Stock + Private + Government + District Breakdown
+                {selectedStockOption ? `${selectedStockOption.label} • ${selectedStockOption.description}` : 'Select a stock report option above.'}
               </p>
             </div>
           </div>
@@ -882,47 +931,71 @@ const Reports = () => {
           </div>
         </div>
 
+        {reportType !== 'stock' && MANUAL_REPORT_TYPES.has(reportType) && (
+          <div className="flex justify-end mb-4">
+            <button
+              type="button"
+              onClick={handleManualReportGenerate}
+              disabled={loading}
+              className={`inline-flex items-center px-4 py-2 rounded-md font-semibold text-white transition-colors ${
+                loading ? 'bg-green-400 cursor-not-allowed opacity-70' : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Generate Report
+            </button>
+          </div>
+        )}
+
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {Object.entries(currentReportData.summary).map(([key, value]) => (
-            <div key={key} className="bg-gray-50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-600 capitalize">
-                {key.replace(/([A-Z])/g, ' $1').trim()}
-              </h4>
-              <p className="text-2xl font-bold text-gray-800 mt-1">
-                {typeof value === 'number' && key.toLowerCase().includes('rate') ? `${value}%` :
-                 typeof value === 'number' && key.toLowerCase().includes('revenue') ? `$${value.toLocaleString()}` :
-                 typeof value === 'number' ? value.toLocaleString() : value}
-              </p>
-            </div>
-          ))}
-        </div>
+        {!hasSummaryData && shouldRenderEmptyState ? (
+          <p className="text-sm text-gray-500 italic mb-6">No summary data available for this report yet.</p>
+        ) : hasSummaryData ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {summaryEntries.map(([key, value]) => (
+              <div key={key} className="bg-gray-50 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-gray-600 capitalize">
+                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                </h4>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  {typeof value === 'number' && key.toLowerCase().includes('rate') ? `${value}%` :
+                   typeof value === 'number' && key.toLowerCase().includes('revenue') ? `$${value.toLocaleString()}` :
+                   typeof value === 'number' ? value.toLocaleString() : value}
+                </p>
+              </div>
+            ))}
+          </div>
+  ) : null}
 
         {/* Breakdown Chart */}
         <div className="space-y-4">
           <h4 className="text-md font-semibold text-gray-800">Breakdown Analysis</h4>
           <div className="space-y-3">
-            {currentReportData.breakdown.map((item, index) => (
-              <div key={index} className="flex items-center space-x-4">
-                <div className="w-32 text-sm text-gray-600">{item.category}</div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div
-                        className="h-2 rounded-full bg-green-500"
-                        style={{ width: `${item.percentage}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-sm text-gray-600 w-12">{item.percentage}%</div>
-                    <div className="text-sm font-medium text-gray-800 w-20 text-right">
-                      {typeof item.value === 'number' && reportType === 'financial' ? 
-                        `$${item.value.toLocaleString()}` : 
-                        item.value.toLocaleString()}
+            {!hasBreakdownData && shouldRenderEmptyState ? (
+              <p className="text-sm text-gray-500 italic">No breakdown data available for this report yet.</p>
+            ) : hasBreakdownData ? (
+              breakdownItems.map((item, index) => (
+                <div key={index} className="flex items-center space-x-4">
+                  <div className="w-32 text-sm text-gray-600">{item.category}</div>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div
+                          className="h-2 rounded-full bg-green-500"
+                          style={{ width: `${item.percentage}%` }}
+                        ></div>
+                      </div>
+                      <div className="text-sm text-gray-600 w-12">{item.percentage}%</div>
+                      <div className="text-sm font-medium text-gray-800 w-20 text-right">
+                        {typeof item.value === 'number' && reportType === 'financial' ? 
+                          `$${item.value.toLocaleString()}` : 
+                          item.value.toLocaleString()}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : null}
           </div>
         </div>
 

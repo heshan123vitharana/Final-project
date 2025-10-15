@@ -123,13 +123,8 @@ const getReport = async (req, res) => {
                 break;
 
             default: {
-                // Return mock data for other report types for now
-                console.log(`No specific query for report type: ${reportType}. Returning mock data.`);
-                const mockData = getMockDataForReport(reportType);
-                if (mockData) {
-                    return res.status(200).json(mockData);
-                }
-                return res.status(404).json({ message: 'Report type not found' });
+                console.warn(`No query implemented for report type: ${reportType}. Returning empty dataset.`);
+                return res.status(200).json({ summary: {}, breakdown: [] });
             }
         }
 
@@ -164,37 +159,6 @@ const getReport = async (req, res) => {
             details: error.sqlMessage || error.toString()
         });
     }
-};
-
-// Helper for mock data
-const getMockDataForReport = (reportType) => {
-    const mockReportData = {
-        production: {
-          summary: { monthlyProduction: 5240, dailyAverage: 169, targetAchievement: 87, qualityGrade: 'A+' },
-          breakdown: [
-            { category: 'Premium Grade', value: 2100, percentage: 40 },
-            { category: 'Standard Grade', value: 2040, percentage: 39 },
-            { category: 'Commercial Grade', value: 1100, percentage: 21 }
-          ]
-        },
-        financial: {
-          summary: { totalRevenue: 2450000, totalCosts: 1890000, profit: 560000, profitMargin: 23 },
-          breakdown: [
-            { category: 'Processing Revenue', value: 1470000, percentage: 60 },
-            { category: 'Storage Revenue', value: 735000, percentage: 30 },
-            { category: 'Other Revenue', value: 245000, percentage: 10 }
-          ]
-        },
-        mills: {
-          summary: { totalMills: 8, activeMills: 7, averageUtilization: 83, topPerformer: 'Green Valley Rice Mill' },
-          breakdown: [
-            { category: 'High Performance (>85%)', value: 3, percentage: 38 },
-            { category: 'Good Performance (70-85%)', value: 4, percentage: 50 },
-            { category: 'Low Performance (<70%)', value: 1, percentage: 12 }
-          ]
-        }
-    };
-    return mockReportData[reportType];
 };
 
 const getStockOverview = async (req, res) => {
