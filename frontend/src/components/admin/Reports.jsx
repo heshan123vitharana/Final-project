@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Download,
   FileText,
@@ -106,6 +106,7 @@ const Reports = () => {
   const [reportData, setReportData] = useState(mockReportData)
   const [loading, setLoading] = useState(false)
   const [generatedReports, setGeneratedReports] = useState([])
+  const skipNextFetchRef = useRef(false)
 
   const regions = REGION_OPTIONS
 
@@ -301,6 +302,11 @@ const Reports = () => {
   };
 
   useEffect(() => {
+    if (skipNextFetchRef.current) {
+      skipNextFetchRef.current = false
+      return
+    }
+
     let isActive = true
 
     const fetchReport = async () => {
@@ -372,14 +378,47 @@ const Reports = () => {
   }, [reportType, dateRange.from, dateRange.to, selectedRegion, selectedMillType, addGeneratedReport, reportTypes, showSuccessNotification])
 
   const generatePDFReport = async (options = {}) => {
-    const { jsPDF } = await import('jspdf')
-    await import('jspdf-autotable')
+    const jsPDFModule = await import('jspdf')
+    const autoTableModule = await import('jspdf-autotable')
 
-    const doc = new jsPDF()
+    const JsPDFConstructor = jsPDFModule.jsPDF || jsPDFModule.default
 
-    if (typeof doc.autoTable !== 'function') {
+    if (!JsPDFConstructor) {
+      console.error('jsPDF module did not expose a constructor')
+      return null
+    }
+
+    const doc = new JsPDFConstructor()
+    const autoTable = autoTableModule.default || autoTableModule
+
+    const applyAutoTable = (tableOptions) => {
+      if (typeof autoTable === 'function') {
+        try {
+          if (autoTable.length >= 2) {
+            autoTable(doc, tableOptions)
+            return true
+          }
+          autoTable(doc, tableOptions)
+          if (typeof doc.autoTable === 'function') {
+            return true
+          }
+        } catch (pluginError) {
+          console.warn('Primary autoTable invocation failed, falling back to doc.autoTable', pluginError)
+        }
+      }
+
+      if (typeof doc.autoTable === 'function') {
+        if (doc.autoTable.length <= 1) {
+          doc.autoTable(tableOptions)
+        } else {
+          const { head, body, ...legacyOptions } = tableOptions
+          doc.autoTable(head, body, legacyOptions)
+        }
+        return true
+      }
+
       console.error('autoTable plugin not loaded properly')
-      return
+      return false
     }
 
     const { customData, customReportType, customFilters, customTitle, variant, generatedAt } = options
@@ -389,13 +428,13 @@ const Reports = () => {
     const filters = customFilters || {
       dateRange: { from: dateRange.from, to: dateRange.to },
       region: selectedRegion,
-  regionLabel: normalizeRegionLabel(selectedRegion),
+      regionLabel: normalizeRegionLabel(selectedRegion),
       millType: selectedMillType
     }
-  const reportName = customTitle || resolveReportDisplayName(targetReportType, variant, reportTypes)
+    const reportName = customTitle || resolveReportDisplayName(targetReportType, variant, reportTypes)
     const periodFrom = filters?.dateRange?.from || ''
     const periodTo = filters?.dateRange?.to || ''
-  const regionDisplay = filters?.regionLabel || normalizeRegionLabel(filters?.region)
+    const regionDisplay = filters?.regionLabel || normalizeRegionLabel(filters?.region)
     const millTypeDisplay = filters?.millType || 'All'
     const generatedDisplay = generatedAt ? new Date(generatedAt).toLocaleString() : `${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`
 
@@ -460,8 +499,9 @@ const Reports = () => {
         return [item.category || item.name || item.mill || item.district || 'N/A', valueDisplay, percentageDisplay]
       })
 
+      let tableOptions
       try {
-        doc.autoTable({
+        tableOptions = {
           startY: yPosition + 5,
           head: [breakdownHeaders],
           body: tableData,
@@ -484,9 +524,14 @@ const Reports = () => {
             1: { cellWidth: 60, halign: 'right' },
             2: { cellWidth: 40, halign: 'center' }
           }
-        })
+        }
+
+        const tableApplied = applyAutoTable(tableOptions)
+        if (!tableApplied) {
+          throw new Error('Unable to apply autoTable with resolved module signatures')
+        }
       } catch (autoTableError) {
-        console.error('AutoTable error:', autoTableError)
+        console.error('AutoTable error with options:', tableOptions, autoTableError)
         doc.setFontSize(10)
         let tableY = yPosition + 15
 
@@ -530,6 +575,10 @@ const Reports = () => {
       await new Promise(resolve => setTimeout(resolve, 300))
       
       const doc = await generatePDFReport()
+      if (!doc) {
+        alert('Unable to generate PDF preview. Please try again later.')
+        return
+      }
       
       // Create blob and URL for preview
       const pdfBlob = doc.output('blob')
@@ -572,6 +621,10 @@ const Reports = () => {
         await new Promise(resolve => setTimeout(resolve, 500))
         
         const doc = await generatePDFReport()
+        if (!doc) {
+          alert('Unable to generate PDF at the moment. Please try again later.')
+          return
+        }
         
         // Use the save method to trigger download
         doc.save(filename)
@@ -620,13 +673,13 @@ const Reports = () => {
     const filters = customFilters || {
       dateRange: { from: dateRange.from, to: dateRange.to },
       region: selectedRegion,
-  regionLabel: normalizeRegionLabel(selectedRegion),
+      regionLabel: normalizeRegionLabel(selectedRegion),
       millType: selectedMillType
     }
-  const reportName = resolveReportDisplayName(activeReportType, variant, reportTypes)
+    const reportName = resolveReportDisplayName(activeReportType, variant, reportTypes)
     const periodFrom = filters?.dateRange?.from || ''
     const periodTo = filters?.dateRange?.to || ''
-  const regionText = filters?.regionLabel || normalizeRegionLabel(filters?.region)
+    const regionText = filters?.regionLabel || normalizeRegionLabel(filters?.region)
     const millTypeText = filters?.millType || 'All'
 
     const escapeCsvValue = (value) => {
@@ -672,6 +725,8 @@ const Reports = () => {
     if (!savedReport) {
       return
     }
+    skipNextFetchRef.current = true
+    setLoading(false)
     if (savedReport.filters?.dateRange) {
       setDateRange(savedReport.filters.dateRange)
     }
@@ -706,10 +761,12 @@ const Reports = () => {
           variant: savedReport.variant,
           generatedAt: savedReport.generatedAt
         })
-        if (doc) {
-          doc.save(`${fileNameBase}.pdf`)
-          showSuccessNotification('PDF downloaded successfully!')
+        if (!doc) {
+          alert('Unable to generate PDF for the saved report right now. Please try again later.')
+          return
         }
+        doc.save(`${fileNameBase}.pdf`)
+        showSuccessNotification('PDF downloaded successfully!')
       } catch (error) {
         console.error('Error generating saved PDF:', error)
         alert('Error generating PDF for saved report. Please try again.')
