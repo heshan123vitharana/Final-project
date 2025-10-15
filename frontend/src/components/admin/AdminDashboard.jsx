@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { 
   FileText, 
   BarChart3, 
@@ -23,6 +24,29 @@ import { handleLogoutSuccess } from '../../utils/validation'
 const AdminDashboard = ({ onLogout }) => {
   const [activeSection, setActiveSection] = useState('license-requests')
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [tooltip, setTooltip] = useState(null)
+
+  useEffect(() => {
+    if (sidebarOpen) {
+      setTooltip(null)
+    }
+  }, [sidebarOpen])
+
+  const tooltipPortal = tooltip
+    ? createPortal(
+        <span
+          className="pointer-events-none fixed px-3 py-2 text-xs bg-gray-900 text-white rounded-lg shadow-2xl border border-gray-700 backdrop-blur-sm z-[9999] whitespace-nowrap"
+          style={{
+            top: tooltip.top,
+            left: tooltip.left,
+            transform: 'translateY(-50%)',
+          }}
+        >
+          {tooltip.label}
+        </span>,
+        document.body
+      )
+    : null
 
   const navigationItems = [
      {
@@ -123,6 +147,21 @@ const AdminDashboard = ({ onLogout }) => {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
+                  onMouseEnter={(event) => {
+                    if (!sidebarOpen) {
+                      const rect = event.currentTarget.getBoundingClientRect()
+                      setTooltip({
+                        label: item.label,
+                        top: rect.top + rect.height / 2,
+                        left: rect.right + 12,
+                      })
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (!sidebarOpen) {
+                      setTooltip(null)
+                    }
+                  }}
                   className={`w-full flex items-center px-4 py-3 text-left hover:bg-white hover:bg-opacity-15 transition-colors backdrop-blur-sm ${
                     activeSection === item.id ? 'bg-white bg-opacity-20 border-r-4 border-yellow-400 shadow-lg' : ''
                   }`}
@@ -159,7 +198,21 @@ const AdminDashboard = ({ onLogout }) => {
               className={`w-full flex items-center text-left bg-red-600 bg-opacity-70 hover:bg-red-700 hover:bg-opacity-80 transition-colors rounded text-white font-medium backdrop-blur-sm shadow-lg ${
                 sidebarOpen ? 'px-4 py-2' : 'px-2 py-3 justify-center'
               }`}
-              title={!sidebarOpen ? 'Logout' : ''}
+              onMouseEnter={(event) => {
+                if (!sidebarOpen) {
+                  const rect = event.currentTarget.getBoundingClientRect()
+                  setTooltip({
+                    label: 'Logout',
+                    top: rect.top + rect.height / 2,
+                    left: rect.right + 12,
+                  })
+                }
+              }}
+              onMouseLeave={() => {
+                if (!sidebarOpen) {
+                  setTooltip(null)
+                }
+              }}
             >
               <LogOut size={20} className="drop-shadow-lg" />
               <span className={`ml-3 drop-shadow-lg ${sidebarOpen ? 'block' : 'hidden'}`}>
@@ -202,6 +255,7 @@ const AdminDashboard = ({ onLogout }) => {
           {ActiveComponent && <ActiveComponent />}
         </main>
       </div>
+      {tooltipPortal}
     </div>
   )
 }
