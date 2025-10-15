@@ -282,6 +282,23 @@ router.get('/applications/:userId', async (req, res) => {
         `, [userId]);
 
         const now = new Date();
+        const startOfDay = (value) => {
+            if (!value) {
+                return null;
+            }
+
+            const normalized = new Date(value);
+            if (Number.isNaN(normalized.getTime())) {
+                return null;
+            }
+
+            normalized.setHours(0, 0, 0, 0);
+            return normalized;
+        };
+
+        const todayStart = startOfDay(now);
+        const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
         const enrichedApplications = applications.map(application => {
             if (!application) {
                 return application;
@@ -295,19 +312,30 @@ router.get('/applications/:userId', async (req, res) => {
                 const referenceDate = application.approved_date || application.updated_at || application.created_at;
 
                 if (referenceDate) {
-                    const parsedReference = new Date(referenceDate);
+                    const licenseStart = startOfDay(referenceDate);
 
-                    if (!Number.isNaN(parsedReference.getTime())) {
-                        const expiryDate = new Date(parsedReference);
-                        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                    if (licenseStart) {
+                        const expiryDateStart = new Date(licenseStart);
+                        expiryDateStart.setFullYear(expiryDateStart.getFullYear() + 1);
 
-                        validUntil = expiryDate.toISOString();
+                        const expiryDateEnd = new Date(expiryDateStart);
+                        expiryDateEnd.setHours(23, 59, 59, 999);
+                        validUntil = expiryDateEnd.toISOString();
 
-                        const diffMs = expiryDate.getTime() - now.getTime();
-                        daysUntilExpiry = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-                        if (diffMs < 0) {
+                        if (!todayStart) {
+                            daysUntilExpiry = null;
+                        } else if (expiryDateEnd < todayStart) {
                             isExpired = true;
+                            daysUntilExpiry = 0;
+                        } else {
+                            const diffInDays = Math.floor((expiryDateStart - todayStart) / millisecondsPerDay);
+                            let inclusiveDays = diffInDays + 1;
+
+                            if (licenseStart.getTime() === todayStart.getTime()) {
+                                inclusiveDays -= 1;
+                            }
+
+                            daysUntilExpiry = Math.max(inclusiveDays, 0);
                         }
                     }
                 }
