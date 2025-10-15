@@ -379,7 +379,7 @@ const Features = () => {
           font-family: 'Poppins', sans-serif;
         }
       `}</style>
-      <section id="features" className="relative min-h-screen overflow-hidden bg-white">
+  <section id="services-excellence" className="relative min-h-screen overflow-hidden bg-white" data-section="features">
       {/* Clean White Background with Subtle Elements */}
       <div className="absolute inset-0 bg-white">
         {/* Subtle grid pattern */}

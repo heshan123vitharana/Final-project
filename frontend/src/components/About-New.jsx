@@ -110,7 +110,7 @@ export default function AboutNew() {
   }, [selectedImage, currentImageIndex, nextImage, prevImage]);
 
   return (
-    <section className="py-20 bg-white min-h-screen">
+    <section id="about" className="py-20 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto px-6">
         {/* Apple-style Leadership Section */}
   <div id="leadership" className="relative">

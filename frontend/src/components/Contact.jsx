@@ -31,7 +31,7 @@ const Contact = () => {
     'w-full px-6 py-4 bg-white/80 backdrop-blur-sm border border-paddy-green/20 rounded-2xl focus:ring-4 focus:ring-paddy-green/20 focus:border-paddy-green transition-all duration-300 text-gray-800 placeholder-gray-500 shadow-soft hover:shadow-elevation'
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 overflow-hidden py-24">
+    <section id="contact" className="relative min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 overflow-hidden py-24">
       {/* Background overlays copied to match Features section */}
       <div className="absolute inset-0">
         {/* Clean gradient overlay */}
@@ -265,7 +265,7 @@ const Contact = () => {
           </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 }
 

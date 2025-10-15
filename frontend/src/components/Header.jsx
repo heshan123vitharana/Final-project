@@ -20,17 +20,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
         { name: 'Quality Control', description: 'Advanced quality assurance', icon: '✅' }
       ]
     },
-    { 
-      name: 'Services', 
-      id: 'services',
-      hasDropdown: true,
-      items: [
-        { name: 'Mill Registration', description: 'Register your mill with PMB', icon: '🏭' },
-        { name: 'Price Information', description: 'Live paddy price updates', icon: '💰' },
-        { name: 'Collection Centers', description: 'Find nearest collection points', icon: '📍' },
-        { name: 'Support', description: '24/7 farmer support services', icon: '🤝' }
-      ]
-    },
+    { name: 'Services & Excellence', id: 'services-excellence' },
     { name: 'Leadership', id: 'leadership' },
     { 
       name: 'Resources', 
@@ -43,7 +33,7 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
         { name: 'Contact Support', description: 'Get help when you need it', icon: '📞' }
       ]
     },
-    { name: 'About', id: 'platform-features-section' },
+    { name: 'About', id: 'about' },
     { name: 'Contact', id: 'contact' }
   ];
 
@@ -113,11 +103,12 @@ const Header = ({ onNavigate = () => {}, currentPage = 'home', onMillRegistratio
         
         // Fallback mappings for different section IDs
         const sectionMappings = {
-          'platform-features-section': ['platform-features-section', 'about'],
+          'services-excellence': ['services-excellence', 'features'],
+          'about': ['about', 'platform-features-section', 'about-section'],
           'collection-centers': ['collection-centers'],
           'live-paddy-prices': ['live-paddy-prices'],
-          'leadership': ['leadership'],
-          'contact': ['contact']
+          'leadership': ['leadership', 'leadership-section'],
+          'contact': ['contact', 'contact-section']
         };
         
         // Try alternative IDs if primary not found
