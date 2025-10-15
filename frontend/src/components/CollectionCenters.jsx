@@ -1,5 +1,230 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import centersData from '../data/collectionCenters.json';
+
+const DISTRICT_TO_PROVINCE = {
+  Colombo: 'Western',
+  Gampaha: 'Western',
+  Kalutara: 'Western',
+  Kandy: 'Central',
+  Matale: 'Central',
+  'Nuwara Eliya': 'Central',
+  Galle: 'Southern',
+  Matara: 'Southern',
+  Hambantota: 'Southern',
+  Jaffna: 'Northern',
+  Kilinochchi: 'Northern',
+  Mannar: 'Northern',
+  Vavuniya: 'Northern',
+  Mullaitivu: 'Northern',
+  Trincomalee: 'Eastern',
+  Batticaloa: 'Eastern',
+  Ampara: 'Eastern',
+  Kurunegala: 'North Western',
+  Puttalam: 'North Western',
+  Anuradhapura: 'North Central',
+  Polonnaruwa: 'North Central',
+  Badulla: 'Uva',
+  Monaragala: 'Uva',
+  Ratnapura: 'Sabaragamuwa',
+  Kegalle: 'Sabaragamuwa'
+};
+
+const BUSINESS_TYPE_SERVICES = {
+  'rice mill': ['Cleaning', 'Drying', 'Hulling', 'Quality Testing'],
+  'paddy storage': ['Storage', 'Inventory Management', 'Quality Testing'],
+  'processing center': ['Cleaning', 'Drying', 'Processing', 'Packaging'],
+  'export hub': ['Quality Certification', 'Packaging', 'Logistics Coordination'],
+  'collection center': ['Storage', 'Quality Testing', 'Farmer Support'],
+  'agro service': ['Farmer Advisory', 'Quality Testing', 'Processing'],
+};
+
+const normalizeDistrictName = (district) => {
+  if (!district) {
+    return null;
+  }
+
+  return String(district)
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+};
+
+const getProvinceForDistrict = (district) => {
+  const normalized = normalizeDistrictName(district);
+  if (!normalized) {
+    return null;
+  }
+
+  return DISTRICT_TO_PROVINCE[normalized] || null;
+};
+
+const categorizeCapacity = (rawCapacity) => {
+  if (rawCapacity === null || rawCapacity === undefined) {
+    return { label: 'Not specified', display: 'Not specified' };
+  }
+
+  const rawString = String(rawCapacity).trim();
+
+  if (!rawString) {
+    return { label: 'Not specified', display: 'Not specified' };
+  }
+
+  const numeric = Number.parseFloat(rawString.replace(/[^0-9.]/g, ''));
+
+  if (!Number.isFinite(numeric)) {
+    return { label: 'Custom', display: rawString };
+  }
+
+  if (numeric >= 4000) {
+    return { label: 'Large', display: rawString.includes('MT') ? rawString : `${numeric} MT/month` };
+  }
+
+  if (numeric >= 2500) {
+    return { label: 'Medium', display: rawString.includes('MT') ? rawString : `${numeric} MT/month` };
+  }
+
+  return { label: 'Small', display: rawString.includes('MT') ? rawString : `${numeric} MT/month` };
+};
+
+const inferServices = (businessType) => {
+  if (!businessType) {
+    return ['Storage', 'Quality Testing'];
+  }
+
+  const lookupKey = String(businessType).toLowerCase();
+  return BUSINESS_TYPE_SERVICES[lookupKey] || ['Storage', 'Quality Testing'];
+};
+
+const buildContactName = (firstName, lastName, businessName) => {
+  const fullName = [firstName, lastName]
+    .filter((part) => part && String(part).trim() !== '')
+    .join(' ')
+    .trim();
+
+  if (fullName) {
+    return fullName;
+  }
+
+  if (businessName && String(businessName).trim() !== '') {
+    return `${businessName} Team`;
+  }
+
+  return 'Operations Team';
+};
+
+const buildCenterKey = (center) => {
+  if (!center) {
+    return null;
+  }
+
+  if (center.licenseNumber && center.licenseNumber !== 'N/A') {
+    return `license:${String(center.licenseNumber).toLowerCase()}`;
+  }
+
+  const lat = center.coordinates?.lat;
+  const lng = center.coordinates?.lng;
+
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    return `geo:${lat.toFixed(4)}:${lng.toFixed(4)}`;
+  }
+
+  return `name:${String(center.name || '').toLowerCase()}|district:${String(center.district || '').toLowerCase()}`;
+};
+
+const normalizeApprovedMill = (mill) => {
+  if (!mill) {
+    return null;
+  }
+
+  const district = normalizeDistrictName(mill.district) || 'Unknown';
+  const province = getProvinceForDistrict(district) || 'Unknown Province';
+  const { label: capacityLabel, display: capacityDisplay } = categorizeCapacity(mill.millCapacity);
+  const services = inferServices(mill.businessType);
+  const manager = buildContactName(mill.contactFirstName, mill.contactLastName, mill.name);
+  const addressParts = [mill.millLocation, mill.city, mill.address]
+    .filter((value) => value && String(value).trim() !== '');
+  const address = addressParts.length ? addressParts.join(', ') : 'Address not provided';
+  const latitude = Number.isFinite(mill.latitude) ? mill.latitude : Number.parseFloat(mill.latitude);
+  const longitude = Number.isFinite(mill.longitude) ? mill.longitude : Number.parseFloat(mill.longitude);
+  const hasCoordinates = Number.isFinite(latitude) && Number.isFinite(longitude);
+  const approvedDate = mill.approvedDate ? new Date(mill.approvedDate) : null;
+  const approvedYear = approvedDate && !Number.isNaN(approvedDate.getTime()) ? String(approvedDate.getFullYear()) : '—';
+  const displayName = mill.name && String(mill.name).trim() !== ''
+    ? mill.name
+    : mill.licenseNumber
+      ? `Licensed Mill ${mill.licenseNumber}`
+      : 'Licensed Mill';
+
+  const identifier = mill.id ? `mill-${mill.id}` : mill.licenseNumber ? `license-${String(mill.licenseNumber).toLowerCase()}` : `mill-${Date.now()}`;
+
+  return {
+    id: identifier,
+    name: displayName,
+    district,
+    province,
+    address,
+    phone: mill.phone || 'N/A',
+    email: mill.email || 'N/A',
+    status: 'Active',
+    capacity: capacityLabel,
+    capacityMT: capacityDisplay,
+    operatingHours: '6:00 AM - 6:00 PM',
+    services,
+    established: approvedYear,
+    rating: null,
+    coordinates: hasCoordinates ? { lat: latitude, lng: longitude } : null,
+    manager,
+    licenseNumber: mill.licenseNumber || 'N/A',
+    businessType: mill.businessType || 'Mill',
+    source: 'live',
+    approvedDate: mill.approvedDate || null,
+  };
+};
+
+const normalizeStaticCenter = (center) => {
+  if (!center) {
+    return null;
+  }
+
+  const district = normalizeDistrictName(center.district) || 'Unknown';
+  const province = center.province || getProvinceForDistrict(district) || 'Unknown Province';
+
+  return {
+    ...center,
+    district,
+    province,
+    address: center.address || 'Address not provided',
+    phone: center.phone || 'N/A',
+    email: center.email || 'N/A',
+    status: center.status || 'Active',
+    capacity: center.capacity || 'Not specified',
+    capacityMT: center.capacityMT || center.capacity || 'Not specified',
+    operatingHours: center.operatingHours || 'Not specified',
+    services: Array.isArray(center.services) ? center.services : (center.services ? [center.services] : []),
+    established: center.established || '—',
+    rating: typeof center.rating === 'number' ? center.rating : null,
+    coordinates: center.coordinates || null,
+    manager: center.manager || 'Operations Team',
+    licenseNumber: center.licenseNumber || 'N/A',
+    businessType: center.businessType || 'Collection Center',
+    source: 'static',
+  };
+};
+
+const formatTimestamp = (value) => {
+  if (!value) {
+    return '';
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+};
 
 const CollectionCenters = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,6 +238,9 @@ const CollectionCenters = () => {
   const [showAllCenters, setShowAllCenters] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
+  const [liveCenters, setLiveCenters] = useState([]);
+  const [loadingLiveCenters, setLoadingLiveCenters] = useState(false);
+  const [liveCentersError, setLiveCentersError] = useState(null);
   const districtRef = useRef(null);
 
   // Intersection observer for animations
@@ -49,15 +277,138 @@ const CollectionCenters = () => {
     };
   }, [showDistrictDropdown]);
 
-  // Load centers from JSON data file
-  const centers = centersData;
+  useEffect(() => {
+    let isMounted = true;
+    let isFetching = false;
+
+    const defaultBackend = (import.meta?.env?.VITE_BACKEND_URL || import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/+$/, '');
+    const candidateEndpoints = Array.from(
+      new Set([
+        '/api/admin/approved-mills',
+        `${defaultBackend}/api/admin/approved-mills`,
+      ])
+    );
+
+    const fetchLiveCenters = async () => {
+      if (isFetching) {
+        return;
+      }
+
+      isFetching = true;
+
+      try {
+        if (isMounted) {
+          setLoadingLiveCenters(true);
+          setLiveCentersError(null);
+        }
+
+        let mills = [];
+        let lastError = null;
+
+        for (const endpoint of candidateEndpoints) {
+          try {
+            const response = await fetch(endpoint);
+
+            if (!response.ok) {
+              throw new Error(`Request failed with status ${response.status}`);
+            }
+
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.toLowerCase().includes('application/json')) {
+              throw new Error(`Unexpected content-type: ${contentType}`);
+            }
+
+            const payload = await response.json();
+            mills = Array.isArray(payload?.mills)
+              ? payload.mills
+              : Array.isArray(payload)
+                ? payload
+                : [];
+            lastError = null;
+            break;
+          } catch (innerError) {
+            lastError = innerError;
+          }
+        }
+
+        if (lastError) {
+          throw lastError;
+        }
+
+        if (isMounted) {
+          setLiveCenters(mills);
+        }
+      } catch (error) {
+        console.error('CollectionCenters: failed to fetch live centers', error);
+        if (isMounted) {
+          setLiveCentersError(error.message || 'Failed to load collection centers');
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingLiveCenters(false);
+        }
+        isFetching = false;
+      }
+    };
+
+    fetchLiveCenters();
+    const intervalId = setInterval(fetchLiveCenters, 60000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  const staticCenters = useMemo(
+    () => centersData.map(normalizeStaticCenter).filter(Boolean),
+    []
+  );
+
+  const normalizedLiveCenters = useMemo(
+    () => liveCenters.map(normalizeApprovedMill).filter(Boolean),
+    [liveCenters]
+  );
+
+  const centers = useMemo(() => {
+    const map = new Map();
+
+    const register = (center) => {
+      if (!center) {
+        return;
+      }
+
+      const key = buildCenterKey(center) || `center-${center.id ?? Math.random().toString(36).slice(2)}`;
+      map.set(key, { ...center, renderKey: key });
+    };
+
+    staticCenters.forEach(register);
+    normalizedLiveCenters.forEach(register);
+
+    return Array.from(map.values());
+  }, [staticCenters, normalizedLiveCenters]);
 
   // Extract unique values for filters
-  const districts = [...new Set(centers.map(c => c.district))].sort();
-  const provinces = [...new Set(centers.map(c => c.province))].sort();
-  const capacityTypes = [...new Set(centers.map(c => c.capacity))].sort();
-  const statusTypes = [...new Set(centers.map(c => c.status))].sort();
-  const allServices = [...new Set(centers.flatMap(c => c.services))].sort();
+  const districts = useMemo(
+    () => [...new Set(centers.map((c) => c?.district).filter(Boolean))].sort(),
+    [centers]
+  );
+  const provinces = useMemo(
+    () => [...new Set(centers.map((c) => c?.province).filter(Boolean))].sort(),
+    [centers]
+  );
+  const capacityTypes = useMemo(
+    () => [...new Set(centers.map((c) => c?.capacity).filter(Boolean))].sort(),
+    [centers]
+  );
+  const statusTypes = useMemo(
+    () => [...new Set(centers.map((c) => c?.status).filter(Boolean))].sort(),
+    [centers]
+  );
+  const allServices = useMemo(
+    () => [...new Set(centers.flatMap((c) => Array.isArray(c?.services) ? c.services : []).filter(Boolean))].sort(),
+    [centers]
+  );
 
   // Filter and sort centers - FIXED VERSION
   const getFilteredCenters = () => {
@@ -177,6 +528,18 @@ const CollectionCenters = () => {
           <p className="text-emerald-100 text-lg max-w-2xl mx-auto">
             Discover our {centers.length} collection centers across Sri Lanka with advanced search and filtering
           </p>
+          <div className="mt-4 flex flex-col items-center gap-1 text-sm">
+            <span className={`px-4 py-1 rounded-full border ${loadingLiveCenters ? 'border-emerald-300/40 text-emerald-100 bg-emerald-500/10 animate-pulse' : 'border-emerald-400/40 text-emerald-100 bg-emerald-500/20'}`}>
+              {loadingLiveCenters
+                ? 'Syncing latest approved mills…'
+                : `Live licenses synced: ${normalizedLiveCenters.length}`}
+            </span>
+            {liveCentersError && (
+              <span className="text-red-200">
+                Live sync issue: {liveCentersError}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Enhanced Search and Filter Section */}
@@ -411,14 +774,19 @@ const CollectionCenters = () => {
                 ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8' 
                 : 'space-y-6'
               } mb-12`}>
-                {filteredCenters.map((center, index) => (
-                  <div 
-                    key={center.id} 
-                    className={`group ${viewMode === 'list' ? 'flex' : ''} bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl border border-white/20 shadow-lg hover:shadow-2xl hover:border-white/30 transition-all duration-300 hover:-translate-y-1 transform`}
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    {/* Center Content */}
-                    <div className={`${viewMode === 'list' ? 'flex-1' : ''} p-6`}>
+                {filteredCenters.map((center, index) => {
+                  const services = Array.isArray(center.services) ? center.services : [];
+                  const maxServices = viewMode === 'list' ? 6 : 4;
+                  const overflowServices = Math.max(services.length - maxServices, 0);
+
+                  return (
+                    <div 
+                      key={center.renderKey || center.id || index} 
+                      className={`group ${viewMode === 'list' ? 'flex' : ''} bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl border border-white/20 shadow-lg hover:shadow-2xl hover:border-white/30 transition-all duration-300 hover:-translate-y-1 transform`}
+                      style={{ animationDelay: `${index * 100}ms` }}
+                    >
+                      {/* Center Content */}
+                      <div className={`${viewMode === 'list' ? 'flex-1' : ''} p-6`}>
                       {/* Header */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
@@ -432,6 +800,7 @@ const CollectionCenters = () => {
                             </svg>
                             <span>{center.district}, {center.province}</span>
                           </div>
+                            <p className="text-xs text-emerald-100/70 leading-relaxed">{center.address}</p>
                         </div>
                         
                         {/* Status & Rating */}
@@ -439,11 +808,14 @@ const CollectionCenters = () => {
                           <span className={`${getStatusColor(center.status)} bg-opacity-20 text-white px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBorderColor(center.status)}`}>
                             {center.status}
                           </span>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${center.source === 'live' ? 'bg-emerald-500/20 text-emerald-100 border border-emerald-400/40' : 'bg-white/10 text-emerald-200 border border-white/10'}`}>
+                            {center.source === 'live' ? 'Live License' : 'Reference Data'}
+                          </span>
                           <div className="flex items-center space-x-1 bg-black/20 px-2 py-1 rounded-full">
-                            <svg className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 24 24">
+                            <svg className={`w-4 h-4 ${typeof center.rating === 'number' ? 'text-yellow-400' : 'text-emerald-200'} fill-current`} viewBox="0 0 24 24">
                               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                             </svg>
-                            <span className="text-sm font-semibold text-white">{center.rating}</span>
+                            <span className="text-sm font-semibold text-white">{typeof center.rating === 'number' ? center.rating.toFixed(1) : '—'}</span>
                           </div>
                         </div>
                       </div>
@@ -451,7 +823,7 @@ const CollectionCenters = () => {
                       {/* Center Details */}
                       <div className="border-t border-white/20 my-4 pt-4">
                         <h4 className="text-sm font-semibold text-emerald-300 uppercase tracking-wider mb-3">Center Details</h4>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                           <div>
                             <p className="text-xs text-emerald-300/70">Capacity</p>
                             <p className="font-semibold text-white">{center.capacity} ({center.capacityMT})</p>
@@ -468,6 +840,14 @@ const CollectionCenters = () => {
                             <p className="text-xs text-emerald-300/70">Established</p>
                             <p className="font-semibold text-white">{center.established}</p>
                           </div>
+                          <div>
+                            <p className="text-xs text-emerald-300/70">License</p>
+                            <p className="font-semibold text-white">{center.licenseNumber && center.licenseNumber !== 'N/A' ? center.licenseNumber : 'Not assigned'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-emerald-300/70">{center.source === 'live' ? 'Approved On' : 'Last Update'}</p>
+                            <p className="font-semibold text-white">{center.source === 'live' ? (formatTimestamp(center.approvedDate) || '—') : (center.established || '—')}</p>
+                          </div>
                         </div>
                       </div>
 
@@ -475,14 +855,19 @@ const CollectionCenters = () => {
                       <div className="my-4">
                         <h4 className="text-sm font-semibold text-emerald-300 uppercase tracking-wider mb-3">Services</h4>
                         <div className="flex flex-wrap gap-2">
-                          {center.services.slice(0, viewMode === 'list' ? 6 : 4).map((service, idx) => (
+                          {services.slice(0, maxServices).map((service, idx) => (
                             <span key={idx} className="px-2 py-1 bg-emerald-500/20 text-emerald-100 rounded-lg text-xs font-medium">
                               {service}
                             </span>
                           ))}
-                          {center.services.length > (viewMode === 'list' ? 6 : 4) && (
+                          {overflowServices > 0 && (
                             <span className="px-2 py-1 bg-black/20 text-gray-300 rounded-lg text-xs font-medium">
-                              +{center.services.length - (viewMode === 'list' ? 6 : 4)} more
+                              +{overflowServices} more
+                            </span>
+                          )}
+                          {services.length === 0 && (
+                            <span className="px-2 py-1 bg-black/20 text-gray-300 rounded-lg text-xs font-medium">
+                              Services not listed
                             </span>
                           )}
                         </div>
@@ -517,8 +902,9 @@ const CollectionCenters = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Load More Button */}
