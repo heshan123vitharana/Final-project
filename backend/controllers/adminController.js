@@ -569,9 +569,11 @@ const getApprovedMills = async (req, res) => {
                 ml.approved_date
             FROM mill_licenses ml
             JOIN users u ON ml.user_id = u.id
-            WHERE ml.status = 'approved'
+            WHERE LOWER(ml.status) = 'approved'
               AND u.mill_latitude IS NOT NULL
               AND u.mill_longitude IS NOT NULL
+              AND u.mill_latitude <> ''
+              AND u.mill_longitude <> ''
         `;
 
         const params = [];
@@ -592,12 +594,11 @@ const getApprovedMills = async (req, res) => {
 
         const mills = rows
             .map((row) => {
-                const latitude = typeof row.mill_latitude === 'string'
-                    ? Number.parseFloat(row.mill_latitude)
-                    : row.mill_latitude;
-                const longitude = typeof row.mill_longitude === 'string'
-                    ? Number.parseFloat(row.mill_longitude)
-                    : row.mill_longitude;
+                const rawLat = row.mill_latitude;
+                const rawLng = row.mill_longitude;
+
+                const latitude = typeof rawLat === 'string' ? Number.parseFloat(rawLat) : rawLat;
+                const longitude = typeof rawLng === 'string' ? Number.parseFloat(rawLng) : rawLng;
 
                 if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
                     return null;

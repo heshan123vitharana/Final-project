@@ -335,6 +335,8 @@ router.get('/applications/:userId', async (req, res) => {
     }
 });
 
+const PROFILE_COMPLETENESS_THRESHOLD = 80;
+
 // Get user profile with completeness check
 router.get('/profile-check/:userId', async (req, res) => {
     try {
@@ -463,7 +465,8 @@ router.get('/profile-check/:userId', async (req, res) => {
                 createdAt: user.created_at
             },
             completeness,
-            canApplyForLicense: completeness === 100,
+            completenessThreshold: PROFILE_COMPLETENESS_THRESHOLD,
+            canApplyForLicense: completeness >= PROFILE_COMPLETENESS_THRESHOLD,
             missingFields,
             fieldStatus
         });

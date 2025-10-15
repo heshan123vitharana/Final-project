@@ -26,6 +26,8 @@ const REPORT_REFRESH_INTERVAL_MS = (() => {
 })();
 
 // Home page component for the Mill Dashboard
+const PROFILE_COMPLETENESS_THRESHOLD = 80;
+
 const MillHome = ({ userData }) => {
   const navigate = useNavigate();
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -56,6 +58,8 @@ const MillHome = ({ userData }) => {
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
   const [sendingReport, setSendingReport] = useState(false);
+  const [profileCompleteness, setProfileCompleteness] = useState(null);
+  const [loadingProfileCompleteness, setLoadingProfileCompleteness] = useState(true);
 
   const effectiveUserData = useMemo(() => {
     if (userData) return userData;
@@ -153,7 +157,7 @@ const MillHome = ({ userData }) => {
     }, 0);
   }, [stockData]);
 
-  const getCurrentUserId = () => {
+  const getCurrentUserId = useCallback(() => {
     try {
       const userData = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
       return userData.id || userData.user_id || 1;
@@ -161,7 +165,7 @@ const MillHome = ({ userData }) => {
       console.error('Error getting user ID from session:', error);
       return 1;
     }
-  };
+  }, []);
 
   const loadProfilePhoto = useCallback(async (userId) => {
     try {
@@ -247,6 +251,34 @@ const MillHome = ({ userData }) => {
     }
   }, [apiBaseUrl, getAuthToken]);
 
+  const fetchProfileCompleteness = useCallback(async () => {
+    try {
+      const userId = getCurrentUserId();
+      if (!userId) {
+        setProfileCompleteness(null);
+        return;
+      }
+
+      setLoadingProfileCompleteness(true);
+      const response = await fetch(`${apiBaseUrl}/api/profile/completeness/${userId}`);
+      if (!response.ok) {
+        throw new Error('Failed to load profile completeness');
+      }
+
+      const data = await response.json();
+      if (typeof data.completeness === 'number') {
+        setProfileCompleteness(data.completeness);
+      } else {
+        setProfileCompleteness(null);
+      }
+    } catch (error) {
+      console.error('Profile completeness fetch failed:', error);
+      setProfileCompleteness(null);
+    } finally {
+      setLoadingProfileCompleteness(false);
+    }
+  }, [apiBaseUrl, getCurrentUserId]);
+
   useEffect(() => {
     const fetchProfilePhoto = async () => {
       setLoadingPhoto(true);
@@ -264,7 +296,7 @@ const MillHome = ({ userData }) => {
     };
 
     fetchProfilePhoto();
-  }, [loadProfilePhoto, userData?.id]);
+  }, [getCurrentUserId, loadProfilePhoto, userData?.id]);
 
   // Load stock data when component mounts
   useEffect(() => {
@@ -274,6 +306,10 @@ const MillHome = ({ userData }) => {
   useEffect(() => {
     fetchReportHistory();
   }, [fetchReportHistory]);
+
+  useEffect(() => {
+    fetchProfileCompleteness();
+  }, [fetchProfileCompleteness]);
 
     useEffect(() => {
       const interval = setInterval(() => {
@@ -668,6 +704,56 @@ const MillHome = ({ userData }) => {
     };
   }, [licenseData]);
 
+  const hasApprovedLicense = licenseData?.status === 'approved';
+  const isProfileComplete = Number.isFinite(profileCompleteness) && profileCompleteness >= PROFILE_COMPLETENESS_THRESHOLD;
+
+  const missingCoordinates = useMemo(() => {
+    const latCandidate = currentUserData?.mill_latitude ?? currentUserData?.millLatitude ?? currentUserData?.latitude ?? null;
+    const lngCandidate = currentUserData?.mill_longitude ?? currentUserData?.millLongitude ?? currentUserData?.longitude ?? null;
+
+    const latitude = typeof latCandidate === 'string' ? Number.parseFloat(latCandidate) : latCandidate;
+    const longitude = typeof lngCandidate === 'string' ? Number.parseFloat(lngCandidate) : lngCandidate;
+
+    return !Number.isFinite(latitude) || !Number.isFinite(longitude);
+  }, [currentUserData]);
+
+  const profileAlertTitle = useMemo(() => {
+    if (!licenseData) {
+      return 'Complete your mill profile';
+    }
+
+    switch (licenseData.status) {
+      case 'pending':
+        return 'Profile awaiting verification';
+      case 'rejected':
+        return 'Profile requires updates';
+      default:
+        return 'Profile pending completion';
+    }
+  }, [licenseData]);
+
+  const profileAlertDescription = useMemo(() => {
+    if (!licenseData) {
+      return 'Finish entering your mill profile details so we can activate your account for the dashboard tools.';
+    }
+
+    if (licenseData.status === 'pending') {
+      return 'We are still verifying your details. Keep your mill profile complete so the board can activate your access without delay.';
+    }
+
+    if (licenseData.status === 'rejected') {
+      return 'Update your mill profile with accurate information and resubmit the details so we can activate your access.';
+    }
+
+    return 'Complete your mill profile to unlock your full dashboard experience.';
+  }, [licenseData]);
+
+  const showProfileAlert =
+    !loadingLicense &&
+    !hasApprovedLicense &&
+    !loadingProfileCompleteness &&
+    !isProfileComplete;
+
   try {
     const licenseStatusDisplay = licenseData ? getStatusDisplay(licenseData.status) : null;
     if (!effectiveUserData) {
@@ -758,6 +844,36 @@ const MillHome = ({ userData }) => {
               </div>
             </div>
           </header>
+
+          {showProfileAlert && (
+            <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 shadow-sm">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-100">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                  </span>
+                  <div>
+                    <h2 className="text-base font-semibold text-amber-900">{profileAlertTitle}</h2>
+                    <p className="mt-1 text-sm text-amber-700">{profileAlertDescription}</p>
+                    {missingCoordinates && (
+                      <p className="mt-2 text-xs font-semibold text-amber-700">
+                        Tip: Add your mill latitude and longitude in the profile so we can place you on the national mill map.
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 md:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/mill/profile')}
+                    className="inline-flex items-center justify-center rounded-lg bg-amber-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-700"
+                  >
+                    Update Profile
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid gap-6">
             <section>

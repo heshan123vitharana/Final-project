@@ -33,6 +33,7 @@ const MillRegistration = () => {
   const [profileData, setProfileData] = useState(null);
   const [canApplyForLicense, setCanApplyForLicense] = useState(false);
   const [profileCompleteness, setProfileCompleteness] = useState(0);
+  const [completenessThreshold, setCompletenessThreshold] = useState(100);
   const [missingFields, setMissingFields] = useState([]);
   const [fieldStatus, setFieldStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -149,6 +150,7 @@ const MillRegistration = () => {
 
     const licenseEligibility = useMemo(() => {
       if (!Array.isArray(history) || history.length === 0) {
+        console.log('🔍 License Eligibility: No history, user CAN apply');
         return {
           pendingApplication: null,
           latestApproved: null,
@@ -156,7 +158,9 @@ const MillRegistration = () => {
           canApplyNow: true,
           showRenewButton: false,
           hasActiveLicense: false,
-          renewAvailableOn: null
+          renewAvailableOn: null,
+          canSubmitNewApplication: true, // FIXED: Added this field for consistency
+          canRenewApplication: false
         };
       }
 
@@ -177,7 +181,23 @@ const MillRegistration = () => {
       const canApplyNow = !pendingApplication && (!latestApproved || licenseIsExpired);
       const showRenewButton = !pendingApplication && !!latestApproved && licenseIsExpired;
       const hasActiveLicense = !!latestApproved && !licenseIsExpired;
-      const canSubmitNewApplication = !pendingApplication && !latestApproved;
+      const canSubmitNewApplication = !pendingApplication && (!latestApproved || licenseIsExpired);
+
+      console.log('🔍 License Eligibility Debug:', {
+        historyCount: history.length,
+        hasPending: !!pendingApplication,
+        hasApproved: !!latestApproved,
+        isExpired: licenseIsExpired,
+        hasActiveLicense,
+        canSubmitNewApplication,
+        canApplyNow,
+        validityInfo: validity ? {
+          startDate: validity.startDate?.toISOString(),
+          endDate: validity.endDate?.toISOString(),
+          isExpired: validity.isExpired,
+          daysRemaining: validity.daysRemaining
+        } : null
+      });
 
       return {
         pendingApplication,
@@ -241,12 +261,26 @@ const MillRegistration = () => {
     })();
 
     const handleOpenForm = (type) => {
-      if (!canApplyForLicense) {
+      // Check profile completeness first
+      const normalizedCompleteness = Number.isFinite(profileCompleteness)
+        ? profileCompleteness
+        : Number.parseFloat(profileCompleteness);
+      const profileEligible = Boolean(canApplyForLicense) || (
+        Number.isFinite(normalizedCompleteness) && normalizedCompleteness >= completenessThreshold
+      );
+
+      if (!profileEligible) {
         toast.error('Please complete your profile before applying for a license.');
         return;
       }
 
-      if (!licenseEligibility.canApplyNow) {
+      // For Apply button: check canSubmitNewApplication
+      // For Renew button: check canRenewApplication
+      const isEligible = type === 'Renew' 
+        ? licenseEligibility.canRenewApplication 
+        : licenseEligibility.canSubmitNewApplication;
+
+      if (!isEligible) {
         if (licenseEligibility.pendingApplication) {
           const submittedOn = formatDateLabel(licenseEligibility.pendingApplication.applied_date || licenseEligibility.pendingApplication.created_at);
           toast.error(submittedOn
@@ -255,7 +289,7 @@ const MillRegistration = () => {
           return;
         }
 
-        if (licenseEligibility.validity?.endDate) {
+        if (licenseEligibility.hasActiveLicense && licenseEligibility.validity?.endDate) {
           const nextEligible = formatDateLabel(licenseEligibility.validity.endDate);
           toast.error(nextEligible
             ? `Your current license is valid until ${nextEligible}. Renewal will be available after this date.`
@@ -440,10 +474,16 @@ const MillRegistration = () => {
           if (response.ok) {
             const apiData = await response.json();
             setProfileData(apiData.user || {});
-            setProfileCompleteness(apiData.completeness || 0);
+            const parsedCompleteness = Number.parseFloat(apiData.completeness);
+            const completeness = Number.isFinite(parsedCompleteness) ? parsedCompleteness : 0;
+            setProfileCompleteness(completeness);
             setMissingFields(apiData.missingFields || []);
             setFieldStatus(apiData.fieldStatus || null);
-            setCanApplyForLicense(apiData.canApplyForLicense || false);
+            const parsedThreshold = Number.parseFloat(apiData.completenessThreshold);
+            const threshold = Number.isFinite(parsedThreshold) ? parsedThreshold : 100;
+            setCompletenessThreshold(threshold);
+            const eligible = Boolean(apiData.canApplyForLicense) || completeness >= threshold;
+            setCanApplyForLicense(eligible);
           }
         } catch {
           // Silent error handling
@@ -509,9 +549,15 @@ const MillRegistration = () => {
             if (response.ok) {
               const apiData = await response.json();
               setProfileData(apiData.user || {});
-              setProfileCompleteness(apiData.completeness);
+              const parsedCompleteness = Number.parseFloat(apiData.completeness);
+              const completeness = Number.isFinite(parsedCompleteness) ? parsedCompleteness : 0;
+              setProfileCompleteness(completeness);
               setMissingFields(apiData.missingFields || []);
-              setCanApplyForLicense(apiData.canApplyForLicense);
+              const parsedThreshold = Number.parseFloat(apiData.completenessThreshold);
+              const threshold = Number.isFinite(parsedThreshold) ? parsedThreshold : completenessThreshold;
+              setCompletenessThreshold(threshold);
+              const eligible = Boolean(apiData.canApplyForLicense) || completeness >= threshold;
+              setCanApplyForLicense(eligible);
             }
 
             // Also refresh license status
