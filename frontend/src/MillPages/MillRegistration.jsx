@@ -711,7 +711,7 @@ const MillRegistration = () => {
 
       {/* Page heading */}
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
-        🏭 Mill Registration
+        Mill Registration
       </h1>
 
 

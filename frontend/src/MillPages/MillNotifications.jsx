@@ -33,7 +33,7 @@ const MillNotifications = () => {
     <div className="p-6 bg-green-50 min-h-screen">
       {/* Header with notification count */}
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2 flex items-center gap-3">
-        🔔 Notifications
+        Notifications
         {notifications.length > 0 && (
           <span className="ml-2 bg-green-600 text-white text-sm px-2 py-1 rounded-full">
             {notifications.length}

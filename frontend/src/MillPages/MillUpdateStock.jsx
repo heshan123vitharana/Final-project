@@ -342,7 +342,7 @@ const MillUpdateStock = ({ userData }) => {
 
       {/* Page heading */}
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
-        🌾 Update Paddy Stock
+        Update Paddy Stock
       </h1>
       <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-blue-800 text-sm font-medium">

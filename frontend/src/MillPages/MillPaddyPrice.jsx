@@ -193,8 +193,8 @@ const MillPaddyPrice = () => {
 
       {/* Page heading with refresh button */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-green-700 border-b-4 border-green-300 pb-2">
-          📊 Live Paddy Prices
+        <h1 className="text-3xl font-bold text-green-700 mb-2 border-b-4 border-green-300 pb-2">
+          Live Paddy Prices
         </h1>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-gray-600">

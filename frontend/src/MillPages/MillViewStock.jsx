@@ -128,7 +128,7 @@ const MillViewStock = ({ userData }) => {
     <div className="p-6 bg-green-50 min-h-screen">
       {/* Page heading */}
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
-        📊 View Paddy Stock
+        View Paddy Stock
       </h1>
 
       {/* Error message */}
@@ -142,9 +142,9 @@ const MillViewStock = ({ userData }) => {
       <div className="mb-6">
         <div className="flex space-x-1 bg-green-100 rounded-lg p-1">
           {[
-            { key: "entries", label: "Stock Entries", icon: "📋" },
-            { key: "summary", label: "Stock Summary", icon: "📊" },
-            { key: "stats", label: "Statistics", icon: "📈" }
+            { key: "entries", label: "Stock Entries", icon: "" },
+            { key: "summary", label: "Stock Summary", icon: "" },
+            { key: "stats", label: "Statistics", icon: "" }
           ].map(({ key, label, icon }) => (
             <button
               key={key}
