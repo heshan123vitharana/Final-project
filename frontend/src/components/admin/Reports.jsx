@@ -4,7 +4,6 @@ import autoTable from 'jspdf-autotable'
 import {
   Download,
   FileText,
-  Calendar,
   Filter,
   BarChart3,
   TrendingUp,
@@ -104,7 +103,7 @@ const Reports = () => {
   const [selectedRegion, setSelectedRegion] = useState('all')
   const [selectedMillType, setSelectedMillType] = useState('all')
   const [reportType, setReportType] = useState('licenses')
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [, setIsGeneratingPDF] = useState(false)
   const [reportData, setReportData] = useState(mockReportData)
   const [loading, setLoading] = useState(false)
   const [generatedReports, setGeneratedReports] = useState([])
@@ -557,104 +556,6 @@ const Reports = () => {
     return doc
   }
 
-  const handlePreviewReport = async () => {
-    try {
-      setIsGeneratingPDF(true)
-      
-      // Add a small delay to show loading state
-      await new Promise(resolve => setTimeout(resolve, 300))
-      
-      const doc = await generatePDFReport()
-      if (!doc) {
-        alert('Unable to generate PDF preview. Please try again later.')
-        return
-      }
-      
-      // Create blob and URL for preview
-      const pdfBlob = doc.output('blob')
-      const pdfUrl = URL.createObjectURL(pdfBlob)
-      
-      // Try to open in new window
-      const newWindow = window.open(pdfUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes')
-      
-      if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-        // If popup is blocked, create a download link instead
-        const link = document.createElement('a')
-        link.href = pdfUrl
-        link.download = `PMB_${reportType}_report_preview.pdf`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        
-        // Show notification
-        alert('PDF preview downloaded (popup may have been blocked by your browser)')
-      }
-      
-      // Clean up URL after a delay
-      setTimeout(() => URL.revokeObjectURL(pdfUrl), 10000)
-      
-    } catch (error) {
-      console.error('Error previewing PDF:', error)
-      alert('Error generating PDF preview. Please check console for details.')
-    } finally {
-      setIsGeneratingPDF(false)
-    }
-  }
-
-  const handleDownloadReport = async (format) => {
-    const filename = `PMB_${reportType}_report_${dateRange.from}_to_${dateRange.to}.${format}`
-    
-    if (format === 'pdf') {
-      setIsGeneratingPDF(true)
-      try {
-        // Add a small delay to show loading state
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        const doc = await generatePDFReport()
-        if (!doc) {
-          alert('Unable to generate PDF at the moment. Please try again later.')
-          return
-        }
-        
-        // Use the save method to trigger download
-        doc.save(filename)
-        
-        // Show success notification
-        showSuccessNotification('PDF downloaded successfully!')
-        
-      } catch (error) {
-        console.error('Error generating PDF:', error)
-        alert(`Error generating PDF report: ${error.message}. Please try again.`)
-      } finally {
-        setIsGeneratingPDF(false)
-      }
-    } else if (format === 'csv') {
-      try {
-        // CSV download functionality
-        const csvContent = generateCSVContent()
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-        
-        // Create download link
-        const link = document.createElement('a')
-        if (link.download !== undefined) {
-          const url = URL.createObjectURL(blob)
-          link.setAttribute('href', url)
-          link.setAttribute('download', filename)
-          link.style.visibility = 'hidden'
-          document.body.appendChild(link)
-          link.click()
-          document.body.removeChild(link)
-          URL.revokeObjectURL(url)
-          
-          showSuccessNotification('CSV downloaded successfully!')
-        }
-      } catch (error) {
-        console.error('Error generating CSV:', error)
-        alert('Error generating CSV report. Please try again.')
-      }
-    }
-  }
-
 
   const generateCSVContent = (options = {}) => {
     const { customData, customReportType, customFilters, variant } = options
@@ -855,129 +756,6 @@ const Reports = () => {
 
   return (
     <div className="space-y-6">
-      {/* Report Configuration */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Generate Reports</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Date Range */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <Calendar className="inline w-4 h-4 mr-1" />
-              Date Range
-            </label>
-            <div className="space-y-2">
-              <input
-                type="date"
-                value={dateRange.from}
-                onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-              <input
-                type="date"
-                value={dateRange.to}
-                onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          {/* Region Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <Filter className="inline w-4 h-4 mr-1" />
-              Region
-            </label>
-            <select
-              value={selectedRegion}
-              onChange={(e) => setSelectedRegion(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              {regions.map(region => {
-                const optionValue = region === 'All Regions' ? 'all' : region.toLowerCase().replace(/\s+/g, '-')
-                return (
-                  <option key={region} value={optionValue}>
-                    {region}
-                  </option>
-                )
-              })}
-            </select>
-          </div>
-
-          {/* Mill Type Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mill Type
-            </label>
-            <select
-              value={selectedMillType}
-              onChange={(e) => setSelectedMillType(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="all">All Types</option>
-              <option value="private">Private Mills</option>
-              <option value="government">Government Mills</option>
-            </select>
-          </div>
-
-          {/* Download Actions */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Download
-            </label>
-            <div className="space-y-2">
-              <button
-                onClick={() => handleDownloadReport('pdf')}
-                disabled={isGeneratingPDF}
-                className="w-full bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center"
-              >
-                {isGeneratingPDF ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 mr-1" />
-                    PDF
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => handlePreviewReport()}
-                disabled={isGeneratingPDF}
-                className="w-full bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center"
-              >
-                {isGeneratingPDF ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Previewing...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="w-4 h-4 mr-1" />
-                    Preview PDF
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => handleDownloadReport('csv')}
-                className="w-full bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center justify-center"
-              >
-                <Download className="w-4 h-4 mr-1" />
-                CSV
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Report Type Selection */}
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Report Types</h3>
