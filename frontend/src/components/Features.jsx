@@ -441,7 +441,7 @@ const Features = () => {
 
                   return (
                     <Motion.div 
-                      key={cardId} 
+                      key={`${cardId}-${index}`} 
                       layout
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       onClick={() => setSelectedId(isSelected ? null : cardId)}
@@ -491,7 +491,7 @@ const Features = () => {
                                   <h4 className="text-md font-semibold text-emerald-800 mb-3">Key Features</h4>
                                   <ul className="space-y-2">
                                     {service.features.map((feature, idx) => (
-                                      <li key={idx} className="flex items-center gap-3 text-gray-600">
+                                      <li key={`${service.id || service.title}-feature-${idx}`} className="flex items-center gap-3 text-gray-600">
                                         <div className="w-5 h-5 flex-shrink-0 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
                                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
                                         </div>

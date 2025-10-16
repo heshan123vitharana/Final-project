@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -10,21 +12,56 @@ const Contact = () => {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState('')
+  const [submitError, setSubmitError] = useState('')
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
+    setSubmitStatus('')
+    setSubmitError('')
+
+    try {
+      const payload = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        subject: formData.subject,
+        message: formData.message.trim(),
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Failed to send message. Please try again later.')
+      }
+
       setSubmitStatus('success')
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' })
-      setTimeout(() => setSubmitStatus(''), 3000)
-    }, 1200)
+      setTimeout(() => setSubmitStatus(''), 5000)
+    } catch (error) {
+      console.error('Contact form submission failed:', error)
+      setSubmitStatus('error')
+      setSubmitError(error.message || 'Unable to send your message at this time.')
+      setTimeout(() => {
+        setSubmitStatus('')
+        setSubmitError('')
+      }, 6000)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const inputClassName =
@@ -256,6 +293,17 @@ const Contact = () => {
                       <div>
                         <p className="text-emerald-800 font-semibold">Message sent successfully!</p>
                         <p className="text-emerald-600 text-sm">We’ll get back to you within 24 hours.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {submitStatus === 'error' && (
+                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-2xl animate-bounce-in">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white font-bold">!</div>
+                      <div>
+                        <p className="text-red-700 font-semibold">Unable to send message</p>
+                        <p className="text-red-600 text-sm">{submitError || 'Please try again later or reach us by phone.'}</p>
                       </div>
                     </div>
                   </div>
