@@ -239,8 +239,8 @@ const CollectionCenters = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
   const [liveCenters, setLiveCenters] = useState([]);
-  const [loadingLiveCenters, setLoadingLiveCenters] = useState(false);
-  const [liveCentersError, setLiveCentersError] = useState(null);
+  const [UNUSED_loadingLiveCenters, setLoadingLiveCenters] = useState(false);
+  const [UNUSED_liveCentersError, setLiveCentersError] = useState(null);
   const districtRef = useRef(null);
 
   // Intersection observer for animations
@@ -528,18 +528,7 @@ const CollectionCenters = () => {
           <p className="text-emerald-100 text-lg max-w-2xl mx-auto">
             Discover our {centers.length} collection centers across Sri Lanka with advanced search and filtering
           </p>
-          <div className="mt-4 flex flex-col items-center gap-1 text-sm">
-            <span className={`px-4 py-1 rounded-full border ${loadingLiveCenters ? 'border-emerald-300/40 text-emerald-100 bg-emerald-500/10 animate-pulse' : 'border-emerald-400/40 text-emerald-100 bg-emerald-500/20'}`}>
-              {loadingLiveCenters
-                ? 'Syncing latest approved mills…'
-                : `Live licenses synced: ${normalizedLiveCenters.length}`}
-            </span>
-            {liveCentersError && (
-              <span className="text-red-200">
-                Live sync issue: {liveCentersError}
-              </span>
-            )}
-          </div>
+          {/* Hidden: Live licenses synced badge */}
         </div>
 
         {/* Enhanced Search and Filter Section */}
