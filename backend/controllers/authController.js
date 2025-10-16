@@ -44,9 +44,24 @@ const validateRegistration = (body) => {
     errors.push('email is invalid');
   }
 
-  // password rules
-  if (body.password && String(body.password).length < 6) {
-    errors.push('password must be at least 6 characters');
+  // Enhanced password rules
+  if (body.password) {
+    const password = String(body.password);
+    if (password.length < 8) {
+      errors.push('password must be at least 8 characters');
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push('password must contain at least one uppercase letter');
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push('password must contain at least one lowercase letter');
+    }
+    if (!/[0-9]/.test(password)) {
+      errors.push('password must contain at least one number');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push('password must contain at least one special character');
+    }
   }
 
   if (body.password !== body.confirm_password) {
@@ -413,9 +428,30 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'Token and new password are required' });
     }
 
-    // Validate password
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    // Enhanced password validation
+    const password = String(newPassword);
+    const passwordErrors = [];
+    
+    if (password.length < 8) {
+      passwordErrors.push('at least 8 characters');
+    }
+    if (!/[A-Z]/.test(password)) {
+      passwordErrors.push('one uppercase letter');
+    }
+    if (!/[a-z]/.test(password)) {
+      passwordErrors.push('one lowercase letter');
+    }
+    if (!/[0-9]/.test(password)) {
+      passwordErrors.push('one number');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      passwordErrors.push('one special character');
+    }
+
+    if (passwordErrors.length > 0) {
+      return res.status(400).json({ 
+        message: `Password must contain ${passwordErrors.join(', ')}` 
+      });
     }
 
     // Hash the token to compare with stored hash

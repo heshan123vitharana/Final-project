@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { validateFormWithToast, handleApiError } from '../utils/validation';
 
 const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword }) => {
   const [formData, setFormData] = useState({
@@ -10,6 +9,7 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -18,13 +18,46 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
       ...prev,
       [name]: value
     }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // Email validation
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const { isValid } = validateFormWithToast(formData, ['email', 'password']);
-    if (!isValid) {
+    // Validate form first
+    if (!validateForm()) {
+      toast.error('Please fix the errors before submitting', {
+        duration: 4000,
+        icon: '⚠️'
+      });
       return;
     }
     
@@ -46,7 +79,14 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
       
       if (response.ok) {
         const result = await response.json();
-        toast.success('Login successful!');
+        toast.success('🎉 Login successful! Welcome back!', {
+          duration: 3000,
+          style: {
+            background: '#10b981',
+            color: '#fff',
+            fontWeight: 'bold'
+          }
+        });
         if (result.role === 'admin') {
           sessionStorage.setItem('adminData', JSON.stringify(result));
           navigate('/admin/dashboard');
@@ -55,10 +95,41 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
         }
       } else {
         const result = await response.json();
-        handleApiError(null, result);
+        // Enhanced error messages
+        if (result.message.includes('Invalid credentials') || result.message.includes('password')) {
+          toast.error('❌ Invalid email or password. Please try again.', {
+            duration: 4000,
+            style: {
+              background: '#ef4444',
+              color: '#fff'
+            }
+          });
+        } else if (result.message.includes('not found')) {
+          toast.error('❌ No account found with this email address.', {
+            duration: 4000,
+            style: {
+              background: '#ef4444',
+              color: '#fff'
+            }
+          });
+        } else {
+          toast.error('❌ ' + result.message || 'Login failed. Please try again.', {
+            duration: 4000,
+            style: {
+              background: '#ef4444',
+              color: '#fff'
+            }
+          });
+        }
       }
-    } catch (error) {
-      handleApiError(error, null);
+    } catch (_error) {
+      toast.error('🔌 Unable to connect to server. Please try again.', {
+        duration: 4000,
+        style: {
+          background: '#ef4444',
+          color: '#fff'
+        }
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -120,9 +191,21 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm"
+                  className={`w-full px-3 py-1.5 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 font-medium tracking-wide text-sm ${
+                    errors.email 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-gray-200 focus:ring-green-500 focus:border-transparent'
+                  }`}
                   placeholder="yourname@gmail.com"
                 />
+                {errors.email && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {errors.email}
+                  </p>
+                )}
               </div>
 
               {/* Password */}
@@ -137,7 +220,11 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm"
+                    className={`w-full px-3 py-1.5 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 font-medium tracking-wide text-sm ${
+                      errors.password 
+                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                        : 'border-gray-200 focus:ring-green-500 focus:border-transparent'
+                    }`}
                     placeholder="********"
                   />
                   <button
@@ -157,6 +244,14 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
                     )}
                   </button>
                 </div>
+                {errors.password && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {errors.password}
+                  </p>
+                )}
               </div>
 
               {/* Forgot Password Link */}

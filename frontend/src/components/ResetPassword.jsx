@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { validateFormWithToast, handleApiError, showSuccessToast } from '../utils/validation'
+import { validateFormWithToast, handleApiError, showSuccessToast, validatePassword } from '../utils/validation'
+import PasswordStrengthIndicator from './PasswordStrengthIndicator'
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams()
@@ -67,9 +68,10 @@ const ResetPassword = () => {
       return
     }
 
-    // Check password strength
-    if (formData.password.length < 6) {
-      handleApiError(null, { message: 'Password must be at least 6 characters long' })
+    // Validate password strength
+    const passwordValidation = validatePassword(formData.password)
+    if (!passwordValidation.isValid) {
+      handleApiError(null, { message: passwordValidation.message })
       return
     }
 
@@ -200,7 +202,13 @@ const ResetPassword = () => {
                 )}
               </button>
             </div>
-            <p className="text-xs text-gray-500">Password must be at least 6 characters long</p>
+            
+            {/* Password Strength Indicator */}
+            {formData.password && (
+              <div className="mt-3">
+                <PasswordStrengthIndicator password={formData.password} />
+              </div>
+            )}
           </div>
 
           {/* Confirm Password */}

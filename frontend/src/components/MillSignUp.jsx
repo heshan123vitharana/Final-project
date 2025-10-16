@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 // Import validation utilities
 import { validateFormWithToast, handleApiError, handleNetworkError, handleRegistrationSuccess } from '../utils/validation';
+import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 
 const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
   const [formData, setFormData] = useState({
@@ -299,6 +300,8 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                       )}
                     </button>
                   </div>
+                  {/* Password Strength Indicator */}
+                  <PasswordStrengthIndicator password={formData.password} />
                 </div>
 
                 <div className="space-y-1">

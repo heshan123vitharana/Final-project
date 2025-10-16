@@ -1,5 +1,38 @@
 import toast from 'react-hot-toast';
 
+// Calculate password strength
+const calculatePasswordStrength = (validations) => {
+  const passed = Object.values(validations).filter(v => v).length;
+  if (passed <= 2) return { level: 'weak', color: 'red', percentage: 33 };
+  if (passed <= 3) return { level: 'medium', color: 'yellow', percentage: 66 };
+  return { level: 'strong', color: 'green', percentage: 100 };
+};
+
+// Password validation utility
+export const validatePassword = (password) => {
+  const validations = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+  };
+  
+  const errors = [];
+  if (!validations.length) errors.push('at least 8 characters');
+  if (!validations.uppercase) errors.push('one uppercase letter (A-Z)');
+  if (!validations.lowercase) errors.push('one lowercase letter (a-z)');
+  if (!validations.number) errors.push('one number (0-9)');
+  if (!validations.special) errors.push('one special character (!@#$%^&*)');
+  
+  return {
+    isValid: errors.length === 0,
+    message: errors.length > 0 ? `Password must contain ${errors.join(', ')}` : '',
+    strength: calculatePasswordStrength(validations),
+    validations
+  };
+};
+
 // Validation rules
 export const validationRules = {
   email: {
@@ -9,8 +42,30 @@ export const validationRules = {
   },
   password: {
     required: true,
-    minLength: 6,
-    message: 'Password must be at least 6 characters long'
+    minLength: 8,
+    message: 'Password must be at least 8 characters long',
+    validate: (value) => {
+      const validations = {
+        length: value.length >= 8,
+        uppercase: /[A-Z]/.test(value),
+        lowercase: /[a-z]/.test(value),
+        number: /[0-9]/.test(value),
+        special: /[!@#$%^&*(),.?":{}|<>]/.test(value)
+      };
+      
+      const errors = [];
+      if (!validations.length) errors.push('at least 8 characters');
+      if (!validations.uppercase) errors.push('one uppercase letter');
+      if (!validations.lowercase) errors.push('one lowercase letter');
+      if (!validations.number) errors.push('one number');
+      if (!validations.special) errors.push('one special character');
+      
+      return {
+        isValid: errors.length === 0,
+        message: errors.length > 0 ? `Password must contain ${errors.join(', ')}` : '',
+        strength: calculatePasswordStrength(validations)
+      };
+    }
   },
   firstName: {
     required: true,
@@ -58,6 +113,11 @@ export const validateField = (fieldName, value, additionalData = {}) => {
   // Skip other validations if field is empty and not required
   if (!value || value.toString().trim() === '') {
     return { isValid: true };
+  }
+
+  // Special password validation
+  if (fieldName === 'password' && rule.validate) {
+    return rule.validate(value);
   }
 
   // Pattern validation
