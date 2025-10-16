@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import QRScanner from "../components/QRScanner";
 
 // Sri Lankan Districts (copied from MillProfile.jsx)
 const sriLankanDistricts = [
@@ -63,6 +64,8 @@ const MillUpdateStock = ({ userData }) => {
   const [notification, setNotification] = useState("");
   // State for loading
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // State for QR scanner
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   // Get current user data from session with fallback - now using effectiveUserData
   const getCurrentUserData = useCallback(() => {
@@ -214,6 +217,19 @@ const MillUpdateStock = ({ userData }) => {
     setShowPopup(true);
   };
 
+  // Handle QR scan success
+  const handleQRScanSuccess = (data) => {
+    // QR data format: Name, NIC, Contact, Location, Area, Crops
+    setFormData(prev => ({
+      ...prev,
+      farmer_id: data.nic || "",
+      farmer_name: data.name || "",
+      // You can add more mappings if needed, e.g.:
+      // notes: `Contact: ${data.contact}, Location: ${data.location}, Area: ${data.area}, Crops: ${data.crops}`
+    }));
+    setShowQRScanner(false);
+  };
+
   // Handle confirmation of stock entry
   const handleConfirm = async () => {
     setShowPopup(false);
@@ -344,6 +360,22 @@ const MillUpdateStock = ({ userData }) => {
       <h1 className="text-3xl font-bold mb-6 text-green-700 border-b-4 border-green-300 pb-2">
         Update Paddy Stock
       </h1>
+
+      {/* QR Scanner Button */}
+      <div className="mb-4 flex justify-center">
+        <button
+          type="button"
+          onClick={() => setShowQRScanner(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-200 flex items-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zM13 3a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1z" clipRule="evenodd" />
+            <path d="M11 4a1 1 0 10-2 0v1a1 1 0 002 0V4zM10 7a1 1 0 011 1v1h2a1 1 0 110 2h-3a1 1 0 01-1-1V8a1 1 0 011-1zM16 9a1 1 0 100 2 1 1 0 000-2zM9 13a1 1 0 011-1h1a1 1 0 110 2v2a1 1 0 11-2 0v-3zM7 11a1 1 0 10-2 0v4a1 1 0 102 0v-4zM15 11a1 1 0 10-2 0v4a1 1 0 102 0v-4zM16 13a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1z" />
+          </svg>
+          Scan Farmer QR Code
+        </button>
+      </div>
+
       <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-blue-800 text-sm font-medium">
           📍 <strong>Note:</strong> Paddy prices are automatically calculated based on your mill district location for accurate regional pricing.
@@ -656,6 +688,13 @@ const MillUpdateStock = ({ userData }) => {
           </div>
         </div>
       )}
+
+      {/* QR Scanner Modal */}
+      <QRScanner
+        isOpen={showQRScanner}
+        onClose={() => setShowQRScanner(false)}
+        onScanSuccess={handleQRScanSuccess}
+      />
     </div>
   );
 };
