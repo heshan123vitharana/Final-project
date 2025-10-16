@@ -266,10 +266,10 @@ const logout = async (req, res) => {
 
 // Configure nodemailer transporter
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // You can change this to your preferred email service
+  service: process.env.EMAIL_SERVICE || 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'your-email@gmail.com',
-    pass: process.env.EMAIL_PASS || 'your-app-password'
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
@@ -302,7 +302,7 @@ const forgotPassword = async (req, res) => {
 
     // Email content
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@paddymarketingboard.com',
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@paddymarketingboard.com',
       to: email,
       subject: 'Password Reset Request - Paddy Marketing Board',
       html: `
