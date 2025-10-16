@@ -1,8 +1,48 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { MapPin, Phone, Mail, Link2, Building, ChevronRight, Newspaper, Facebook, Twitter, Linkedin, Youtube } from 'lucide-react';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 const Footer = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
+
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setSubscribing(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('🎉 ' + data.message);
+        setEmail(''); // Clear input
+      } else {
+        toast.error(data.message || 'Subscription failed');
+      }
+    } catch (error) {
+      console.error('Newsletter subscription error:', error);
+      toast.error('Failed to subscribe. Please try again later.');
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
   const quickLinks = [
     { name: 'Paddy Procurement', href: '/services/procurement' },
     { name: 'Storage Services', href: '/services/storage' },
@@ -174,15 +214,22 @@ const Footer = () => {
               </h4>
               <p className="text-gray-300 leading-relaxed">Subscribe to our newsletter for the latest updates on rice varieties, agricultural news, and government policies affecting farmers.</p>
             </div>
-            <form onSubmit={(e) => e.preventDefault()} className="flex flex-col sm:flex-row gap-4">
+            <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-4">
               <input 
                 type="email" 
                 placeholder="Enter your email address" 
                 required
-                className="flex-1 px-4 py-3 bg-gray-800/50 text-white rounded-xl border border-gray-600/50 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none transition-all duration-300 backdrop-blur-sm"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={subscribing}
+                className="flex-1 px-4 py-3 bg-gray-800/50 text-white rounded-xl border border-gray-600/50 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 outline-none transition-all duration-300 backdrop-blur-sm disabled:opacity-50"
               />
-              <button type="submit" className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-emerald-500/25 transform hover:scale-[1.02]">
-                Subscribe
+              <button 
+                type="submit" 
+                disabled={subscribing}
+                className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-emerald-500/25 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {subscribing ? 'Subscribing...' : 'Subscribe'}
               </button>
             </form>
           </div>

@@ -489,6 +489,20 @@ const initializeTables = async () => {
     `);
     console.log('✅ Notifications table ready');
 
+    // Newsletter subscribers table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(191) NOT NULL UNIQUE,
+        name VARCHAR(255) DEFAULT 'Subscriber',
+        is_active BOOLEAN DEFAULT TRUE,
+        subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        unsubscribed_at TIMESTAMP NULL,
+        INDEX idx_active (is_active)
+      )
+    `);
+    console.log('✅ Newsletter subscribers table ready');
+
     // Initialize stock tables
     const StockModel = require('../models/stockModel');
     await StockModel.initializeStockTables();

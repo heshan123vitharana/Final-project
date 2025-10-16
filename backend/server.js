@@ -14,6 +14,7 @@ const servicesExcellenceRoutes = require('./routes/servicesExcellenceRoutes');
 const leadershipRoutes = require('./routes/leadershipRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const newsletterRoutes = require('./routes/newsletterRoutes');
 const path = require('path');
 
 const app = express();
@@ -126,6 +127,8 @@ app.use('/api/notifications', notificationRoutes);
 console.log('✅ Notification routes registered');
 app.use('/api/contact', contactRoutes);
 console.log('✅ Contact routes registered');
+app.use('/api/newsletter', newsletterRoutes);
+console.log('✅ Newsletter routes registered');
 
 // 404 handler for undefined routes (must be after all other routes)
 app.use((req, res, _next) => {
