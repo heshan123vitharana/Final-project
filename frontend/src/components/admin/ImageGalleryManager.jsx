@@ -267,19 +267,20 @@ const ImageGalleryManager = () => {
             body: formData
           });
 
-          if (response.ok) {
+          const responseData = await response.json();
+
+          if (response.ok && responseData.success) {
             setUploadingFiles(prev => prev.map(f =>
               f.id === fileId ? { ...f, progress: 100 } : f
             ));
-            toast.success(`${file.name} uploaded successfully`);
+            toast.success(`✅ ${file.name} uploaded successfully`);
             return { success: true };
           } else {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Upload failed');
+            throw new Error(responseData.message || 'Upload failed');
           }
         } catch (error) {
           console.error('Upload error:', error);
-          toast.error(`Failed to upload ${file.name}: ${error.message}`);
+          toast.error(`❌ Failed to upload ${file.name}: ${error.message}`);
           setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
           return { success: false };
         }

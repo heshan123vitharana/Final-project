@@ -104,9 +104,11 @@ const getImageById = async (req, res) => {
 // Add new image
 const addImage = async (req, res) => {
   try {
+    console.log('📸 Adding new image to gallery...');
     const { title, description, category_id, is_active, status } = req.body;
 
     if (!req.file) {
+      console.log('❌ No file provided');
       return res.status(400).json({
         success: false,
         message: 'Image file is required'
@@ -114,11 +116,20 @@ const addImage = async (req, res) => {
     }
 
     if (!title) {
+      console.log('❌ No title provided');
       return res.status(400).json({
         success: false,
         message: 'Title is required'
       });
     }
+
+    console.log('📝 Image details:', {
+      title,
+      fileName: req.file.originalname,
+      size: req.file.size,
+      mimeType: req.file.mimetype,
+      categoryId: category_id
+    });
 
     // Convert image to base64 for storage
     const imageData = req.file.buffer.toString('base64');
@@ -156,6 +167,8 @@ const addImage = async (req, res) => {
       status || 'active'
     ]);
 
+    console.log('✅ Image inserted successfully, ID:', result.insertId);
+
     res.status(201).json({
       success: true,
       message: 'Image added successfully',
@@ -163,7 +176,7 @@ const addImage = async (req, res) => {
         id: result.insertId,
         title,
         description,
-        category: category || 'General',
+        category_id: finalCategoryId,
         file_name: fileName,
         file_path: filePath,
         image_url: imageUrl,
@@ -172,7 +185,11 @@ const addImage = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error adding image:', error);
+    console.error('❌ Error adding image:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack
+    });
     res.status(500).json({
       success: false,
       message: 'Failed to add image',
