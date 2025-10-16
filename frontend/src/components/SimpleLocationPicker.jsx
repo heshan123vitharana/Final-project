@@ -59,12 +59,18 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
       location.lat = latNum;
       location.lng = lngNum;
     } else {
+      // Try to geocode the address automatically
       try {
         setIsResolving(true);
+        
+        // Try OpenStreetMap Nominatim first
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&countrycodes=lk&q=${encodeURIComponent(address.trim())}`,
+          `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&countrycodes=lk&q=${encodeURIComponent(address.trim() + ', Sri Lanka')}`,
           {
-            headers: { 'Accept-Language': 'en' }
+            headers: { 
+              'Accept-Language': 'en',
+              'User-Agent': 'PaddyMarketingBoard/1.0'
+            }
           }
         );
 
@@ -75,8 +81,7 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
         const results = await response.json();
 
         if (!Array.isArray(results) || results.length === 0) {
-          alert('We could not locate that address automatically. Please add latitude and longitude manually.');
-          return;
+          throw new Error('No results found');
         }
 
         const bestMatch = results[0];
@@ -84,8 +89,7 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
         const lngNum = Number.parseFloat(bestMatch.lon);
 
         if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
-          alert('The location lookup returned invalid coordinates. Please enter them manually.');
-          return;
+          throw new Error('Invalid coordinates returned');
         }
 
         location = {
@@ -95,7 +99,7 @@ const SimpleLocationPicker = ({ isOpen, onClose, onLocationSelect, initialLocati
         };
       } catch (error) {
         console.error('Address geocoding failed:', error);
-        alert('Unable to automatically locate that address. Please provide latitude and longitude manually.');
+        alert('We could not locate that address automatically. Please add latitude and longitude manually.\n\nTip: Try entering a more complete address like "Walsmulla, Matara, Sri Lanka"');
         return;
       } finally {
         setIsResolving(false);
