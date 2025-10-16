@@ -74,35 +74,44 @@ const validateEmail = (value) => {
 // Subscribe to newsletter
 const subscribeNewsletter = async (req, res) => {
     try {
+        console.log('📧 Newsletter subscription request:', { body: req.body });
+        
         const db = req.db;
         const { email, name } = req.body || {};
 
         const cleanedEmail = sanitize(email).toLowerCase();
         const cleanedName = sanitize(name, 'Subscriber');
 
+        console.log('📧 Cleaned data:', { email: cleanedEmail, name: cleanedName });
+
         if (!cleanedEmail || !validateEmail(cleanedEmail)) {
+            console.log('❌ Invalid email:', cleanedEmail);
             return res.status(400).json({
                 message: 'Please provide a valid email address.',
             });
         }
 
         // Check if email already exists
+        console.log('🔍 Checking if email already exists...');
         const [existing] = await db.execute(
             'SELECT * FROM newsletter_subscribers WHERE email = ?',
             [cleanedEmail]
         );
 
         if (existing.length > 0) {
+            console.log('⚠️ Email already subscribed:', cleanedEmail);
             return res.status(400).json({
                 message: 'This email is already subscribed to our newsletter.',
             });
         }
 
         // Insert new subscriber
+        console.log('➕ Inserting new subscriber...');
         await db.execute(
             'INSERT INTO newsletter_subscribers (email, name, subscribed_at) VALUES (?, ?, NOW())',
             [cleanedEmail, cleanedName]
         );
+        console.log('✅ Subscriber added successfully');
 
         // Read logo file as base64
         const logoPath = path.join(__dirname, '..', 'assets', 'pmb-logo.png');
@@ -314,9 +323,17 @@ const subscribeNewsletter = async (req, res) => {
             email: cleanedEmail,
         });
     } catch (error) {
-        console.error('Newsletter subscription failed:', error);
+        console.error('❌ Newsletter subscription failed:', error);
+        console.error('Error stack:', error.stack);
+        console.error('Error details:', {
+            message: error.message,
+            code: error.code,
+            errno: error.errno,
+            sql: error.sql
+        });
         return res.status(500).json({
             message: 'Failed to process subscription. Please try again later.',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
