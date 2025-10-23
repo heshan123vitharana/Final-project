@@ -34,3 +34,36 @@ nul
 backend/nul
 # Ignore all markdown files
 *.md
+# Specific documentation files
+CERTIFICATE_IMPLEMENTATION_SUMMARY.md
+CORS_FIX_SUMMARY.md
+FORGOT_PASSWORD_FEATURE.md
+FORGOT_PASSWORD_TEST_GUIDE.md
+GALLERY_UPLOAD_FIX.md
+NEWSLETTER_SETUP.md
+NOTIFICATION_SYSTEM_SUMMARY.md
+# Additional documentation files
+PASSWORD_VALIDATION_GUIDE.md
+QR_SCANNER_IMPLEMENTATION.md
+QUICK_FIX_GUIDE.md
+README.md
+STOCK_REPORT_FEATURES.md
+# Backup and temp files
+*.bak
+*.tmp
+
+# Database dumps
+*.sql
+
+# Test output
+test-output/
+
+# Uploads
+uploads/
+
+# Build output
+frontend/dist/
+backend/dist/
+
+# Windows system files
+Thumbs.db
