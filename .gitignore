@@ -32,3 +32,5 @@ dist-ssr
 # Windows accidental device file names
 nul
 backend/nul
+# Ignore all markdown files
+*.md
