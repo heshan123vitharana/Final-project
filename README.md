@@ -146,3 +146,30 @@ Make sure you have the following software installed:
 * **Register/Login:** Create a new account or log in as an existing user (e.g., admin, mill owner).
 * **Admin Dashboard:** If you log in as an admin, you will see the dashboard where you can manage license requests and other system settings.
 * **Apply for a License:** If you log in as a mill owner, you can fill out and submit a license application form.
+
+# Final Project
+
+This repository contains a full-stack application for Paddy Marketing Board management, including user authentication, password reset, stock reporting, notifications, gallery uploads, and more.
+
+## Project Structure
+
+- `backend/` - Node.js Express API, database scripts, controllers, models, routes, and utility scripts.
+- `frontend/` - Vite + React app, Tailwind CSS, forms, and UI components.
+- Various markdown guides for features, fixes, and implementation notes.
+
+## Key Features
+
+- **Authentication**: Secure login, password reset, and admin management.
+- **Stock Reporting**: Real-time stock updates and reporting for mill owners.
+- **Notifications**: System for sending and managing notifications.
+- **Gallery Uploads**: Upload and manage images for the gallery.
+- **Newsletter**: Setup and manage newsletters for users.
+- **QR Scanner**: Integrated QR code scanning for quick access.
+- **Certificate Management**: Issue and manage certificates for users.
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v16+ recommended)
+- npm
+
