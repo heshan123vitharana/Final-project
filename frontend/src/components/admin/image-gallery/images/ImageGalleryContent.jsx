@@ -8,7 +8,7 @@ import {
   uploadImage,
   updateImage as apiUpdateImage,
   deleteImage as apiDeleteImage,
-} from '../../../services/api';
+} from '../../../../services/api';
 
 const initialFormData = {
   title: '',

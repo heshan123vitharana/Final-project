@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { ImageIcon, Folder, Award, Users } from 'lucide-react';
 
 // Import the new content components
-import ImageGalleryContent from './image-gallery/ImageGalleryContent';
-import CategoryManagementContent from './image-gallery/CategoryManagementContent';
-import ServicesExcellenceContent from './image-gallery/ServicesExcellenceContent';
-import LeadershipManagementContent from './image-gallery/LeadershipManagementContent';
+import ImageGalleryContent from './image-gallery/images/ImageGalleryContent';
+import CategoryManagementContent from './image-gallery/category/CategoryManagementContent';
+import ServicesExcellenceContent from './image-gallery/services/ServicesExcellenceContent';
+import LeadershipManagementContent from './image-gallery/leadership/LeadershipManagementContent';
 
 /**
  * The main container for the gallery and content management sections.

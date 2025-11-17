@@ -6,8 +6,8 @@ import {
   fetchServices as apiFetchServices,
   submitService,
   deleteService as apiDeleteService,
-} from '../../../services/api';
-import { SERVICE_TYPES, ICON_OPTIONS } from '../../../utils/constants';
+} from '../../../../services/api';
+import { SERVICE_TYPES, ICON_OPTIONS } from '../../../../utils/constants';
 
 const initialFormData = {
   title: '',

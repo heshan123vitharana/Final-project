@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 import LeadershipGrid from './LeadershipGrid';
 import LeadershipModal from './LeadershipModal';
-import { fetchLeadership as apiFetchLeadership, reorderLeadership, deleteLeadership, submitLeadership } from '../../../services/api';
+import { fetchLeadership as apiFetchLeadership, reorderLeadership, deleteLeadership, submitLeadership } from '../../../../services/api';
 
 /**
  * Manages the Leadership Team section in the admin panel.

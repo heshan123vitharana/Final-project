@@ -6,7 +6,7 @@ import {
   fetchCategoriesWithCounts as apiFetchCategories,
   submitCategory,
   deleteCategory as apiDeleteCategory,
-} from '../../../services/api';
+} from '../../../../services/api';
 
 const initialFormData = {
   name: '',
