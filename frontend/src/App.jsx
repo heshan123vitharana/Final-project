@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Header from './components/Header';
-import HeroSection from './components/HeroSection';
-import About from './components/About-New';
-import Features from './components/Features';
-import CollectionCenters from './components/CollectionCenters';
-import LivePaddyPrices from './components/LivePaddyPrices';
-import Contact from './components/Contact';
-import Footer from './components/Footer';
-import AdminLogin from './components/AdminLogin';
-import AuthPage from './components/AuthPage';
-import AdminDashboard from './components/admin/AdminDashboard';
-import ResetPassword from './components/ResetPassword';
-import MillLayout from './MillComponents/MillLayout';
-import ToastProvider from './components/ToastProvider';
-import ScrollToTopButton from './components/ScrollToTopButton';
+import Header from './features/public/components/Header';
+import HeroSection from './features/public/components/HeroSection';
+import About from './features/public/pages/About';
+import Features from './features/public/pages/Features';
+import CollectionCenters from './features/public/pages/CollectionCenters';
+import LivePaddyPrices from './features/public/pages/LivePaddyPrices';
+import Contact from './features/public/pages/Contact';
+import Footer from './features/public/components/Footer';
+import AdminLogin from './features/auth/pages/AdminLogin';
+import AuthPage from './features/auth/pages/AuthPage';
+import AdminDashboard from './features/admin/pages/AdminDashboard';
+import ResetPassword from './features/auth/pages/ResetPassword';
+import MillLayout from './features/mill/components/MillLayout';
+import ToastProvider from './features/ui/components/ToastProvider';
+import ScrollToTopButton from './features/public/components/ScrollToTopButton';
 
 function App() {
   return (
