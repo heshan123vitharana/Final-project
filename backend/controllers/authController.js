@@ -182,6 +182,8 @@ const login = async (req, res) => {
       {
         sub: user.id,
         email: user.email,
+        username: user.username,
+        Nic: user.Nic,
         business_type: user.business_type,
         role: 'mill',
       },

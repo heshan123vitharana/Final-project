@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 
 const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword }) => {
   const [formData, setFormData] = useState({
+    username: '',
+    Nic: '',
     email: '',
     password: ''
   });
@@ -30,7 +32,11 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
 
   const validateForm = () => {
     const newErrors = {};
-    
+    // username validation
+    if (!formData.username) {
+      newErrors.username = 'Username is required';
+    }
+
     // Email validation
     if (!formData.email) {
       newErrors.email = 'Email is required';
@@ -67,6 +73,8 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
       const payload = {
         email: formData.email,
         password: formData.password,
+        username: formData.username,
+        Nic: formData.Nic
       };
 
       const response = await fetch(url, {
@@ -122,8 +130,10 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
           });
         }
       }
-    } catch (_error) {
-      toast.error('🔌 Unable to connect to server. Please try again.', {
+
+    } catch (error) {
+      console.error('Login Error:', error);
+      toast.error('❌ An unexpected error occurred. Please try again later.', {
         duration: 4000,
         style: {
           background: '#ef4444',
@@ -180,6 +190,61 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
 
             {/* Login Form */}
             <form className="space-y-2" onSubmit={handleSubmit}>
+              {/* Username */}
+              <div className="space-y-1">
+                <label htmlFor="username" className="block text-xs font-semibold text-gray-700 tracking-wide">
+                  Username *
+                </label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-1.5 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 font-medium tracking-wide text-sm ${
+                    errors.username
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-200 focus:ring-green-500 focus:border-transparent'
+                  }`}
+                  placeholder="Enter your username"
+                />
+                {errors.username && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {errors.username}
+                  </p>
+                )}
+              </div> 
+              {/* Nic */}
+              <div className="space-y-1">
+                <label htmlFor="Nic" className="block text-xs font-semibold text-gray-700 tracking-wide">
+                  NIC *
+                </label>
+                <input
+                  id="Nic"
+                  name="Nic"
+                  type="text"
+                  value={formData.Nic}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-1.5 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 font-medium tracking-wide text-sm ${
+                    errors.Nic
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-200 focus:ring-green-500 focus:border-transparent'
+                  }`}
+                  placeholder="Enter your NIC"
+                />
+                {errors.Nic && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {errors.Nic}
+                  </p>
+                )}
+              </div>
+              
               {/* Email */}
               <div className="space-y-1">
                 <label htmlFor="email" className="block text-xs font-semibold text-gray-700 tracking-wide">
