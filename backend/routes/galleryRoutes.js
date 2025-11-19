@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+
+const db = require('../config/database');
 const {
   upload,
   getAllImages,
@@ -8,6 +10,12 @@ const {
   updateImage,
   deleteImage
 } = require('../controllers/galleryController');
+
+// Middleware to inject db connection as req.db
+router.use((req, res, next) => {
+  req.db = db;
+  next();
+});
 
 // Test route
 router.get('/test', (req, res) => {

@@ -4,7 +4,7 @@ const db = require('./database'); // Assuming your database connection is export
 
 const saltRounds = 10;
 const adminEmail = 'admin@paddy.lk';
-const newPassword = 'admin123';
+const newPassword = 'Admin@2025';
 
 async function updateAdminPassword() {
   try {
