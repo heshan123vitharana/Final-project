@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 
 const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword }) => {
   const [formData, setFormData] = useState({
+    username: '',
+    nic: '',
     email: '',
     password: ''
   });
@@ -30,6 +32,20 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
 
   const validateForm = () => {
     const newErrors = {};
+
+    // Username validation
+    if (!formData.username) {
+      newErrors.username = 'Username is required';
+    } else if (formData.username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
+    }
+    // NIC validation
+    if (!formData.nic) {
+      newErrors.nic = 'NIC is required';
+    } else if (!/^[0-9]{9}[vVxX]$|^[0-9]{12}$/.test(formData.nic)) {
+      newErrors.nic = 'Please enter a valid NIC number';
+    }
+  
     
     // Email validation
     if (!formData.email) {
@@ -180,6 +196,66 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
 
             {/* Login Form */}
             <form className="space-y-2" onSubmit={handleSubmit}>
+              {/* Username */}
+              <div className="space-y-1">
+                <label htmlFor="username" className="block text-xs font-semibold text-gray-700 tracking-wide">
+                  Username *
+                </label>
+                <input
+
+                  id="username"
+                  name="username"
+                  type="text"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-1.5 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 font-medium tracking-wide text-sm ${
+                    errors.username
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-200 focus:ring-green-500 focus:border-transparent'
+                  }`}
+                  placeholder="Enter your username"
+                />
+                {errors.username && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {errors.username}
+                  </p>
+                )}
+              </div>
+                
+              {/* NIC */}
+              <div className="space-y-1">
+
+                <label htmlFor="nic" className="block text-xs font-semibold text-gray-700 tracking-wide">
+                  NIC Number *
+                </label>
+                <input
+
+                  id="nic"
+                  name="nic"
+                  type="text"
+                  value={formData.nic}
+                  onChange={handleInputChange}
+
+                  className={`w-full px-3 py-1.5 bg-gray-50 border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-200 font-medium tracking-wide text-sm ${
+                    errors.nic
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-200 focus:ring-green-500 focus:border-transparent'
+                  }`}
+                  placeholder="Enter your NIC number"
+                />
+                {errors.nic && (
+                  <p className="text-xs text-red-600 mt-1 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {errors.nic}
+                  </p>
+                )}
+              </div>
               {/* Email */}
               <div className="space-y-1">
                 <label htmlFor="email" className="block text-xs font-semibold text-gray-700 tracking-wide">
