@@ -17,14 +17,14 @@ export const validatePassword = (password) => {
     number: /[0-9]/.test(password),
     special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
   };
-  
+
   const errors = [];
   if (!validations.length) errors.push('at least 8 characters');
   if (!validations.uppercase) errors.push('one uppercase letter (A-Z)');
   if (!validations.lowercase) errors.push('one lowercase letter (a-z)');
   if (!validations.number) errors.push('one number (0-9)');
   if (!validations.special) errors.push('one special character (!@#$%^&*)');
-  
+
   return {
     isValid: errors.length === 0,
     message: errors.length > 0 ? `Password must contain ${errors.join(', ')}` : '',
@@ -52,14 +52,14 @@ export const validationRules = {
         number: /[0-9]/.test(value),
         special: /[!@#$%^&*(),.?":{}|<>]/.test(value)
       };
-      
+
       const errors = [];
       if (!validations.length) errors.push('at least 8 characters');
       if (!validations.uppercase) errors.push('one uppercase letter');
       if (!validations.lowercase) errors.push('one lowercase letter');
       if (!validations.number) errors.push('one number');
       if (!validations.special) errors.push('one special character');
-      
+
       return {
         isValid: errors.length === 0,
         message: errors.length > 0 ? `Password must contain ${errors.join(', ')}` : '',
@@ -94,6 +94,11 @@ export const validationRules = {
   confirmPassword: {
     required: true,
     message: 'Please confirm your password'
+  },
+  nic: {
+    required: true,
+    pattern: /^([0-9]{9}[vVxX]|[0-9]{12})$/,
+    message: 'Please enter a valid Sri Lankan NIC (e.g., 123456789V or 199012345678)'
   }
 };
 
@@ -187,13 +192,13 @@ export const showWarningToast = (message) => {
 // Form validation with toast notifications
 export const validateFormWithToast = (formData, requiredFields) => {
   const { isValid, errors } = validateForm(formData, requiredFields);
-  
+
   if (!isValid) {
     // Show the first error in a toast
     const firstError = Object.values(errors)[0];
     showErrorToast(firstError);
   }
-  
+
   return { isValid, errors };
 };
 

@@ -24,6 +24,7 @@ const validateRegistration = (body) => {
     'business_name',
     'business_type',
     'phone',
+    'nic',
     'email',
     'password',
     'confirm_password',
@@ -42,6 +43,11 @@ const validateRegistration = (body) => {
   // simple email check
   if (body.email && !/^\S+@\S+\.\S+$/.test(body.email)) {
     errors.push('email is invalid');
+  }
+
+  // NIC validation
+  if (body.nic && !/^([0-9]{9}[x|X|v|V]|[0-9]{12})$/.test(body.nic)) {
+    errors.push('nic is invalid (must be 9 digits+V/X or 12 digits)');
   }
 
   // Enhanced password rules
@@ -82,6 +88,7 @@ const register = async (req, res) => {
       last_name,
       business_name,
       phone,
+      nic,
       email,
       password,
     } = req.body;
@@ -100,6 +107,7 @@ const register = async (req, res) => {
       business_name: String(business_name).trim(),
       business_type: normalizedBusinessType,
       phone: String(phone).trim(),
+      nic: String(nic).trim(),
       email: String(email).toLowerCase().trim(),
       passwordHash,
     });
@@ -126,57 +134,81 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, nic, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: 'email and password are required' });
+    if ((!email && !nic) || !password) {
+      return res.status(400).json({ message: 'Email/NIC and password are required' });
     }
 
-    // 1. Check for Admin user first
-    console.log(`[AUTH] Attempting login for: ${email}`);
-    const admin = await adminModel.findActiveByEmail(String(email).toLowerCase().trim());
-    if (admin) {
-      console.log('[AUTH] Admin user found. Comparing password...');
-      const ok = await bcrypt.compare(password, admin.password);
-      if (ok) {
-        console.log('[AUTH] Admin password correct. Generating token.');
-        const token = jwt.sign(
-          {
-            sub: admin.id,
-            email: admin.email,
+    // 1. Check for Admin user first (only if email is provided)
+    if (email) {
+      console.log(`[AUTH] Attempting login for: ${email}`);
+      const admin = await adminModel.findActiveByEmail(String(email).toLowerCase().trim());
+      if (admin) {
+        console.log('[AUTH] Admin user found. Comparing password...');
+        const ok = await bcrypt.compare(password, admin.password);
+        if (ok) {
+          console.log('[AUTH] Admin password correct. Generating token.');
+          const token = jwt.sign(
+            {
+              sub: admin.id,
+              email: admin.email,
+              role: 'admin',
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+          );
+          return res.json({
+            message: 'Admin login successful',
+            token,
             role: 'admin',
-          },
-          process.env.JWT_SECRET,
-          { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
-        );
-        return res.json({
-          message: 'Admin login successful',
-          token,
-          role: 'admin',
-          user: {
-            id: admin.id,
-            username: admin.username,
-            email: admin.email,
-          },
-        });
+            user: {
+              id: admin.id,
+              username: admin.username,
+              email: admin.email,
+            },
+          });
+        }
+        // If admin is found but password is wrong, fail immediately.
+        console.log('[AUTH] Admin password incorrect.');
+        return res.status(401).json({ message: 'Invalid credentials' });
+      } else {
+        console.log('[AUTH] No active admin user found. Proceeding to check for mill user.');
       }
-      // If admin is found but password is wrong, fail immediately.
-      console.log('[AUTH] Admin password incorrect.');
-      return res.status(401).json({ message: 'Invalid credentials' });
-    } else {
-      console.log('[AUTH] No active admin user found. Proceeding to check for mill user.');
     }
 
     // 2. If not an admin, check for a Mill user
-    const user = await userModel.findByEmail(String(email).toLowerCase().trim());
+    let user;
+    if (email) {
+      user = await userModel.findByEmail(String(email).toLowerCase().trim());
+    }
+    if (!user && nic) {
+      user = await userModel.findByNic(String(nic).trim());
+    }
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Check for lockout
+    if (user.lockout_until && new Date(user.lockout_until) > new Date()) {
+      const remainingTime = Math.ceil((new Date(user.lockout_until) - new Date()) / 1000 / 60);
+      return res.status(429).json({ message: `Account locked. Try again in ${remainingTime} minutes.` });
+    }
+
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) {
+      await userModel.incrementFailedLogin(user.id);
+      // Check if this failed attempt triggered a lockout (attempts >= 3)
+      // Note: user.failed_login_attempts is the value BEFORE increment
+      if ((user.failed_login_attempts || 0) + 1 >= 3) {
+        await userModel.lockUser(user.id);
+        return res.status(429).json({ message: 'Account locked due to too many failed attempts. Try again in 3 minutes.' });
+      }
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    // Reset failed attempts on successful login
+    await userModel.resetFailedLogin(user.id);
 
     const token = jwt.sign(
       {
@@ -196,10 +228,10 @@ const login = async (req, res) => {
     const fullUser = await getUserWithProfilePhoto(user.id);
 
     // Check if this is a first-time login (missing profile fields)
-  const isFirstLogin = !fullUser.address || !fullUser.city || !fullUser.district ||
-            !fullUser.mill_capacity || !fullUser.mill_location ||
-            fullUser.mill_latitude === null || fullUser.mill_latitude === undefined ||
-            fullUser.mill_longitude === null || fullUser.mill_longitude === undefined;
+    const isFirstLogin = !fullUser.address || !fullUser.city || !fullUser.district ||
+      !fullUser.mill_capacity || !fullUser.mill_location ||
+      fullUser.mill_latitude === null || fullUser.mill_latitude === undefined ||
+      fullUser.mill_longitude === null || fullUser.mill_longitude === undefined;
 
     return res.json({
       message: 'Login successful',
@@ -220,8 +252,8 @@ const login = async (req, res) => {
         postal_code: fullUser.postal_code,
         mill_capacity: fullUser.mill_capacity,
         mill_location: fullUser.mill_location,
-  mill_latitude: fullUser.mill_latitude,
-  mill_longitude: fullUser.mill_longitude,
+        mill_latitude: fullUser.mill_latitude,
+        mill_longitude: fullUser.mill_longitude,
         registration_date: fullUser.created_at,
         has_photo: !!fullUser.has_photo,
         profile_photo: fullUser.photo_data ? `data:${fullUser.mime_type || 'image/png'};base64,${fullUser.photo_data}` : null
@@ -237,7 +269,7 @@ const getProfile = async (req, res) => {
   try {
     // const userId = req.user.sub;
     const user = await userModel.findByEmail(req.user.email);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -268,7 +300,7 @@ const logout = async (req, res) => {
     // since JWTs are stateless. The client will remove the token.
     // This endpoint mainly serves to validate the user is authenticated
     // and provide a proper logout response.
-    
+
     res.json({
       message: 'Logout successful'
     });
@@ -433,7 +465,7 @@ const resetPassword = async (req, res) => {
     // Enhanced password validation
     const password = String(newPassword);
     const passwordErrors = [];
-    
+
     if (password.length < 8) {
       passwordErrors.push('at least 8 characters');
     }
@@ -451,8 +483,8 @@ const resetPassword = async (req, res) => {
     }
 
     if (passwordErrors.length > 0) {
-      return res.status(400).json({ 
-        message: `Password must contain ${passwordErrors.join(', ')}` 
+      return res.status(400).json({
+        message: `Password must contain ${passwordErrors.join(', ')}`
       });
     }
 

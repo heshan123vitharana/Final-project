@@ -10,6 +10,7 @@ const createUser = async (user) => {
       business_name,
       business_type,
       phone,
+      nic,
       email,
       passwordHash,
     } = user;
@@ -17,13 +18,14 @@ const createUser = async (user) => {
     console.log('🔄 Creating user:', { email, business_name, business_type });
 
     const [result] = await db.execute(
-      "INSERT INTO users (first_name, last_name, business_name, business_type, phone, email, password) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO users (first_name, last_name, business_name, business_type, phone, nic, email, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       [
         first_name,
         last_name,
         business_name,
         business_type,
         phone,
+        nic,
         email,
         passwordHash,
       ]
@@ -177,12 +179,61 @@ const clearResetToken = async (userId) => {
   }
 };
 
+const findByNic = async (nic) => {
+  try {
+    const [rows] = await db.execute('SELECT * FROM users WHERE nic = ?', [nic]);
+    return rows[0];
+  } catch (error) {
+    console.error('Error finding user by NIC:', error);
+    throw error;
+  }
+};
+
+const incrementFailedLogin = async (userId) => {
+  try {
+    await db.execute(
+      `UPDATE users SET failed_login_attempts = failed_login_attempts + 1 WHERE id = ?`,
+      [userId]
+    );
+  } catch (error) {
+    console.error('❌ Error incrementing failed login:', error.message);
+  }
+};
+
+const resetFailedLogin = async (userId) => {
+  try {
+    await db.execute(
+      `UPDATE users SET failed_login_attempts = 0, lockout_until = NULL WHERE id = ?`,
+      [userId]
+    );
+  } catch (error) {
+    console.error('❌ Error resetting failed login:', error.message);
+  }
+};
+
+const lockUser = async (userId) => {
+  try {
+    // Lock for 3 minutes
+    const lockoutTime = new Date(Date.now() + 3 * 60 * 1000);
+    await db.execute(
+      `UPDATE users SET lockout_until = ? WHERE id = ?`,
+      [lockoutTime, userId]
+    );
+  } catch (error) {
+    console.error('❌ Error locking user:', error.message);
+  }
+};
+
 module.exports = {
   createUser,
   findByEmail,
+  findByNic,
   getUserWithProfilePhoto,
   saveResetToken,
   findByResetToken,
   updatePassword,
   clearResetToken,
+  incrementFailedLogin,
+  resetFailedLogin,
+  lockUser,
 };

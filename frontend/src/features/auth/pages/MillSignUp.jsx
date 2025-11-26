@@ -8,6 +8,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
     firstName: '',
     lastName: '',
     phoneNumber: '+94',
+    nic: '',
     businessName: '',
     businessType: 'private',
     email: '',
@@ -22,7 +23,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
   // Slideshow images
   const slides = [
     "/src/assets/mill-slide-1.png",
-    "/src/assets/mill-slide-2.png", 
+    "/src/assets/mill-slide-2.png",
     "/src/assets/mill-slide-3.png"
   ];
 
@@ -58,19 +59,20 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     // Validate form with toast notifications
     const { isValid } = validateFormWithToast(formData, [
-      'firstName', 
-      'lastName', 
-      'phoneNumber', 
-      'businessName', 
-      'businessType', 
-      'email', 
-      'password', 
+      'firstName',
+      'lastName',
+      'phoneNumber',
+      'nic',
+      'businessName',
+      'businessType',
+      'email',
+      'password',
       'confirmPassword'
     ]);
-    
+
     if (!isValid) {
       return;
     }
@@ -88,13 +90,14 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
           business_name: formData.businessName,
           business_type: formData.businessType,
           phone: formData.phoneNumber,
+          nic: formData.nic,
           email: formData.email,
           password: formData.password,
           confirm_password: formData.confirmPassword,
         }),
       });
       const result = await response.json();
-      
+
       if (response.ok) {
         handleRegistrationSuccess();
         onSignUpSuccess(result.user);
@@ -111,18 +114,18 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
   return (
     <>
       <div className="fixed inset-0 z-40 min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50 flex items-center justify-center p-6 font-inter"
-           style={{
-             backgroundImage: `linear-gradient(to bottom right, rgba(248, 250, 252, 0.4), rgba(255, 255, 255, 0.4), rgba(249, 250, 251, 0.4)), url('/bg-1.jpg')`,
-             backgroundSize: 'cover',
-             backgroundPosition: 'center',
-             backgroundRepeat: 'no-repeat'
-           }}>
-        
-        <div className="relative w-full max-w-5xl mx-auto h-[500px] bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-gray-100/50">
+        style={{
+          backgroundImage: `linear-gradient(to bottom right, rgba(248, 250, 252, 0.4), rgba(255, 255, 255, 0.4), rgba(249, 250, 251, 0.4)), url('/bg-1.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}>
+
+        <div className="relative w-full max-w-5xl mx-auto min-h-[500px] bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-gray-100/50">
           <div className="grid lg:grid-cols-3 h-full">
-            
+
             {/* Left Section - Personal & Business Info */}
-            <div className="flex flex-col justify-center p-6 lg:p-8 bg-white order-2 lg:order-1">
+            <div className="flex flex-col justify-center p-5 lg:p-6 bg-white order-2 lg:order-1">
               {/* Header with Back Button */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
@@ -137,7 +140,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                       <p className="text-xs text-gray-500 font-medium">Registration</p>
                     </div>
                   </div>
-                  
+
                   {/* Back to Home Button */}
                   <button
                     type="button"
@@ -150,7 +153,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                     <span className="font-semibold tracking-wide">Home</span>
                   </button>
                 </div>
-                
+
                 <h2 className="text-xl font-bold text-gray-900 mb-1 tracking-tight">Personal Information</h2>
                 <p className="text-xs text-gray-600 leading-relaxed font-medium">
                   Enter your personal and business details
@@ -158,7 +161,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
               </div>
 
               {/* Personal Info Fields */}
-              <form className="space-y-3" onSubmit={handleSubmit}>
+              <form className="space-y-2" onSubmit={handleSubmit}>
                 {/* Name Fields */}
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
@@ -223,6 +226,22 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                   />
                 </div>
 
+                {/* NIC */}
+                <div className="space-y-1">
+                  <label htmlFor="nic" className="block text-xs font-semibold text-gray-700 tracking-wide">
+                    NIC *
+                  </label>
+                  <input
+                    id="nic"
+                    name="nic"
+                    type="text"
+                    value={formData.nic}
+                    onChange={handleInputChange}
+                    className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 font-medium tracking-wide text-sm"
+                    placeholder="NIC Number"
+                  />
+                </div>
+
                 {/* Business Name */}
                 <div className="space-y-1">
                   <label htmlFor="businessName" className="block text-xs font-semibold text-gray-700 tracking-wide">
@@ -259,7 +278,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
             </div>
 
             {/* Middle Section - Password & Actions */}
-            <div className="flex flex-col justify-center p-6 lg:p-8 bg-gray-50 order-3 lg:order-2">
+            <div className="flex flex-col justify-center p-5 lg:p-6 bg-gray-50 order-3 lg:order-2">
               <div className="mb-4">
                 <h2 className="text-xl font-bold text-gray-900 mb-1 tracking-tight">Security</h2>
                 <p className="text-xs text-gray-600 leading-relaxed font-medium">
@@ -367,7 +386,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                     onClick={onBackToLogin}
                     className="font-semibold text-green-600 hover:text-green-500 transition-colors duration-200 tracking-wide"
                   >
-                    Sign in 
+                    Sign in
                   </button>
                 </p>
               </div>
@@ -376,7 +395,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
             {/* Right Section - Icon Slideshow */}
             <div className="relative bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 order-1 lg:order-3 overflow-hidden flex items-center justify-center">
               <div className="absolute inset-0 bg-gradient-to-br from-green-600/10 via-emerald-500/5 to-green-700/10"></div>
-              
+
               {/* Slideshow Container */}
               <div className="relative h-full flex items-center justify-center">
                 <div className="relative w-full h-full flex items-center justify-center">
@@ -384,8 +403,8 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                   <div className="relative w-full h-full flex items-center justify-center transition-all duration-1000 ease-in-out transform">
                     {/* PNG Image - Small Icon Style */}
                     <div className="transform transition-all duration-1000 hover:scale-105">
-                      <img 
-                        src={slides[currentSlide]} 
+                      <img
+                        src={slides[currentSlide]}
                         alt={`Mill Slide ${currentSlide + 1}`}
                         className="w-60 h-60 object-contain opacity-95"
                       />
@@ -393,7 +412,7 @@ const MillSignUp = ({ onSignUpSuccess, onBackToLogin, onExit }) => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Background Pattern Overlay */}
               <div className="absolute inset-0 opacity-5">
                 <div className="absolute inset-0" style={{
