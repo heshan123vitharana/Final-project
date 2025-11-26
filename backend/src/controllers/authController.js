@@ -190,17 +190,29 @@ const login = async (req, res) => {
     }
 
     // Check for lockout
-    if (user.lockout_until && new Date(user.lockout_until) > new Date()) {
-      const remainingTime = Math.ceil((new Date(user.lockout_until) - new Date()) / 1000 / 60);
-      return res.status(429).json({ message: `Account locked. Try again in ${remainingTime} minutes.` });
+    if (user.lockout_until) {
+      console.log(`[AUTH] Checking lockout for user ${user.email || user.nic}. Lockout until: ${user.lockout_until}`);
+      if (new Date(user.lockout_until) > new Date()) {
+        const remainingTime = Math.ceil((new Date(user.lockout_until) - new Date()) / 1000 / 60);
+        console.log(`[AUTH] User locked out. Remaining time: ${remainingTime}m`);
+        return res.status(429).json({ message: `Account locked. Try again in ${remainingTime} minutes.` });
+      } else {
+        console.log('[AUTH] Lockout expired.');
+      }
     }
 
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) {
+      console.log(`[AUTH] Password incorrect for user ${user.id}. Current failed attempts: ${user.failed_login_attempts}`);
       await userModel.incrementFailedLogin(user.id);
+
       // Check if this failed attempt triggered a lockout (attempts >= 3)
       // Note: user.failed_login_attempts is the value BEFORE increment
-      if ((user.failed_login_attempts || 0) + 1 >= 3) {
+      const currentAttempts = (user.failed_login_attempts || 0) + 1;
+      console.log(`[AUTH] New failed attempts count: ${currentAttempts}`);
+
+      if (currentAttempts >= 3) {
+        console.log(`[AUTH] Locking user ${user.id} due to ${currentAttempts} failed attempts.`);
         await userModel.lockUser(user.id);
         return res.status(429).json({ message: 'Account locked due to too many failed attempts. Try again in 3 minutes.' });
       }
@@ -208,7 +220,10 @@ const login = async (req, res) => {
     }
 
     // Reset failed attempts on successful login
-    await userModel.resetFailedLogin(user.id);
+    if (user.failed_login_attempts > 0 || user.lockout_until) {
+      console.log(`[AUTH] Login successful. Resetting failed attempts for user ${user.id}`);
+      await userModel.resetFailedLogin(user.id);
+    }
 
     const token = jwt.sign(
       {
