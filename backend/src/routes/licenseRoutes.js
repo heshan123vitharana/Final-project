@@ -1,9 +1,10 @@
+
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 
-const CertificateDataGenerator = require('../utils/certificateDataGenerator');
-const UnifiedCertificateGenerator = require('../utils/unifiedCertificateGenerator');
+const CertificateDataGenerator = require('../services/certificateDataGenerator');
+const UnifiedCertificateGenerator = require('../services/unifiedCertificateGenerator');
 
 // Endpoint to update license application status (MySQL version)
 router.put('/applications/:applicationId/status', async (req, res) => {
@@ -79,12 +80,12 @@ router.put('/applications/:applicationId/status', async (req, res) => {
 router.post('/apply', async (req, res) => {
     try {
         console.log('📋 License application request received');
-        const { 
-            userId, 
-            paymentReceipt, 
-            brDocument, 
-            licenseType, 
-            comments 
+        const {
+            userId,
+            paymentReceipt,
+            brDocument,
+            licenseType,
+            comments
         } = req.body;
 
         console.log('Application data:', {
@@ -169,7 +170,7 @@ router.post('/apply', async (req, res) => {
         ];
         const filledPersonalFields = personalFields.filter(field => field && field.toString().trim() !== '').length;
         const personalCompleteness = (filledPersonalFields / personalFields.length) * 50;
-        
+
         // Business Information (50%): business_name, business_type, mill_capacity, mill_location, registration_date
         const businessFields = [
             user.business_name, user.business_type, user.mill_capacity,
@@ -177,13 +178,13 @@ router.post('/apply', async (req, res) => {
         ];
         const filledBusinessFields = businessFields.filter(field => field && field.toString().trim() !== '').length;
         const businessCompleteness = (filledBusinessFields / businessFields.length) * 50;
-        
+
         const completeness = Math.round(personalCompleteness + businessCompleteness);
 
         console.log('Profile completeness:', completeness);
 
         if (completeness < 100) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'Profile must be 100% complete to apply for license',
                 currentCompleteness: completeness,
                 requiresCompletion: true
@@ -198,7 +199,7 @@ router.post('/apply', async (req, res) => {
 
         if (pendingApplications.length > 0) {
             const pendingApplication = pendingApplications[0];
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'You already have a pending license application',
                 existingApplication: pendingApplication,
                 requiresRenewalWait: false
@@ -251,8 +252,8 @@ router.post('/apply', async (req, res) => {
         `, [userId, applicationNumber, licenseType, paymentReceiptData, brDocumentData, comments]);
 
         console.log(`✅ License application submitted for user ${userId}, application: ${applicationNumber}`);
-        
-        res.status(201).json({ 
+
+        res.status(201).json({
             message: 'License application submitted successfully',
             applicationNumber: applicationNumber,
             applicationId: result.insertId,
@@ -261,7 +262,7 @@ router.post('/apply', async (req, res) => {
 
     } catch (error) {
         console.error('Error processing license application:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Failed to process license application',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
         });
@@ -356,7 +357,7 @@ router.get('/applications/:userId', async (req, res) => {
 
     } catch (error) {
         console.error('Error retrieving license applications:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Failed to retrieve license applications',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
         });
@@ -402,7 +403,7 @@ router.get('/profile-check/:userId', async (req, res) => {
             { field: user.district, name: 'District' },
             { field: user.postal_code, name: 'Postal Code' }
         ];
-        
+
         // Business Information Fields (50%)
         const businessFields = [
             { field: user.business_name, name: 'Business Name' },
@@ -412,20 +413,20 @@ router.get('/profile-check/:userId', async (req, res) => {
             { field: user.mill_district, name: 'Mill District' },
             { field: user.registration_date, name: 'Registration Date' }
         ];
-        
+
         // Calculate filled fields for each category
-        const filledPersonalFields = personalFields.filter(item => 
+        const filledPersonalFields = personalFields.filter(item =>
             item.field && item.field.toString().trim() !== ''
         );
-        const filledBusinessFields = businessFields.filter(item => 
+        const filledBusinessFields = businessFields.filter(item =>
             item.field && item.field.toString().trim() !== ''
         );
-        
+
         // Calculate weighted completeness
         const personalCompleteness = (filledPersonalFields.length / personalFields.length) * 50;
         const businessCompleteness = (filledBusinessFields.length / businessFields.length) * 50;
         const completeness = Math.round(personalCompleteness + businessCompleteness);
-        
+
         console.log(`👤 Personal fields: ${filledPersonalFields.length}/${personalFields.length} = ${personalCompleteness}%`);
         console.log(`🏢 Business fields: ${filledBusinessFields.length}/${businessFields.length} = ${businessCompleteness}%`);
         console.log(`📊 Total completeness: ${completeness}%`);
@@ -501,7 +502,7 @@ router.get('/profile-check/:userId', async (req, res) => {
 
     } catch (error) {
         console.error('Error checking profile completeness:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Failed to check profile completeness',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
         });
@@ -760,7 +761,7 @@ router.put('/admin/approve/:applicationId', async (req, res) => {
 
     } catch (error) {
         console.error('Error approving license application:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Failed to approve license application',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
         });
@@ -824,7 +825,7 @@ router.put('/admin/reject/:applicationId', async (req, res) => {
 
     } catch (error) {
         console.error('Error rejecting license application:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Failed to reject license application',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
         });

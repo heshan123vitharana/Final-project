@@ -1,14 +1,14 @@
-
+process.env.SKIP_DB_INIT = 'true';
 const bcrypt = require('bcrypt');
-const db = require('./database'); // Assuming your database connection is exported from 'database.js'
+const db = require('./src/config/database');
 
-const saltRounds = 10;
 const adminEmail = 'admin@paddy.lk';
-const newPassword = 'admin123';
+const newPassword = 'PaddyAdmin@123';
 
 async function updateAdminPassword() {
   try {
     console.log(`Hashing new password for ${adminEmail}...`);
+    const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
     console.log('Password hashed.');
 
@@ -31,6 +31,7 @@ async function updateAdminPassword() {
     if (db.end) {
       db.end();
     }
+    process.exit(0);
   }
 }
 

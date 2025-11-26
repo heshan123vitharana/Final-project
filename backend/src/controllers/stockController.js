@@ -4,9 +4,9 @@ const stockUpdateEmitter = require('../utils/stockUpdateEmitter');
 
 const validateStockData = (data) => {
   const errors = [];
-  
+
   const required = ['farmer_id', 'farmer_name', 'paddy_type', 'paddy_condition', 'quantity', 'entry_date', 'price_per_kg'];
-  
+
   required.forEach(field => {
     // Special handling for numeric fields
     if (field === 'price_per_kg' || field === 'quantity') {
@@ -63,9 +63,9 @@ const addStock = async (req, res) => {
     const errors = validateStockData(stockData);
     console.log('🔍 Validation errors:', errors);
     if (errors.length > 0) {
-      return res.status(400).json({ 
-        message: 'Validation failed', 
-        errors 
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors
       });
     }
 
@@ -95,15 +95,15 @@ const addStock = async (req, res) => {
     // Send notification to admin about new stock entry
     try {
       const { createNotification } = require('./notificationController');
-      const db = require('../database');
-      
+      const db = require('../config/database');
+
       // Get mill info
       const [millRows] = await db.execute('SELECT business_name FROM users WHERE id = ?', [mill_id]);
       const millName = millRows[0]?.business_name || `Mill #${mill_id}`;
-      
+
       // Get all admin users
       const [adminRows] = await db.execute('SELECT id FROM admin WHERE status = "active"');
-      
+
       // Create notification for each admin
       for (const admin of adminRows) {
         await createNotification({
@@ -217,7 +217,7 @@ const deleteStock = async (req, res) => {
     // Get stock entry details before deletion for notification
     let stockDetails = null;
     try {
-      const db = require('../database');
+      const db = require('../config/database');
       const [stockRows] = await db.execute(
         'SELECT paddy_type, paddy_condition, quantity FROM stock_entries WHERE id = ? AND mill_id = ?',
         [id, mill_id]
@@ -252,14 +252,14 @@ const deleteStock = async (req, res) => {
       try {
         const { createNotification } = require('./notificationController');
         const db = require('../database');
-        
+
         // Get mill info
         const [millRows] = await db.execute('SELECT business_name FROM users WHERE id = ?', [mill_id]);
         const millName = millRows[0]?.business_name || `Mill #${mill_id}`;
-        
+
         // Get all admin users
         const [adminRows] = await db.execute('SELECT id FROM admin WHERE status = "active"');
-        
+
         // Create notification for each admin
         for (const admin of adminRows) {
           await createNotification({
@@ -323,20 +323,20 @@ const submitStockReport = async (req, res) => {
 
     const breakdown = Array.isArray(summary)
       ? summary.map((item) => ({
-          paddyType: item.paddy_type,
-          condition: item.paddy_condition,
-          region: item.region,
-          quantity: item.total_quantity ? parseFloat(item.total_quantity) : 0,
-          lastUpdated: item.last_updated
-        }))
+        paddyType: item.paddy_type,
+        condition: item.paddy_condition,
+        region: item.region,
+        quantity: item.total_quantity ? parseFloat(item.total_quantity) : 0,
+        lastUpdated: item.last_updated
+      }))
       : [];
 
     const varietyStats = Array.isArray(stats?.breakdown)
       ? stats.breakdown.map((item) => ({
-          paddyType: item.paddy_type,
-          condition: item.paddy_condition,
-          quantity: item.quantity ? parseFloat(item.quantity) : 0
-        }))
+        paddyType: item.paddy_type,
+        condition: item.paddy_condition,
+        quantity: item.quantity ? parseFloat(item.quantity) : 0
+      }))
       : [];
 
     const summaryPayload = {
@@ -347,12 +347,12 @@ const submitStockReport = async (req, res) => {
       },
       mill: millInfo
         ? {
-            id: millInfo.id,
-            name: millInfo.business_name,
-            businessType: millInfo.business_type,
-            district: millInfo.district,
-            capacity: StockModel.parseCapacity(millInfo.mill_capacity)
-          }
+          id: millInfo.id,
+          name: millInfo.business_name,
+          businessType: millInfo.business_type,
+          district: millInfo.district,
+          capacity: StockModel.parseCapacity(millInfo.mill_capacity)
+        }
         : { id: mill_id },
       totals,
       breakdown,

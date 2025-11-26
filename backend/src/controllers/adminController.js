@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const db = require('../database');
+const db = require('../config/database');
 const StockModel = require('../models/stockModel');
 const stockUpdateEmitter = require('../utils/stockUpdateEmitter');
 
@@ -7,7 +7,7 @@ const adminLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
         console.log('Login attempt for email:', email);
-       
+
         // First, let's test if we can query the table at all
         try {
             const testQuery = 'SELECT COUNT(*) as total FROM admin';
@@ -17,15 +17,15 @@ const adminLogin = async (req, res) => {
             console.log('Count query failed:', testError.message);
             return res.status(500).json({ message: 'Database connection error', error: testError.message });
         }
-       
+
         // Query to get admin by email - ONLY select columns that exist
         const query = 'SELECT id, username, email, password, status FROM admin WHERE email = ? AND status = ?';
         console.log('Executing query:', query);
         console.log('With parameters:', [email, 'active']);
-       
+
         const [rows] = await db.execute(query, [email, 'active']);
         console.log('Query successful, found records:', rows.length);
-       
+
         if (rows.length === 0) {
             console.log('No admin found with email:', email);
             return res.status(401).json({
@@ -33,7 +33,7 @@ const adminLogin = async (req, res) => {
                 error: 'Invalid email or password'
             });
         }
-       
+
         const admin = rows[0];
         console.log('Found admin:', { id: admin.id, username: admin.username, email: admin.email });
 
@@ -45,9 +45,9 @@ const adminLogin = async (req, res) => {
                 error: 'Invalid email or password'
             });
         }
-       
+
         console.log('Login successful for:', admin.email);
-       
+
         // Return success response
         res.status(200).json({
             message: 'Login successful',
@@ -58,7 +58,7 @@ const adminLogin = async (req, res) => {
                 status: admin.status
             }
         });
-       
+
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({
@@ -77,8 +77,8 @@ const getReport = async (req, res) => {
             return res.status(400).json({ message: 'Missing required query parameters: reportType, from, to' });
         }
 
-    let query = '';
-    let params = [];
+        let query = '';
+        let params = [];
 
         switch (reportType) {
             case 'licenses':
@@ -100,7 +100,7 @@ const getReport = async (req, res) => {
                 }
                 query += ' GROUP BY ml.status';
                 break;
-            
+
             case 'stock':
                 query = `
                     SELECT 
@@ -118,7 +118,7 @@ const getReport = async (req, res) => {
                     const districtFilter = region.replace(/ Province$/i, '');
                     params.push(districtFilter);
                 }
-                
+
                 query += ' GROUP BY se.paddy_type';
                 break;
 
@@ -146,7 +146,7 @@ const getReport = async (req, res) => {
             acc[item.category.toLowerCase()] = item.value;
             return acc;
         }, { totalApplications: total });
-        
+
         res.status(200).json({ summary, breakdown });
 
     } catch (error) {
@@ -373,7 +373,7 @@ const generateStockReport = async (req, res) => {
                     JOIN users u ON se.mill_id = u.id
                     WHERE LOWER(u.business_type) IN ('private', 'government')
                 `;
-                
+
                 if (districtFilterValue) {
                     query += ' AND COALESCE(u.mill_district, u.district) = ?';
                     params.push(districtFilterValue);
@@ -392,7 +392,7 @@ const generateStockReport = async (req, res) => {
                     JOIN users u ON se.mill_id = u.id
                     WHERE LOWER(u.business_type) = 'private'
                 `;
-                
+
                 if (districtFilterValue) {
                     query += ' AND COALESCE(u.mill_district, u.district) = ?';
                     params.push(districtFilterValue);
@@ -411,7 +411,7 @@ const generateStockReport = async (req, res) => {
                     JOIN users u ON se.mill_id = u.id
                     WHERE LOWER(u.business_type) = 'government'
                 `;
-                
+
                 if (districtFilterValue) {
                     query += ' AND COALESCE(u.mill_district, u.district) = ?';
                     params.push(districtFilterValue);
@@ -433,12 +433,12 @@ const generateStockReport = async (req, res) => {
                     JOIN users u ON se.mill_id = u.id
                     WHERE LOWER(u.business_type) IN ('private', 'government')
                 `;
-                
+
                 if (districtFilterValue) {
                     query += ' AND COALESCE(u.mill_district, u.district) = ?';
                     params.push(districtFilterValue);
                 }
-                
+
                 query += ' GROUP BY COALESCE(u.mill_district, u.district, \'Unknown\') ORDER BY totalStock DESC';
                 break;
 
@@ -593,7 +593,7 @@ const getApprovedMills = async (req, res) => {
             params.push(String(district).toLowerCase());
         }
 
-    query += ' ORDER BY (ml.approved_date IS NULL), ml.approved_date DESC, u.business_name ASC';
+        query += ' ORDER BY (ml.approved_date IS NULL), ml.approved_date DESC, u.business_name ASC';
 
         const [rows] = await db.execute(query, params);
 

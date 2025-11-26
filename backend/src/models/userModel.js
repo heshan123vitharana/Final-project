@@ -1,5 +1,5 @@
 // models/userModel.js
-const db = require('../database');
+const db = require('../config/database');
 const { getDefaultProfilePhotoBase64 } = require('../utils/defaultProfilePhoto');
 
 const createUser = async (user) => {

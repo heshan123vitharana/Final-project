@@ -1,5 +1,5 @@
 // models/stockModel.js
-const db = require('../database');
+const db = require('../config/database');
 
 class StockModel {
   // Create stock entries table
@@ -277,7 +277,7 @@ class StockModel {
   static async getAggregatedStockOverview() {
     try {
       console.log('📊 Starting aggregated stock overview query...');
-      
+
       const [rows] = await db.execute(`
         SELECT 
           u.id AS mill_id,
@@ -430,7 +430,7 @@ class StockModel {
     try {
       // Ensure limit is always a valid integer for MySQL
       let sanitizedLimit = 10; // default
-      
+
       if (limit !== undefined && limit !== null) {
         const parsed = parseInt(limit, 10);
         if (!isNaN(parsed) && parsed > 0) {

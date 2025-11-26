@@ -1,11 +1,11 @@
-const db = require('../database');
+const db = require('../config/database');
 
 // Get all paddy prices with filtering
 const getAllPrices = async (req, res) => {
   try {
     console.log('📡 PriceController: getAllPrices called');
     console.log('📄 Query params:', req.query);
-    
+
     const {
       district,
       province,
@@ -38,7 +38,7 @@ const getAllPrices = async (req, res) => {
       FROM paddy_prices 
       WHERE status = ?
     `;
-    
+
     const params = [status];
 
     // Add filters
@@ -46,7 +46,7 @@ const getAllPrices = async (req, res) => {
       query += ' AND district = ?';
       params.push(district);
     }
-    
+
     if (province && province !== 'All Provinces') {
       query += ' AND province = ?';
       params.push(province);
@@ -65,12 +65,12 @@ const getAllPrices = async (req, res) => {
     // Add sorting
     const validSortFields = ['district', 'variety', 'price_per_kg', 'updated_at'];
     const validSortOrders = ['ASC', 'DESC'];
-    
+
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'updated_at';
     const order = validSortOrders.includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
-    
+
     query += ` ORDER BY ${sortField} ${order}`;
-    
+
     // Add limit (use string interpolation instead of parameter binding for LIMIT)
     if (limit && !isNaN(limit) && parseInt(limit) > 0) {
       query += ` LIMIT ${parseInt(limit)}`;
@@ -104,7 +104,7 @@ const getAllPrices = async (req, res) => {
     }));
 
     console.log('✅ PriceController: Returning', transformedData.length, 'records');
-    
+
     res.json({
       success: true,
       data: transformedData,
@@ -125,7 +125,7 @@ const getAllPrices = async (req, res) => {
 const getPriceById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const query = `
       SELECT 
         id,
@@ -147,7 +147,7 @@ const getPriceById = async (req, res) => {
       FROM paddy_prices 
       WHERE id = ?
     `;
-    
+
     const [rows] = await db.execute(query, [id]);
 
     if (rows.length === 0) {
@@ -180,7 +180,7 @@ const getPriceById = async (req, res) => {
       qualityGrade: row.pricePerKg >= 260 ? 'Premium' : row.pricePerKg >= 240 ? 'Grade A+' : 'Grade A',
       collectionCenter: `${row.district} Center`
     };
-    
+
     res.json({
       success: true,
       data: transformedData
@@ -249,7 +249,7 @@ const addPrice = async (req, res) => {
     ];
 
     const [result] = await db.execute(query, params);
-    
+
     res.status(201).json({
       success: true,
       message: 'Price added successfully',
@@ -303,16 +303,16 @@ const updatePrice = async (req, res) => {
     `;
 
     const [result] = await db.execute(updateQuery, [newPrice, currentPrice, priceChange, trend, id]);
-    
+
     // Create notifications for all mills about price update
     console.log('🔔 Starting notification creation process...');
     try {
       const { createNotificationForAllMills } = require('./notificationController');
       console.log('✅ Notification controller loaded');
-      
+
       const trendEmoji = trend === 'up' ? '📈' : trend === 'down' ? '📉' : '➡️';
       const priceChangeText = priceChange > 0 ? `+${priceChange.toFixed(2)}` : priceChange.toFixed(2);
-      
+
       const notificationData = {
         title: `${trendEmoji} Paddy Price Updated`,
         message: `${variety} (${type}) price in ${district} updated from LKR ${currentPrice.toFixed(2)} to LKR ${newPrice.toFixed(2)} (${priceChangeText} LKR/kg)`,
@@ -321,7 +321,7 @@ const updatePrice = async (req, res) => {
         related_type: 'paddy_price'
       };
       console.log('📧 Notification data prepared:', JSON.stringify(notificationData, null, 2));
-      
+
       await createNotificationForAllMills(notificationData);
       console.log(`✅ Notifications sent to all mills about price update`);
     } catch (notifError) {
@@ -330,7 +330,7 @@ const updatePrice = async (req, res) => {
       console.error('Error stack:', notifError.stack);
       // Don't fail the price update if notifications fail
     }
-    
+
     res.json({
       success: true,
       message: 'Price updated successfully',
@@ -361,7 +361,7 @@ const deletePrice = async (req, res) => {
         message: 'Price not found'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Price deleted successfully'
