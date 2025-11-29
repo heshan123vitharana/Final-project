@@ -1,30 +1,37 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { 
-  FileText, 
-  BarChart3, 
-  Map, 
-  FileBarChart, 
-  DollarSign, 
-  Menu, 
+import {
+  FileText,
+  BarChart3,
+  Map,
+  FileBarChart,
+  DollarSign,
+  Menu,
   X,
   LogOut,
-  Image as GalleryIcon 
+  Image as GalleryIcon,
+  Users
 } from 'lucide-react';
 import LicenseRequestManagement from '../components/LicenseRequestManagement'
+import RegionalOfficerManagement from '../components/RegionalOfficerManagement'
 import StockDashboard from '../components/StockDashboard'
 import MillMap from '../components/MillMap'
 import Reports from '../components/Reports'
 import PriceManagement from '../components/UpdatePrice'
 import ImageGalleryManager from '../components/ImageGalleryManager';
+import PasswordPromptModal from '../../../components/PasswordPromptModal';
 import rainbowNature from '../../../assets/beautiful-rainbow-nature.jpg'
 import pmbLogo from '../../../assets/logo-p.png'
 import { handleLogoutSuccess } from '../../../utils/validation'
 
-const AdminDashboard = ({ onLogout }) => {
+const AdminDashboard = ({ onLogout, userData }) => {
   const [activeSection, setActiveSection] = useState('license-requests')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [tooltip, setTooltip] = useState(null)
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [pendingTab, setPendingTab] = useState(null);
+
+  console.log('AdminDashboard userData:', userData); // Debug log
 
   useEffect(() => {
     if (sidebarOpen) {
@@ -32,24 +39,40 @@ const AdminDashboard = ({ onLogout }) => {
     }
   }, [sidebarOpen])
 
+  const handleTabChange = (tabId) => {
+    if (tabId === 'regional-officers') {
+      setPendingTab(tabId);
+      setIsPasswordModalOpen(true);
+    } else {
+      setActiveSection(tabId);
+    }
+  };
+
+  const handlePasswordSuccess = () => {
+    if (pendingTab) {
+      setActiveSection(pendingTab);
+      setPendingTab(null);
+    }
+  };
+
   const tooltipPortal = tooltip
     ? createPortal(
-        <span
-          className="pointer-events-none fixed px-3 py-2 text-xs bg-gray-900 text-white rounded-lg shadow-2xl border border-gray-700 backdrop-blur-sm z-[9999] whitespace-nowrap"
-          style={{
-            top: tooltip.top,
-            left: tooltip.left,
-            transform: 'translateY(-50%)',
-          }}
-        >
-          {tooltip.label}
-        </span>,
-        document.body
-      )
+      <span
+        className="pointer-events-none fixed px-3 py-2 text-xs bg-gray-900 text-white rounded-lg shadow-2xl border border-gray-700 backdrop-blur-sm z-[9999] whitespace-nowrap"
+        style={{
+          top: tooltip.top,
+          left: tooltip.left,
+          transform: 'translateY(-50%)',
+        }}
+      >
+        {tooltip.label}
+      </span>,
+      document.body
+    )
     : null
 
   const navigationItems = [
-     {
+    {
       id: 'stock-dashboard',
       label: 'Live Stock Dashboard',
       icon: BarChart3,
@@ -67,7 +90,13 @@ const AdminDashboard = ({ onLogout }) => {
       icon: FileText,
       component: LicenseRequestManagement
     },
-   
+    {
+      id: 'regional-officers',
+      label: 'Regional Officers',
+      icon: Users,
+      component: RegionalOfficerManagement
+    },
+
     {
       id: 'mill-map',
       label: 'Mill Map',
@@ -92,11 +121,19 @@ const AdminDashboard = ({ onLogout }) => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
+      <PasswordPromptModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => {
+          setIsPasswordModalOpen(false);
+          setPendingTab(null);
+        }}
+        onSuccess={handlePasswordSuccess}
+      />
+
       {/* Sidebar - Fixed */}
-      <div 
-        className={`text-white transition-all duration-300 flex flex-col flex-shrink-0 ${
-          sidebarOpen ? 'w-64' : 'w-16'
-        }`}
+      <div
+        className={`text-white transition-all duration-300 flex flex-col flex-shrink-0 ${sidebarOpen ? 'w-64' : 'w-16'
+          }`}
         style={{
           backgroundImage: `url(${rainbowNature})`,
           backgroundSize: 'cover',
@@ -111,16 +148,16 @@ const AdminDashboard = ({ onLogout }) => {
       >
         {/* Overlay for better text readability */}
         <div className="absolute inset-0 bg-green-900 bg-opacity-30"></div>
-        
+
         {/* Content wrapper */}
         <div className="relative z-10 flex flex-col h-full">
           {/* Header */}
           <div className="p-4 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className={`flex items-center ${sidebarOpen ? 'flex' : 'hidden'}`}>
-                <img 
-                  src={pmbLogo} 
-                  alt="PMB Logo" 
+                <img
+                  src={pmbLogo}
+                  alt="PMB Logo"
                   className="w-16 h-16 object-contain drop-shadow-lg mr-3"
                 />
                 <div className="font-bold text-sm text-white drop-shadow-lg tracking-wide">
@@ -146,7 +183,7 @@ const AdminDashboard = ({ onLogout }) => {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveSection(item.id)}
+                  onClick={() => handleTabChange(item.id)}
                   onMouseEnter={(event) => {
                     if (!sidebarOpen) {
                       const rect = event.currentTarget.getBoundingClientRect()
@@ -162,9 +199,8 @@ const AdminDashboard = ({ onLogout }) => {
                       setTooltip(null)
                     }
                   }}
-                  className={`w-full flex items-center px-4 py-3 text-left hover:bg-white hover:bg-opacity-15 transition-colors backdrop-blur-sm ${
-                    activeSection === item.id ? 'bg-white bg-opacity-20 border-r-4 border-yellow-400 shadow-lg' : ''
-                  }`}
+                  className={`w-full flex items-center px-4 py-3 text-left hover:bg-white hover:bg-opacity-15 transition-colors backdrop-blur-sm ${activeSection === item.id ? 'bg-white bg-opacity-20 border-r-4 border-yellow-400 shadow-lg' : ''
+                    }`}
                 >
                   <IconComponent size={20} className="drop-shadow-lg" />
                   <span className={`ml-3 drop-shadow-lg ${sidebarOpen ? 'block' : 'hidden'}`}>
@@ -180,14 +216,14 @@ const AdminDashboard = ({ onLogout }) => {
             <button
               onClick={() => {
                 console.log('Admin logout button clicked');
-                
+
                 // Clear admin session data
                 sessionStorage.removeItem('adminData');
                 localStorage.removeItem('adminData');
-                
+
                 // Show logout success toast
                 handleLogoutSuccess('Admin');
-                
+
                 // Call logout handler
                 if (onLogout) {
                   setTimeout(() => {
@@ -195,9 +231,8 @@ const AdminDashboard = ({ onLogout }) => {
                   }, 500); // Small delay to show toast
                 }
               }}
-              className={`w-full flex items-center text-left bg-red-600 bg-opacity-70 hover:bg-red-700 hover:bg-opacity-80 transition-colors rounded text-white font-medium backdrop-blur-sm shadow-lg ${
-                sidebarOpen ? 'px-4 py-2' : 'px-2 py-3 justify-center'
-              }`}
+              className={`w-full flex items-center text-left bg-red-600 bg-opacity-70 hover:bg-red-700 hover:bg-opacity-80 transition-colors rounded text-white font-medium backdrop-blur-sm shadow-lg ${sidebarOpen ? 'px-4 py-2' : 'px-2 py-3 justify-center'
+                }`}
               onMouseEnter={(event) => {
                 if (!sidebarOpen) {
                   const rect = event.currentTarget.getBoundingClientRect()
@@ -224,9 +259,9 @@ const AdminDashboard = ({ onLogout }) => {
       </div>
 
       {/* Main Content */}
-      <div 
+      <div
         className="flex-1 flex flex-col min-w-0"
-        style={{ 
+        style={{
           marginLeft: sidebarOpen ? '256px' : '64px',
           transition: 'margin-left 300ms'
         }}

@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { adminLogin, getReport, getStockOverview, getStockReports, subscribeStockUpdates, getStockEntries, generateStockReport, getApprovedMills } = require('../controllers/adminController');
+const { adminLogin, getReport, getStockOverview, getStockReports, subscribeStockUpdates, getStockEntries, generateStockReport, getApprovedMills, verifyPassword } = require('../controllers/adminController');
 
 // Debug log to check if function is imported correctly
 console.log('adminController import:', { adminLogin, getReport });
 
 // POST route for admin login
 router.post('/login', adminLogin);
+
+// POST route for verifying admin password (for sensitive actions)
+router.post('/verify-password', verifyPassword);
 
 // GET route for reports
 router.get('/reports', getReport);

@@ -15,6 +15,7 @@ const leadershipRoutes = require('./routes/leadershipRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const newsletterRoutes = require('./routes/newsletterRoutes');
+const regionalOfficerRoutes = require('./routes/regionalOfficerRoutes');
 const path = require('path');
 
 const app = express();
@@ -88,8 +89,8 @@ app.get('/', (_req, res) => {
 
 // Health check endpoint
 app.get('/health', (_req, res) => {
-    res.json({ 
-        status: 'OK', 
+    res.json({
+        status: 'OK',
         timestamp: new Date().toISOString(),
         port: PORT,
         uptime: process.uptime()
@@ -129,11 +130,13 @@ app.use('/api/contact', contactRoutes);
 console.log('✅ Contact routes registered');
 app.use('/api/newsletter', newsletterRoutes);
 console.log('✅ Newsletter routes registered');
+app.use('/api/regional-officers', regionalOfficerRoutes);
+console.log('✅ Regional Officer routes registered');
 
 // 404 handler for undefined routes (must be after all other routes)
 app.use((req, res, _next) => {
-    res.status(404).json({ 
-        message: 'Route not found', 
+    res.status(404).json({
+        message: 'Route not found',
         path: req.originalUrl,
         method: req.method
     });
@@ -142,7 +145,7 @@ app.use((req, res, _next) => {
 // Global error handler
 app.use((err, _req, res, _next) => {
     console.error('Global error handler:', err);
-    res.status(500).json({ 
+    res.status(500).json({
         message: 'Internal server error',
         error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
     });

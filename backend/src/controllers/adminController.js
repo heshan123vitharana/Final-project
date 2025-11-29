@@ -645,6 +645,41 @@ const getApprovedMills = async (req, res) => {
     }
 };
 
+const verifyPassword = async (req, res) => {
+    try {
+        const { password, email } = req.body;
+        console.log('🔐 Verify Password Request:', { email, passwordProvided: !!password });
+
+        if (!password || !email) {
+            console.log('❌ Missing credentials');
+            return res.status(400).json({ message: 'Password and email are required' });
+        }
+
+        // Find admin by email
+        const [rows] = await db.execute('SELECT * FROM admin WHERE email = ? AND status = ?', [email, 'active']);
+        console.log('👤 Admin Lookup Result:', { found: rows.length > 0 });
+
+        if (rows.length === 0) {
+            console.log('❌ Admin not found or inactive');
+            return res.status(404).json({ message: 'Admin not found' });
+        }
+
+        const admin = rows[0];
+        const isMatch = await bcrypt.compare(password, admin.password);
+        console.log('🔑 Password Match Result:', isMatch);
+
+        if (!isMatch) {
+            console.log('❌ Password mismatch');
+            return res.status(401).json({ message: 'Invalid password' });
+        }
+
+        console.log('✅ Password verified successfully');
+        res.json({ message: 'Password verified successfully' });
+    } catch (error) {
+        console.error('❌ Verify password error:', error);
+        res.status(500).json({ message: 'Server error verifying password' });
+    }
+};
 
 module.exports = {
     adminLogin,
@@ -654,5 +689,6 @@ module.exports = {
     subscribeStockUpdates,
     getStockEntries,
     generateStockReport,
-    getApprovedMills
+    getApprovedMills,
+    verifyPassword
 };

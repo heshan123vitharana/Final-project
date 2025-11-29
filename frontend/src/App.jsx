@@ -9,6 +9,7 @@ import LivePaddyPrices from './features/public/pages/LivePaddyPrices';
 import Contact from './features/public/pages/Contact';
 import Footer from './features/public/components/Footer';
 import AdminLogin from './features/auth/pages/AdminLogin';
+import RegionalLogin from './features/auth/pages/RegionalLogin';
 import AuthPage from './features/auth/pages/AuthPage';
 import AdminDashboard from './features/admin/pages/AdminDashboard';
 import ResetPassword from './features/auth/pages/ResetPassword';
@@ -26,6 +27,7 @@ function App() {
           <Route path="/admin/*" element={<AdminPage />} />
           <Route path="/mill/*" element={<MillPage />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/regional-admin" element={<RegionalLogin />} />
         </Routes>
         <ScrollToTopButton />
       </ToastProvider>
@@ -35,7 +37,7 @@ function App() {
 
 const HomePage = () => (
   <div className="min-h-screen bg-white">
-    <Header 
+    <Header
       onAdminClick={() => window.location.href = '/admin'}
       onMillRegistrationClick={() => window.location.href = '/auth'}
     />
@@ -59,11 +61,11 @@ const syncMillSession = (millData) => {
   try {
     const normalized = millData.user
       ? {
-          ...millData.user,
-          token: millData.token,
-          role: millData.role,
-          isFirstLogin: millData.isFirstLogin ?? false,
-        }
+        ...millData.user,
+        token: millData.token,
+        role: millData.role,
+        isFirstLogin: millData.isFirstLogin ?? false,
+      }
       : millData;
 
     localStorage.setItem('millData', JSON.stringify(normalized));

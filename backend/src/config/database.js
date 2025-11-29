@@ -384,37 +384,50 @@ if (useSQLite) {
 
       // Notifications table
       await pool.execute(`
-      CREATE TABLE IF NOT EXISTS notifications(
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      user_type ENUM('mill', 'admin') NOT NULL,
-      title VARCHAR(255) NOT NULL,
-      message TEXT NOT NULL,
-      type ENUM('info', 'success', 'warning', 'error', 'price_update', 'mill_update', 'stock_update', 'license_update') DEFAULT 'info',
-      is_read BOOLEAN DEFAULT FALSE,
-      related_id INT NULL,
-      related_type VARCHAR(50) NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      INDEX idx_user(user_id, user_type),
-      INDEX idx_read(is_read),
-      INDEX idx_created(created_at)
-    )
-    `);
+        CREATE TABLE IF NOT EXISTS notifications(
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          user_type ENUM('mill', 'admin') NOT NULL,
+          title VARCHAR(255) NOT NULL,
+          message TEXT NOT NULL,
+          type ENUM('info', 'success', 'warning', 'error', 'price_update', 'mill_update', 'stock_update', 'license_update') DEFAULT 'info',
+          is_read BOOLEAN DEFAULT FALSE,
+          related_id INT NULL,
+          related_type VARCHAR(50) NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_user(user_id, user_type),
+          INDEX idx_read(is_read),
+          INDEX idx_created(created_at)
+        )
+      `);
       console.log('✅ Notifications table ready');
 
       // Newsletter subscribers table
       await pool.execute(`
-      CREATE TABLE IF NOT EXISTS newsletter_subscribers(
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      email VARCHAR(191) NOT NULL UNIQUE,
-      name VARCHAR(255) DEFAULT 'Subscriber',
-      is_active BOOLEAN DEFAULT TRUE,
-      subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      unsubscribed_at TIMESTAMP NULL,
-      INDEX idx_active(is_active)
-    )
-    `);
+        CREATE TABLE IF NOT EXISTS newsletter_subscribers(
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          email VARCHAR(191) NOT NULL UNIQUE,
+          name VARCHAR(255) DEFAULT 'Subscriber',
+          is_active BOOLEAN DEFAULT TRUE,
+          subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          unsubscribed_at TIMESTAMP NULL,
+          INDEX idx_active(is_active)
+        )
+      `);
       console.log('✅ Newsletter subscribers table ready');
+
+      // Regional Officers table
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS regional_officers(
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          username VARCHAR(191) NOT NULL UNIQUE,
+          password VARCHAR(255) NOT NULL,
+          district VARCHAR(100) NOT NULL,
+          email VARCHAR(191),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      console.log('✅ Regional officers table ready');
 
       // Initialize stock tables
       const StockModel = require('../models/stockModel');
@@ -425,7 +438,7 @@ if (useSQLite) {
       console.log('✅ MySQL database initialized successfully');
     } catch (error) {
       console.error('❌ Database initialization error:', error);
-      throw error;
+      // Don't throw, just log so server can start
     }
   };
 
