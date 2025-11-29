@@ -191,7 +191,6 @@ const findByNic = async (nic) => {
 
 const incrementFailedLogin = async (userId) => {
   try {
-    console.log(`[DB] Incrementing failed login for user ${userId}`);
     await db.execute(
       `UPDATE users SET failed_login_attempts = COALESCE(failed_login_attempts, 0) + 1 WHERE id = ?`,
       [userId]
@@ -203,7 +202,6 @@ const incrementFailedLogin = async (userId) => {
 
 const resetFailedLogin = async (userId) => {
   try {
-    console.log(`[DB] Resetting failed login for user ${userId}`);
     await db.execute(
       `UPDATE users SET failed_login_attempts = 0, lockout_until = NULL WHERE id = ?`,
       [userId]
@@ -217,7 +215,6 @@ const lockUser = async (userId) => {
   try {
     // Lock for 3 minutes
     const lockoutTime = new Date(Date.now() + 3 * 60 * 1000);
-    console.log(`[DB] Locking user ${userId} until ${lockoutTime}`);
     await db.execute(
       `UPDATE users SET lockout_until = ? WHERE id = ?`,
       [lockoutTime, userId]
