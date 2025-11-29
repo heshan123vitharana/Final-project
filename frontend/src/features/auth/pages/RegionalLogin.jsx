@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { MapPin, User, Lock, ArrowRight, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MapPin, User, Lock, ArrowRight, AlertCircle, Sparkles, Shield } from 'lucide-react';
 
 const RegionalLogin = () => {
     const navigate = useNavigate();
@@ -12,6 +12,7 @@ const RegionalLogin = () => {
     });
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [focusedField, setFocusedField] = useState(null);
 
     const districts = [
         'Colombo', 'Gampaha', 'Kalutara',
@@ -54,8 +55,7 @@ const RegionalLogin = () => {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
 
-            // Redirect to dashboard (placeholder for now)
-            // You might want to create a specific dashboard for them later
+            // Redirect to dashboard
             navigate('/regional-dashboard');
         } catch (err) {
             setError(err.message);
@@ -65,94 +65,223 @@ const RegionalLogin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+        <div className="regional-login-container">
+            {/* Animated Background */}
+            <div className="regional-login-bg">
+                <div className="regional-gradient-orb regional-orb-1"></div>
+                <div className="regional-gradient-orb regional-orb-2"></div>
+                <div className="regional-gradient-orb regional-orb-3"></div>
+            </div>
+
+            {/* Floating Particles */}
+            <div className="regional-particles">
+                {[...Array(20)].map((_, i) => (
+                    <motion.div
+                        key={i}
+                        className="regional-particle"
+                        initial={{
+                            x: Math.random() * window.innerWidth,
+                            y: Math.random() * window.innerHeight,
+                            scale: Math.random() * 0.5 + 0.5
+                        }}
+                        animate={{
+                            y: [null, Math.random() * window.innerHeight],
+                            x: [null, Math.random() * window.innerWidth],
+                        }}
+                        transition={{
+                            duration: Math.random() * 20 + 10,
+                            repeat: Infinity,
+                            repeatType: "reverse"
+                        }}
+                    />
+                ))}
+            </div>
+
+            {/* Login Card */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
+                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="regional-login-card"
             >
-                <div className="bg-emerald-600 p-8 text-center">
-                    <div className="mx-auto bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mb-4 backdrop-blur-sm">
-                        <MapPin className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-3xl font-bold text-white mb-2">Regional Officer</h2>
-                    <p className="text-emerald-100">Secure Access Portal</p>
+                {/* Header Section */}
+                <div className="regional-card-header">
+                    <motion.div
+                        className="regional-icon-container"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                    >
+                        <div className="regional-icon-glow"></div>
+                        <MapPin className="regional-icon" />
+                        <Sparkles className="regional-sparkle regional-sparkle-1" />
+                        <Sparkles className="regional-sparkle regional-sparkle-2" />
+                    </motion.div>
+
+                    <motion.h1
+                        className="regional-title"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                    >
+                        Regional Officer Portal
+                    </motion.h1>
+
+                    <motion.div
+                        className="regional-subtitle-container"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                    >
+                        <Shield className="regional-shield-icon" />
+                        <p className="regional-subtitle">Secure Access Gateway</p>
+                    </motion.div>
                 </div>
 
-                <div className="p-8">
-                    {error && (
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="bg-red-50 text-red-600 p-3 rounded-lg flex items-center gap-2 mb-6 text-sm"
-                        >
-                            <AlertCircle className="w-4 h-4" />
-                            {error}
-                        </motion.div>
-                    )}
+                {/* Form Section */}
+                <div className="regional-form-container">
+                    <AnimatePresence mode="wait">
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, x: -20, height: 0 }}
+                                animate={{ opacity: 1, x: 0, height: 'auto' }}
+                                exit={{ opacity: 0, x: 20, height: 0 }}
+                                className="regional-error-alert"
+                            >
+                                <AlertCircle className="regional-error-icon" />
+                                <span>{error}</span>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">District Office</label>
-                            <div className="relative">
-                                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <form onSubmit={handleSubmit} className="regional-form">
+                        {/* District Field */}
+                        <motion.div
+                            className="regional-form-group"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                        >
+                            <label className="regional-label">
+                                District Office
+                                <span className="regional-required">*</span>
+                            </label>
+                            <div className="regional-input-wrapper">
+                                <MapPin className={`regional-input-icon ${focusedField === 'district' ? 'regional-icon-active' : ''}`} />
                                 <select
                                     name="district"
                                     value={formData.district}
                                     onChange={handleChange}
+                                    onFocus={() => setFocusedField('district')}
+                                    onBlur={() => setFocusedField(null)}
                                     required
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white"
+                                    className="regional-select"
                                 >
-                                    <option value="">Select District</option>
+                                    <option value="">Select your district</option>
                                     {districts.map(district => (
                                         <option key={district} value={district}>{district}</option>
                                     ))}
                                 </select>
+                                <div className={`regional-input-border ${focusedField === 'district' ? 'regional-border-active' : ''}`}></div>
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        {/* Username Field */}
+                        <motion.div
+                            className="regional-form-group"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5 }}
+                        >
+                            <label className="regional-label">
+                                Username
+                                <span className="regional-required">*</span>
+                            </label>
+                            <div className="regional-input-wrapper">
+                                <User className={`regional-input-icon ${focusedField === 'username' ? 'regional-icon-active' : ''}`} />
                                 <input
                                     type="text"
                                     name="username"
                                     value={formData.username}
                                     onChange={handleChange}
+                                    onFocus={() => setFocusedField('username')}
+                                    onBlur={() => setFocusedField(null)}
                                     required
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                                    className="regional-input"
                                     placeholder="Enter your username"
                                 />
+                                <div className={`regional-input-border ${focusedField === 'username' ? 'regional-border-active' : ''}`}></div>
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        {/* Password Field */}
+                        <motion.div
+                            className="regional-form-group"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.6 }}
+                        >
+                            <label className="regional-label">
+                                Password
+                                <span className="regional-required">*</span>
+                            </label>
+                            <div className="regional-input-wrapper">
+                                <Lock className={`regional-input-icon ${focusedField === 'password' ? 'regional-icon-active' : ''}`} />
                                 <input
                                     type="password"
                                     name="password"
                                     value={formData.password}
                                     onChange={handleChange}
+                                    onFocus={() => setFocusedField('password')}
+                                    onBlur={() => setFocusedField(null)}
                                     required
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                                    className="regional-input"
                                     placeholder="Enter your password"
                                 />
+                                <div className={`regional-input-border ${focusedField === 'password' ? 'regional-border-active' : ''}`}></div>
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <button
+                        {/* Submit Button */}
+                        <motion.button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="regional-submit-btn"
+                            whileHover={{ scale: 1.02, y: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.7 }}
                         >
-                            {isLoading ? 'Authenticating...' : 'Sign In'}
-                            {!isLoading && <ArrowRight className="w-5 h-5" />}
-                        </button>
+                            <span className="regional-btn-content">
+                                {isLoading ? (
+                                    <>
+                                        <div className="regional-spinner"></div>
+                                        <span>Authenticating...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Sign In</span>
+                                        <ArrowRight className="regional-btn-icon" />
+                                    </>
+                                )}
+                            </span>
+                            <div className="regional-btn-glow"></div>
+                        </motion.button>
                     </form>
                 </div>
+
+                {/* Footer */}
+                <motion.div
+                    className="regional-card-footer"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                >
+                    <div className="regional-footer-badge">
+                        <Shield className="regional-footer-icon" />
+                        <span>Secured with 256-bit encryption</span>
+                    </div>
+                </motion.div>
             </motion.div>
         </div>
     );
