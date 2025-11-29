@@ -12,6 +12,7 @@ import AdminLogin from './features/auth/pages/AdminLogin';
 import RegionalLogin from './features/auth/pages/RegionalLogin';
 import AuthPage from './features/auth/pages/AuthPage';
 import AdminDashboard from './features/admin/pages/AdminDashboard';
+import RegionalDashboard from './features/regional/pages/RegionalDashboard';
 import ResetPassword from './features/auth/pages/ResetPassword';
 import MillLayout from './features/mill/components/MillLayout';
 import ToastProvider from './features/ui/components/ToastProvider';
@@ -28,6 +29,7 @@ function App() {
           <Route path="/mill/*" element={<MillPage />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/regional-admin" element={<RegionalLogin />} />
+          <Route path="/regional-dashboard" element={<RegionalDashboard />} />
         </Routes>
         <ScrollToTopButton />
       </ToastProvider>

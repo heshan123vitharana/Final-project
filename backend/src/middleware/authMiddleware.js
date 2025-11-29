@@ -8,7 +8,7 @@ const requireAuth = (req, res, next) => {
 
     if (!token) return res.status(401).json({ message: 'Missing token' });
 
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
     req.user = payload; // { sub, email, business_type, iat, exp }
     return next();
   } catch (e) {

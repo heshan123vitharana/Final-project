@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const regionalOfficerController = require('../controllers/regionalOfficerController');
+
+console.log('Loading regionalOfficerRoutes...');
+
 // Assuming you have middleware for admin authentication
 // If not, we might need to implement a basic check or reuse existing auth middleware
 // For now, I'll assume the existence of an 'authenticateToken' or similar middleware, 
@@ -11,7 +14,18 @@ const regionalOfficerController = require('../controllers/regionalOfficerControl
 // Login route (Public)
 router.post('/login', regionalOfficerController.login);
 
-// Admin routes (Protected - need to add middleware later if not present)
+// --- Regional Officer Protected Routes ---
+const { requireAuth } = require('../middleware/authMiddleware');
+
+// Price Management
+console.log('Registering /prices routes in regionalOfficerRoutes');
+router.get('/prices', requireAuth, regionalOfficerController.getRegionalPrices);
+router.post('/prices', requireAuth, regionalOfficerController.addRegionalPrice);
+router.put('/prices/:id', requireAuth, regionalOfficerController.updateRegionalPrice);
+router.delete('/prices/:id', requireAuth, regionalOfficerController.deleteRegionalPrice);
+
+// --- Admin Protected Routes (Officer Management) ---
+// Note: These should ideally be protected by admin middleware
 router.post('/create', regionalOfficerController.createOfficer);
 router.get('/', regionalOfficerController.getOfficers);
 router.put('/:id', regionalOfficerController.updateOfficer);
