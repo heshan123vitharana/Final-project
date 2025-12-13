@@ -357,6 +357,14 @@ const RegionalDashboard = () => {
                                             </div>
                                             <h3 className="text-gray-500 text-sm font-medium">{displayName}</h3>
                                             <p className="text-2xl font-bold text-gray-900 mt-1">{latestPrice ? `LKR ${latestPrice.price_per_kg}` : 'N/A'}</p>
+                                            {latestPrice && (
+                                                <span className={`inline-block mt-2 px-2 py-1 rounded-full text-xs font-medium ${latestPrice.paddy_condition === 'Dry'
+                                                        ? 'bg-amber-100 text-amber-700'
+                                                        : 'bg-blue-100 text-blue-700'
+                                                    }`}>
+                                                    {latestPrice.paddy_condition}
+                                                </span>
+                                            )}
                                         </div>
                                     );
                                 })}
