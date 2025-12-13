@@ -24,6 +24,10 @@ router.post('/prices', requireAuth, regionalOfficerController.addRegionalPrice);
 router.put('/prices/:id', requireAuth, regionalOfficerController.updateRegionalPrice);
 router.delete('/prices/:id', requireAuth, regionalOfficerController.deleteRegionalPrice);
 
+// Stock Monitoring
+router.get('/stock-overview', requireAuth, regionalOfficerController.getDistrictStock);
+router.post('/report', requireAuth, regionalOfficerController.submitReport);
+
 // --- Admin Protected Routes (Officer Management) ---
 // Note: These should ideally be protected by admin middleware
 router.post('/create', regionalOfficerController.createOfficer);

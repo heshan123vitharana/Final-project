@@ -310,6 +310,47 @@ const regionalOfficerController = {
             console.error('Delete Regional Price Error:', error);
             res.status(500).json({ message: 'Failed to delete price' });
         }
+    },
+
+    // --- Stock Monitoring ---
+
+    deleteOfficer: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const success = await RegionalOfficer.delete(id);
+            if (success) {
+                res.json({ message: 'Officer deleted successfully' });
+            } else {
+                res.status(404).json({ message: 'Officer not found' });
+            }
+        } catch (error) {
+            console.error('Delete Officer Error:', error);
+            res.status(500).json({ message: 'Failed to delete officer' });
+        }
+    },
+
+    // Submit District Report
+    submitReport: async (req, res) => {
+        try {
+            const officerId = req.user.id; // From auth middleware
+            const { district } = req.user;
+            const { reportType, reportData } = req.body;
+            const db = require('../config/database');
+
+            // Insert into regional_reports
+            const [result] = await db.execute(
+                'INSERT INTO regional_reports (officer_id, district, report_type, report_data) VALUES (?, ?, ?, ?)',
+                [officerId, district, reportType, JSON.stringify(reportData)]
+            );
+
+            res.status(201).json({
+                message: 'Report submitted successfully',
+                reportId: result.insertId
+            });
+        } catch (error) {
+            console.error('Submit Regional Report Error:', error);
+            res.status(500).json({ message: 'Failed to submit report', error: error.message });
+        }
     }
 };
 

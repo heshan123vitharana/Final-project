@@ -672,6 +672,118 @@ class StockModel {
       throw error;
     }
   }
+  static async getDistrictStockOverview(district) {
+    try {
+      console.log(`📊 Starting district stock overview query for district: ${district}...`);
+
+      const [rows] = await db.execute(`
+        SELECT 
+          u.id AS mill_id,
+          u.business_name,
+          u.business_type,
+          COALESCE(u.mill_district, u.district, 'Unknown') AS district,
+          u.mill_capacity,
+          COALESCE(SUM(ss.total_quantity), 0) AS total_quantity,
+          MAX(ss.last_updated) AS last_updated
+        FROM users u
+        LEFT JOIN stock_summary ss ON ss.mill_id = u.id
+        WHERE u.business_type IN ('private', 'government')
+        AND COALESCE(u.mill_district, u.district) = ?
+        GROUP BY u.id, u.business_name, u.business_type, u.mill_district, u.district, u.mill_capacity
+      `, [district]);
+
+      console.log(`✅ Found ${rows.length} mills in district ${district}`);
+
+      const overview = {
+        privateVsGovernmentStock: [
+          { name: 'Private Mills', current: 0, capacity: 0, percentage: 0 },
+          { name: 'Government Mills', current: 0, capacity: 0, percentage: 0 }
+        ],
+        stockByMill: [],
+        summary: {
+          totalStock: 0,
+          totalCapacity: 0,
+          utilizationRate: 0,
+          activeMills: 0
+        },
+        stockByType: [] // New breakdown for charts
+      };
+
+      if (!rows || rows.length === 0) {
+        return overview;
+      }
+
+      // Also fetch stock breakdown by type for this district
+      const [typeRows] = await db.execute(`
+        SELECT 
+          ss.paddy_type,
+          SUM(ss.total_quantity) as total_quantity
+        FROM stock_summary ss
+        JOIN users u ON ss.mill_id = u.id
+        WHERE COALESCE(u.mill_district, u.district) = ?
+        GROUP BY ss.paddy_type
+      `, [district]);
+
+      overview.stockByType = typeRows.map(row => ({
+        name: row.paddy_type,
+        value: parseFloat(row.total_quantity)
+      }));
+
+      rows.forEach((row) => {
+        const quantity = parseFloat(row.total_quantity) || 0;
+        const capacity = StockModel.parseCapacity(row.mill_capacity);
+        const type = (row.business_type || '').toLowerCase();
+
+        if (type === 'private') {
+          overview.privateVsGovernmentStock[0].current += quantity;
+          overview.privateVsGovernmentStock[0].capacity += capacity;
+        } else if (type === 'government') {
+          overview.privateVsGovernmentStock[1].current += quantity;
+          overview.privateVsGovernmentStock[1].capacity += capacity;
+        }
+
+        overview.summary.totalStock += quantity;
+        overview.summary.totalCapacity += capacity;
+
+        if (quantity > 0) {
+          overview.summary.activeMills += 1;
+        }
+
+        const utilization = capacity > 0 ? Math.round((quantity / capacity) * 100) : 0;
+
+        overview.stockByMill.push({
+          mill: row.business_name || `Mill ${row.mill_id}`,
+          stock: Math.round(quantity * 100) / 100,
+          capacity: capacity ? Math.round(capacity * 100) / 100 : 0,
+          utilization,
+          type: type === 'government' ? 'Government' : 'Private'
+        });
+      });
+
+      // Recalculate percentages
+      overview.privateVsGovernmentStock = overview.privateVsGovernmentStock.map((entry) => ({
+        ...entry,
+        current: Math.round(entry.current * 100) / 100,
+        capacity: Math.round(entry.capacity * 100) / 100,
+        percentage: entry.capacity > 0 ? Math.round((entry.current / entry.capacity) * 100) : 0
+      }));
+
+      overview.summary.totalStock = Math.round(overview.summary.totalStock * 100) / 100;
+      overview.summary.totalCapacity = Math.round(overview.summary.totalCapacity * 100) / 100;
+      overview.summary.utilizationRate = overview.summary.totalCapacity > 0
+        ? Math.round((overview.summary.totalStock / overview.summary.totalCapacity) * 100)
+        : 0;
+
+      // Sort mills by stock desc
+      overview.stockByMill.sort((a, b) => b.stock - a.stock);
+
+      return overview;
+
+    } catch (error) {
+      console.error('❌ District stock overview error:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = StockModel;

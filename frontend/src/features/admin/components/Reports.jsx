@@ -139,7 +139,8 @@ const Reports = () => {
     { id: 'production', name: 'Production Report', icon: BarChart3 },
     { id: 'financial', name: 'Financial Report', icon: TrendingUp },
     { id: 'mills', name: 'Mill Performance Report', icon: Users },
-    { id: 'licenses', name: 'License Status Report', icon: FileText }
+    { id: 'licenses', name: 'License Status Report', icon: FileText },
+    { id: 'regional_submission', name: 'Regional Submissions', icon: Eye }
   ]), [])
 
   const addGeneratedReport = useCallback((entry) => {
@@ -160,7 +161,7 @@ const Reports = () => {
       </div>
     `
     document.body.appendChild(notification)
-    
+
     // Remove notification after 3 seconds
     setTimeout(() => {
       if (notification.parentNode) {
@@ -256,156 +257,221 @@ const Reports = () => {
   const handleGenerateStockReport = async (stockReportType) => {
     setLoading(true);
     try {
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-        const adminApiKey = import.meta.env.VITE_ADMIN_API_KEY;
-        const regionLabel = normalizeRegionLabel(selectedRegion);
-        
-        const params = new URLSearchParams({
-            reportType: stockReportType
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const adminApiKey = import.meta.env.VITE_ADMIN_API_KEY;
+      const regionLabel = normalizeRegionLabel(selectedRegion);
+
+      const params = new URLSearchParams({
+        reportType: stockReportType
+      });
+
+      // Add district filter if selected
+      if (regionLabel && regionLabel !== 'All Regions') {
+        params.append('district', regionLabel);
+      }
+
+      const headers = adminApiKey ? { 'x-admin-key': adminApiKey } : {};
+      const response = await fetch(`${apiBaseUrl}/api/admin/generate-stock-report?${params.toString()}`, { headers });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate stock report: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      const generatedAt = result.generatedAt || new Date().toISOString();
+      const baseEntry = {
+        reportType: 'stock',
+        variant: stockReportType,
+        filters: {
+          dateRange: null,
+          region: selectedRegion,
+          regionLabel,
+          millType: selectedMillType
+        },
+        generatedAt
+      };
+      const toastLabel = resolveReportDisplayName('stock', stockReportType, reportTypes)
+
+      // Format the data for display
+      if (stockReportType === 'combined') {
+        // For combined report, show all data sections
+        const formattedData = {
+          summary: {
+            totalStock: result.data.total.summary.totalStock || 0,
+            privateStock: result.data.private.summary.totalStock || 0,
+            governmentStock: result.data.government.summary.totalStock || 0,
+            totalDistricts: result.data.byDistrict.summary.totalDistricts || 0,
+            totalMills: result.data.total.summary.totalMills || 0
+          },
+          breakdown: [
+            {
+              category: 'Total Stock',
+              value: result.data.total.summary.totalStock || 0,
+              percentage: 100
+            },
+            {
+              category: 'Private Mills Stock',
+              value: result.data.private.summary.totalStock || 0,
+              percentage: result.data.total.summary.totalStock > 0
+                ? ((result.data.private.summary.totalStock / result.data.total.summary.totalStock) * 100).toFixed(2)
+                : 0
+            },
+            {
+              category: 'Government Mills Stock',
+              value: result.data.government.summary.totalStock || 0,
+              percentage: result.data.total.summary.totalStock > 0
+                ? ((result.data.government.summary.totalStock / result.data.total.summary.totalStock) * 100).toFixed(2)
+                : 0
+            },
+            ...result.data.byDistrict.breakdown.map(d => ({
+              category: d.district,
+              value: parseFloat(d.totalStock || 0),
+              percentage: result.data.byDistrict.summary.totalStock > 0
+                ? ((d.totalStock / result.data.byDistrict.summary.totalStock) * 100).toFixed(2)
+                : 0
+            }))
+          ]
+        };
+
+        setReportData(prevData => ({
+          ...prevData,
+          stock: formattedData
+        }));
+
+        showSuccessNotification(`${toastLabel} generated successfully!`);
+
+        addGeneratedReport({
+          id: Date.now(),
+          name: resolveReportDisplayName('stock', stockReportType, reportTypes),
+          data: formattedData,
+          ...baseEntry
         });
+      } else if (stockReportType === 'by-district') {
+        const formattedData = {
+          summary: result.data.summary,
+          breakdown: result.data.breakdown.map(d => ({
+            category: d.district,
+            value: parseFloat(d.totalStock || 0),
+            percentage: result.data.summary.totalStock > 0
+              ? ((d.totalStock / result.data.summary.totalStock) * 100).toFixed(2)
+              : 0,
+            mills: d.totalMills,
+            privateStock: parseFloat(d.privateStock || 0),
+            governmentStock: parseFloat(d.governmentStock || 0)
+          }))
+        };
 
-        // Add district filter if selected
-    if (regionLabel && regionLabel !== 'All Regions') {
-      params.append('district', regionLabel);
-        }
+        setReportData(prevData => ({
+          ...prevData,
+          stock: formattedData
+        }));
 
-        const headers = adminApiKey ? { 'x-admin-key': adminApiKey } : {};
-        const response = await fetch(`${apiBaseUrl}/api/admin/generate-stock-report?${params.toString()}`, { headers });
+        showSuccessNotification(`${toastLabel} generated successfully!`);
 
-        if (!response.ok) {
-            throw new Error(`Failed to generate stock report: ${response.statusText}`);
-        }
+        addGeneratedReport({
+          id: Date.now(),
+          name: resolveReportDisplayName('stock', stockReportType, reportTypes),
+          data: formattedData,
+          ...baseEntry
+        });
+      } else {
+        // For single category reports (total, private, government)
+        const formattedData = {
+          summary: result.data.summary,
+          breakdown: [
+            {
+              category: stockReportType.charAt(0).toUpperCase() + stockReportType.slice(1) + ' Stock',
+              value: result.data.summary.totalStock || 0,
+              percentage: 100
+            }
+          ]
+        };
 
-        const result = await response.json();
-    const generatedAt = result.generatedAt || new Date().toISOString();
-    const baseEntry = {
-      reportType: 'stock',
-      variant: stockReportType,
-      filters: {
-        dateRange: null,
-        region: selectedRegion,
-        regionLabel,
-        millType: selectedMillType
-      },
-      generatedAt
-    };
-    const toastLabel = resolveReportDisplayName('stock', stockReportType, reportTypes)
-        
-        // Format the data for display
-        if (stockReportType === 'combined') {
-            // For combined report, show all data sections
-            const formattedData = {
-                summary: {
-                    totalStock: result.data.total.summary.totalStock || 0,
-                    privateStock: result.data.private.summary.totalStock || 0,
-                    governmentStock: result.data.government.summary.totalStock || 0,
-                    totalDistricts: result.data.byDistrict.summary.totalDistricts || 0,
-                    totalMills: result.data.total.summary.totalMills || 0
-                },
-                breakdown: [
-                    {
-                        category: 'Total Stock',
-                        value: result.data.total.summary.totalStock || 0,
-                        percentage: 100
-                    },
-                    {
-                        category: 'Private Mills Stock',
-                        value: result.data.private.summary.totalStock || 0,
-                        percentage: result.data.total.summary.totalStock > 0 
-                            ? ((result.data.private.summary.totalStock / result.data.total.summary.totalStock) * 100).toFixed(2)
-                            : 0
-                    },
-                    {
-                        category: 'Government Mills Stock',
-                        value: result.data.government.summary.totalStock || 0,
-                        percentage: result.data.total.summary.totalStock > 0 
-                            ? ((result.data.government.summary.totalStock / result.data.total.summary.totalStock) * 100).toFixed(2)
-                            : 0
-                    },
-                    ...result.data.byDistrict.breakdown.map(d => ({
-                        category: d.district,
-                        value: parseFloat(d.totalStock || 0),
-                        percentage: result.data.byDistrict.summary.totalStock > 0
-                            ? ((d.totalStock / result.data.byDistrict.summary.totalStock) * 100).toFixed(2)
-                            : 0
-                    }))
-                ]
-            };
-            
-            setReportData(prevData => ({
-                ...prevData,
-                stock: formattedData
-            }));
-            
-            showSuccessNotification(`${toastLabel} generated successfully!`);
+        setReportData(prevData => ({
+          ...prevData,
+          stock: formattedData
+        }));
 
-      addGeneratedReport({
-        id: Date.now(),
-        name: resolveReportDisplayName('stock', stockReportType, reportTypes),
-                data: formattedData,
-                ...baseEntry
-            });
-        } else if (stockReportType === 'by-district') {
-            const formattedData = {
-                summary: result.data.summary,
-                breakdown: result.data.breakdown.map(d => ({
-                    category: d.district,
-                    value: parseFloat(d.totalStock || 0),
-                    percentage: result.data.summary.totalStock > 0
-                        ? ((d.totalStock / result.data.summary.totalStock) * 100).toFixed(2)
-                        : 0,
-                    mills: d.totalMills,
-                    privateStock: parseFloat(d.privateStock || 0),
-                    governmentStock: parseFloat(d.governmentStock || 0)
-                }))
-            };
-            
-            setReportData(prevData => ({
-                ...prevData,
-                stock: formattedData
-            }));
-            
-            showSuccessNotification(`${toastLabel} generated successfully!`);
+        showSuccessNotification(`${toastLabel} generated successfully!`);
 
-      addGeneratedReport({
-        id: Date.now(),
-        name: resolveReportDisplayName('stock', stockReportType, reportTypes),
-                data: formattedData,
-                ...baseEntry
-            });
-        } else {
-            // For single category reports (total, private, government)
-            const formattedData = {
-                summary: result.data.summary,
-                breakdown: [
-                    {
-                        category: stockReportType.charAt(0).toUpperCase() + stockReportType.slice(1) + ' Stock',
-                        value: result.data.summary.totalStock || 0,
-                        percentage: 100
-                    }
-                ]
-            };
-            
-            setReportData(prevData => ({
-                ...prevData,
-                stock: formattedData
-            }));
-            
-            showSuccessNotification(`${toastLabel} generated successfully!`);
-
-      addGeneratedReport({
-        id: Date.now(),
-        name: resolveReportDisplayName('stock', stockReportType, reportTypes),
-                data: formattedData,
-                ...baseEntry
-            });
-        }
+        addGeneratedReport({
+          id: Date.now(),
+          name: resolveReportDisplayName('stock', stockReportType, reportTypes),
+          data: formattedData,
+          ...baseEntry
+        });
+      }
 
     } catch (error) {
-        console.error('Error generating stock report:', error);
-        alert(`Error generating stock report: ${error.message}`);
+      console.error('Error generating stock report:', error);
+      alert(`Error generating stock report: ${error.message}`);
     } finally {
-        setLoading(false);
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateRegionalSubmissions = async () => {
+    setLoading(true);
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      // Normalize selectedRegion to match 'region' query param expected by backend if any (though backend uses 'district')
+      const regionLabel = normalizeRegionLabel(selectedRegion);
+      let url = `${apiBaseUrl}/api/admin/regional-reports`;
+      if (regionLabel && regionLabel !== 'All Regions') {
+        url += `?district=${encodeURIComponent(regionLabel)}`;
+      }
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch regional reports: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      const reports = result.data || [];
+
+      // Transform for display
+      const formattedData = {
+        summary: {
+          totalReports: reports.length,
+          latestSubmission: reports.length > 0 ? new Date(reports[0].created_at).toLocaleDateString() : 'N/A'
+        },
+        breakdown: reports.map(r => ({
+          category: r.district,
+          officer: r.officer_name,
+          date: new Date(r.created_at).toLocaleString(),
+          type: r.report_type,
+          value: 'View Details',
+          rawData: r
+        }))
+      };
+
+      setReportData(prevData => ({
+        ...prevData,
+        regional_submission: formattedData
+      }));
+
+      showSuccessNotification('Regional Submissions loaded successfully!');
+
+      // Also add to generated list for history
+      addGeneratedReport({
+        id: Date.now(),
+        name: 'Regional Submissions',
+        reportType: 'regional_submission',
+        variant: null,
+        data: formattedData,
+        filters: {
+          region: selectedRegion,
+          regionLabel
+        },
+        generatedAt: new Date().toISOString()
+      });
+
+    } catch (error) {
+      console.error('Error fetching regional reports:', error);
+      alert(`Error fetching regional reports: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -423,6 +489,11 @@ const Reports = () => {
 
     if (reportType === 'stock' || MANUAL_REPORT_TYPES.has(reportType)) {
       return
+    }
+
+    if (reportType === 'regional_submission') {
+      handleGenerateRegionalSubmissions();
+      return;
     }
 
     fetchReportData(reportType)
@@ -827,11 +898,10 @@ const Reports = () => {
               <button
                 key={type.id}
                 onClick={() => setReportType(type.id)}
-                className={`p-4 rounded-lg border-2 transition-colors ${
-                  reportType === type.id
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
-                }`}
+                className={`p-4 rounded-lg border-2 transition-colors ${reportType === type.id
+                  ? 'border-green-500 bg-green-50 text-green-700'
+                  : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
+                  }`}
               >
                 <IconComponent className="w-8 h-8 mx-auto mb-2" />
                 <span className="text-sm font-medium block text-center">{type.name}</span>
@@ -848,12 +918,12 @@ const Reports = () => {
             <Package className="w-5 h-5 mr-2 text-green-600" />
             Custom Stock Report Generator
           </h3>
-          
+
           <div className="bg-white rounded-lg p-6 space-y-4">
             <p className="text-sm text-gray-600 mb-4">
               Generate detailed stock reports with custom filters and breakdowns
             </p>
-            
+
             {/* Stock Report Options */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               {STOCK_REPORT_OPTIONS.map(option => {
@@ -864,11 +934,10 @@ const Reports = () => {
                     type="button"
                     key={option.id}
                     onClick={() => setSelectedStockVariant(option.id)}
-                    className={`p-4 rounded-lg border-2 text-left transition-colors flex flex-col space-y-2 ${
-                      isActive
-                        ? 'border-green-500 bg-green-50 text-green-700 shadow-sm'
-                        : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
-                    }`}
+                    className={`p-4 rounded-lg border-2 text-left transition-colors flex flex-col space-y-2 ${isActive
+                      ? 'border-green-500 bg-green-50 text-green-700 shadow-sm'
+                      : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
+                      }`}
                   >
                     <IconComponent className={`w-8 h-8 ${isActive ? 'text-green-600' : 'text-gray-500'}`} />
                     <span className="font-medium">{option.label}</span>
@@ -879,7 +948,7 @@ const Reports = () => {
                 )
               })}
             </div>
-            
+
             {/* District Filter for Stock Reports */}
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -937,9 +1006,8 @@ const Reports = () => {
               type="button"
               onClick={handleManualReportGenerate}
               disabled={loading}
-              className={`inline-flex items-center px-4 py-2 rounded-md font-semibold text-white transition-colors ${
-                loading ? 'bg-green-400 cursor-not-allowed opacity-70' : 'bg-green-600 hover:bg-green-700'
-              }`}
+              className={`inline-flex items-center px-4 py-2 rounded-md font-semibold text-white transition-colors ${loading ? 'bg-green-400 cursor-not-allowed opacity-70' : 'bg-green-600 hover:bg-green-700'
+                }`}
             >
               <FileText className="w-4 h-4 mr-2" />
               Generate Report
@@ -959,13 +1027,13 @@ const Reports = () => {
                 </h4>
                 <p className="text-2xl font-bold text-gray-800 mt-1">
                   {typeof value === 'number' && key.toLowerCase().includes('rate') ? `${value}%` :
-                   typeof value === 'number' && key.toLowerCase().includes('revenue') ? `$${value.toLocaleString()}` :
-                   typeof value === 'number' ? value.toLocaleString() : value}
+                    typeof value === 'number' && key.toLowerCase().includes('revenue') ? `$${value.toLocaleString()}` :
+                      typeof value === 'number' ? value.toLocaleString() : value}
                 </p>
               </div>
             ))}
           </div>
-  ) : null}
+        ) : null}
 
         {/* Breakdown Chart */}
         <div className="space-y-4">
@@ -987,8 +1055,8 @@ const Reports = () => {
                       </div>
                       <div className="text-sm text-gray-600 w-12">{item.percentage}%</div>
                       <div className="text-sm font-medium text-gray-800 w-20 text-right">
-                        {typeof item.value === 'number' && reportType === 'financial' ? 
-                          `$${item.value.toLocaleString()}` : 
+                        {typeof item.value === 'number' && reportType === 'financial' ?
+                          `$${item.value.toLocaleString()}` :
                           item.value.toLocaleString()}
                       </div>
                     </div>
@@ -998,6 +1066,41 @@ const Reports = () => {
             ) : null}
           </div>
         </div>
+
+        {/* Custom Table for Regional Submissions */}
+        {reportType === 'regional_submission' && hasBreakdownData && (
+          <div className="mt-8 overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">District</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Officer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submission Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {breakdownItems.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.category}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.officer}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.date}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
+                      <button onClick={() => {
+                        // Simple alert for now, ideally a modal
+                        const r = item.rawData;
+                        const summary = typeof r.report_data === 'string' ? JSON.parse(r.report_data) : r.report_data;
+                        alert(`Report Details for ${item.category}:\n\nTotal Stock: ${summary?.summary?.totalStock || 'N/A'}\nStart Date: ${new Date(r.created_at).toLocaleDateString()}`);
+                      }}>
+                        View Data
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Report Notes */}
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">

@@ -681,6 +681,41 @@ const verifyPassword = async (req, res) => {
     }
 };
 
+const getRegionalReports = async (req, res) => {
+    try {
+        const { district } = req.query;
+        let query = `
+            SELECT rr.*, ro.username as officer_name 
+            FROM regional_reports rr
+            JOIN regional_officers ro ON rr.officer_id = ro.id
+        `;
+        const params = [];
+
+        if (district && district !== 'All' && district !== 'All Regions') {
+            query += ' WHERE rr.district = ?';
+            params.push(district);
+        }
+
+        query += ' ORDER BY rr.created_at DESC';
+
+        const [rows] = await db.execute(query, params);
+
+        // Parse JSON data
+        const reports = rows.map(row => ({
+            ...row,
+            report_data: typeof row.report_data === 'string' ? JSON.parse(row.report_data) : row.report_data
+        }));
+
+        res.json({
+            message: 'Regional reports retrieved successfully',
+            data: reports
+        });
+    } catch (error) {
+        console.error('Get Regional Reports Error:', error);
+        res.status(500).json({ message: 'Failed to fetch regional reports' });
+    }
+};
+
 module.exports = {
     adminLogin,
     getReport,
@@ -690,5 +725,6 @@ module.exports = {
     getStockEntries,
     generateStockReport,
     getApprovedMills,
-    verifyPassword
+    verifyPassword,
+    getRegionalReports
 };
