@@ -106,6 +106,8 @@ const MillProfile = ({ userData }) => {
   const [selectedMillLocation, setSelectedMillLocation] = useState(null);
   // State for picker type (free map or simple)
   const [useSimplePicker, setUseSimplePicker] = useState(false);
+  // State to track if mill is approved (has license)
+  const [isApprovedMill, setIsApprovedMill] = useState(false);
 
   const getCurrentUserId = () => {
     try {
@@ -127,6 +129,22 @@ const MillProfile = ({ userData }) => {
       return "";
     } catch {
       return "";
+    }
+  };
+
+  // Check if mill has an active (approved and not expired) license
+  const fetchLicenseStatus = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/license/status/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        // Returns { hasActiveLicense: true/false, status: 'approved'/'expired'/etc, expiryDate: '...' }
+        return data.hasActiveLicense || false;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error fetching license status:', error);
+      return false;
     }
   };
 
@@ -172,6 +190,11 @@ const MillProfile = ({ userData }) => {
           profilePhoto: "",
           password: "",
         };
+
+        // Check license status from backend API (more reliable than userData)
+        const userId = getCurrentUserId();
+        const hasActiveLicense = await fetchLicenseStatus(userId);
+        setIsApprovedMill(hasActiveLicense);
 
         // Load any saved profile customizations and merge with user data
         const savedProfile = sessionStorage.getItem("profileData");
@@ -305,11 +328,11 @@ const MillProfile = ({ userData }) => {
     // Extract city (usually the first substantial part that's not a street number)
     for (const part of parts) {
       if (part &&
-          !part.match(/^\d/) && // Not starting with number
-          !part.toLowerCase().includes('sri lanka') &&
-          !part.toLowerCase().includes('road') &&
-          !part.toLowerCase().includes('street') &&
-          part.length > 2) {
+        !part.match(/^\d/) && // Not starting with number
+        !part.toLowerCase().includes('sri lanka') &&
+        !part.toLowerCase().includes('road') &&
+        !part.toLowerCase().includes('street') &&
+        part.length > 2) {
         city = part;
         break;
       }
@@ -359,17 +382,17 @@ const MillProfile = ({ userData }) => {
         showErrorToast('Image size must be less than 5MB');
         return;
       }
-      
+
       // Validate file type
       if (!file.type.startsWith('image/')) {
         showErrorToast('Please select a valid image file (PNG, JPG, JPEG, GIF, WebP)');
         return;
       }
 
-      
+
       // Show loading state
       setIsLoading(true);
-      
+
       const reader = new FileReader();
       reader.onloadend = async () => {
         // Upload to database
@@ -393,7 +416,7 @@ const MillProfile = ({ userData }) => {
       reader.readAsDataURL(file);
     }
   };
-  
+
 
 
 
@@ -408,7 +431,7 @@ const MillProfile = ({ userData }) => {
   const handleSave = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       // Validate required fields - Personal and Business Information
       const requiredFields = [
@@ -416,12 +439,12 @@ const MillProfile = ({ userData }) => {
         'businessName', 'businessType', 'millCapacity', 'millLocation', 'millDistrict'
       ];
       const { isValid } = validateFormWithToast(formData, requiredFields);
-      
+
       if (!isValid) {
         setIsLoading(false);
         return;
       }
-      
+
       // Validate password fields if changing password
       if (passwords.new || passwords.confirm) {
         if (passwords.new !== passwords.confirm) {
@@ -429,14 +452,14 @@ const MillProfile = ({ userData }) => {
           setIsLoading(false);
           return;
         }
-        
+
         if (passwords.new.length < 6) {
           showErrorToast('New password must be at least 6 characters long');
           setIsLoading(false);
           return;
         }
       }
-      
+
       // Make API call to update profile in database
       const profileData = {
         firstName: formData.firstName,
@@ -473,14 +496,14 @@ const MillProfile = ({ userData }) => {
 
       const result = await response.json();
       console.log('Profile updated successfully:', result);
-      
+
       // Update local state with API response
       const updatedProfile = {
         ...formData,
         lastUpdated: new Date().toISOString()
       };
 
-  const { profilePhoto: _profilePhoto, ...storageSafeProfile } = updatedProfile;
+      const { profilePhoto: _profilePhoto, ...storageSafeProfile } = updatedProfile;
 
       try {
         sessionStorage.setItem("profileData", JSON.stringify(storageSafeProfile));
@@ -491,9 +514,9 @@ const MillProfile = ({ userData }) => {
       setOriginalData(updatedProfile);
       setPasswords({ current: "", new: "", confirm: "" });
       setIsEditing(false);
-      
+
       showSuccessToast('Profile updated successfully!');
-      
+
     } catch (error) {
       const fallbackMessage = 'Failed to update profile. Please try again.';
       const errorMessage = typeof error?.message === 'string' && error.message.trim().length > 0
@@ -554,8 +577,8 @@ const MillProfile = ({ userData }) => {
             {/* User Info */}
             <div>
               <h2 className="text-2xl font-bold text-green-700 mb-2">
-                {formData.firstName && formData.lastName ? 
-                  `${formData.firstName} ${formData.lastName}` : 
+                {formData.firstName && formData.lastName ?
+                  `${formData.firstName} ${formData.lastName}` :
                   'Complete Your Profile'
                 }
               </h2>
@@ -611,91 +634,91 @@ const MillProfile = ({ userData }) => {
           )}
         </div>
 
-      {/* Information Overview */}
-      <div className="grid md:grid-cols-2 gap-6 mt-8">
-        {/* Personal Information Card */}
-        <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-semibold text-green-700 flex items-center gap-3 mb-4">
-            <UserIcon className="h-5 w-5 text-green-600" />
-            Personal Information
-          </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-              <div className="flex items-center gap-3">
-                <EnvelopeIcon className="h-4 w-4 text-slate-400" />
-                <span className="text-slate-600 text-sm">Email</span>
+        {/* Information Overview */}
+        <div className="grid md:grid-cols-2 gap-6 mt-8">
+          {/* Personal Information Card */}
+          <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-semibold text-green-700 flex items-center gap-3 mb-4">
+              <UserIcon className="h-5 w-5 text-green-600" />
+              Personal Information
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <EnvelopeIcon className="h-4 w-4 text-slate-400" />
+                  <span className="text-slate-600 text-sm">Email</span>
+                </div>
+                <span className="text-slate-900 font-medium text-sm">
+                  {formData.email || <span className="text-slate-400">Not set</span>}
+                </span>
               </div>
-              <span className="text-slate-900 font-medium text-sm">
-                {formData.email || <span className="text-slate-400">Not set</span>}
-              </span>
-            </div>
-            <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-              <div className="flex items-center gap-3">
-                <PhoneIcon className="h-4 w-4 text-slate-400" />
-                <span className="text-slate-600 text-sm">Phone</span>
+              <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <PhoneIcon className="h-4 w-4 text-slate-400" />
+                  <span className="text-slate-600 text-sm">Phone</span>
+                </div>
+                <span className="text-slate-900 font-medium text-sm">
+                  {formData.phoneNumber || <span className="text-slate-400">Not set</span>}
+                </span>
               </div>
-              <span className="text-slate-900 font-medium text-sm">
-                {formData.phoneNumber || <span className="text-slate-400">Not set</span>}
-              </span>
-            </div>
-            <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-              <div className="flex items-center gap-3">
-                <MapPinIcon className="h-4 w-4 text-slate-400" />
-                <span className="text-slate-600 text-sm">City</span>
+              <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <MapPinIcon className="h-4 w-4 text-slate-400" />
+                  <span className="text-slate-600 text-sm">City</span>
+                </div>
+                <span className="text-slate-900 font-medium text-sm">
+                  {formData.city || <span className="text-slate-400">Not set</span>}
+                </span>
               </div>
-              <span className="text-slate-900 font-medium text-sm">
-                {formData.city || <span className="text-slate-400">Not set</span>}
-              </span>
             </div>
           </div>
-        </div>
 
-        {/* Business Information Card */}
-        <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-semibold text-green-700 flex items-center gap-3 mb-4">
-            <BuildingOfficeIcon className="h-5 w-5 text-green-600" />
-            Business Information
-          </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-              <div className="flex items-center gap-3">
-                <BuildingOfficeIcon className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600 text-sm">Business Type</span>
+          {/* Business Information Card */}
+          <div className="bg-white shadow-md border border-green-200 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-semibold text-green-700 flex items-center gap-3 mb-4">
+              <BuildingOfficeIcon className="h-5 w-5 text-green-600" />
+              Business Information
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <BuildingOfficeIcon className="h-4 w-4 text-gray-400" />
+                  <span className="text-gray-600 text-sm">Business Type</span>
+                </div>
+                <span className="text-gray-900 font-medium text-sm capitalize">
+                  {formData.businessType || <span className="text-gray-400">Not set</span>}
+                </span>
               </div>
-              <span className="text-gray-900 font-medium text-sm capitalize">
-                {formData.businessType || <span className="text-gray-400">Not set</span>}
-              </span>
-            </div>
-            <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-              <div className="flex items-center gap-3">
-                <UserIcon className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600 text-sm">Mill Capacity</span>
+              <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <UserIcon className="h-4 w-4 text-gray-400" />
+                  <span className="text-gray-600 text-sm">Mill Capacity</span>
+                </div>
+                <span className="text-gray-900 font-medium text-sm">
+                  {formData.millCapacity ? `${formData.millCapacity} tons/day` : <span className="text-gray-400">Not set</span>}
+                </span>
               </div>
-              <span className="text-gray-900 font-medium text-sm">
-                {formData.millCapacity ? `${formData.millCapacity} tons/day` : <span className="text-gray-400">Not set</span>}
-              </span>
-            </div>
-            <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-              <div className="flex items-center gap-3">
-                <MapPinIcon className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600 text-sm">Owner District</span>
+              <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <MapPinIcon className="h-4 w-4 text-gray-400" />
+                  <span className="text-gray-600 text-sm">Owner District</span>
+                </div>
+                <span className="text-gray-900 font-medium text-sm">
+                  {formData.district || <span className="text-gray-400">Not set</span>}
+                </span>
               </div>
-              <span className="text-gray-900 font-medium text-sm">
-                {formData.district || <span className="text-gray-400">Not set</span>}
-              </span>
-            </div>
-            <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-              <div className="flex items-center gap-3">
-                <MapPinIcon className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-600 text-sm">Mill District</span>
+              <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-3">
+                  <MapPinIcon className="h-4 w-4 text-gray-400" />
+                  <span className="text-gray-600 text-sm">Mill District</span>
+                </div>
+                <span className="text-gray-900 font-medium text-sm">
+                  {formData.millDistrict || <span className="text-gray-400">Not set</span>}
+                </span>
               </div>
-              <span className="text-gray-900 font-medium text-sm">
-                {formData.millDistrict || <span className="text-gray-400">Not set</span>}
-              </span>
             </div>
           </div>
         </div>
-      </div>
 
         {/* Profile viewing mode (not editing) */}
         {!isEditing ? (
@@ -711,7 +734,7 @@ const MillProfile = ({ userData }) => {
                 <UserIcon className="h-6 w-6 text-green-600" />
                 <h3 className="text-xl font-semibold text-green-700">Personal Information</h3>
               </div>
-              
+
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -743,6 +766,7 @@ const MillProfile = ({ userData }) => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     National Identity Card (NIC) *
+                    {isApprovedMill && <span className="ml-2 text-xs text-amber-600">(Locked - License Approved)</span>}
                   </label>
                   <div className="relative">
                     <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -751,7 +775,9 @@ const MillProfile = ({ userData }) => {
                       name="nic"
                       value={formData.nic}
                       onChange={handleChange}
-                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                      disabled={isApprovedMill}
+                      className={`w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${isApprovedMill ? 'bg-gray-100 cursor-not-allowed' : ''
+                        }`}
                       placeholder="Enter your NIC number (e.g., 123456789V or 200012345678)"
                       pattern="^([0-9]{9}[VvXx]|[0-9]{12})$"
                       title="Enter a valid Sri Lankan NIC (9 digits + V/X or 12 digits)"
@@ -759,7 +785,10 @@ const MillProfile = ({ userData }) => {
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Enter your Sri Lankan National Identity Card number
+                    {isApprovedMill
+                      ? '🔒 NIC is locked during active license period. Will be editable after license expires.'
+                      : 'Enter your Sri Lankan National Identity Card number'
+                    }
                   </p>
                 </div>
 
@@ -890,7 +919,7 @@ const MillProfile = ({ userData }) => {
                 <BuildingOfficeIcon className="h-6 w-6 text-green-600" />
                 <h3 className="text-xl font-semibold text-green-700">Business Information</h3>
               </div>
-              
+
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Business Name *</label>
@@ -907,12 +936,17 @@ const MillProfile = ({ userData }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Business Type *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Business Type *
+                      {isApprovedMill && <span className="ml-2 text-xs text-amber-600">(Locked - License Approved)</span>}
+                    </label>
                     <select
                       name="businessType"
                       value={formData.businessType}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                      disabled={isApprovedMill}
+                      className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${isApprovedMill ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''
+                        }`}
                       required
                     >
                       <option value="private">Private</option>
@@ -937,69 +971,86 @@ const MillProfile = ({ userData }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Mill Location *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Mill Location *
+                      {isApprovedMill && <span className="ml-2 text-xs text-amber-600">(Locked - License Approved)</span>}
+                    </label>
                     <div className="relative">
                       <input
                         type="text"
                         name="millLocation"
                         value={formData.millLocation}
                         onChange={handleChange}
-                        className="w-full px-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                        disabled={isApprovedMill}
+                        className={`w-full px-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${isApprovedMill ? 'bg-gray-100 cursor-not-allowed' : ''
+                          }`}
                         placeholder="Enter mill location"
                         required
                       />
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex gap-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setUseSimplePicker(false);
-                            setShowMillLocationMap(true);
-                          }}
-                          className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-                          title="Select mill location from free map"
-                        >
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setUseSimplePicker(true);
-                            setShowMillLocationMap(true);
-                          }}
-                          className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Enter mill location manually"
-                        >
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                      </div>
+                      {!isApprovedMill && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUseSimplePicker(false);
+                              setShowMillLocationMap(true);
+                            }}
+                            className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Select mill location from free map"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUseSimplePicker(true);
+                              setShowMillLocationMap(true);
+                            }}
+                            className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Enter mill location manually"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Latitude *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Latitude *
+                          {isApprovedMill && <span className="ml-2 text-xs text-amber-600">(Locked - License Approved)</span>}
+                        </label>
                         <input
                           type="number"
                           name="millLatitude"
                           step="any"
                           value={formData.millLatitude}
                           onChange={handleChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                          disabled={isApprovedMill}
+                          className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${isApprovedMill ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''
+                            }`}
                           placeholder="e.g., 7.873100"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Longitude *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Longitude *
+                          {isApprovedMill && <span className="ml-2 text-xs text-amber-600">(Locked - License Approved)</span>}
+                        </label>
                         <input
                           type="number"
                           name="millLongitude"
                           step="any"
                           value={formData.millLongitude}
                           onChange={handleChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                          disabled={isApprovedMill}
+                          className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${isApprovedMill ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''
+                            }`}
                           placeholder="e.g., 80.771800"
                           required
                         />
@@ -1010,12 +1061,17 @@ const MillProfile = ({ userData }) => {
                     </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Mill District *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Mill District *
+                      {isApprovedMill && <span className="ml-2 text-xs text-amber-600">(Locked - License Approved)</span>}
+                    </label>
                     <select
                       name="millDistrict"
                       value={formData.millDistrict}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors bg-white"
+                      disabled={isApprovedMill}
+                      className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors bg-white ${isApprovedMill ? 'bg-gray-100 cursor-not-allowed' : ''
+                        }`}
                       required
                     >
                       <option value="">Select mill district</option>
@@ -1026,20 +1082,33 @@ const MillProfile = ({ userData }) => {
                       ))}
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
-                      Select the district where your mill is located for paddy pricing
+                      {isApprovedMill
+                        ? '🔒 Mill district is locked during active license period. Will be editable after license expires.'
+                        : 'Select the district where your mill is located for paddy pricing'
+                      }
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Registration Date</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Registration Date
+                    {isApprovedMill && <span className="ml-2 text-xs text-amber-600">(Locked - License Approved)</span>}
+                  </label>
                   <input
                     type="date"
                     name="registrationDate"
                     value={formData.registrationDate}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                    disabled={isApprovedMill}
+                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${isApprovedMill ? 'bg-gray-100 cursor-not-allowed text-gray-500' : ''
+                      }`}
                   />
+                  {isApprovedMill && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      🔒 Registration date is locked during active license period.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1050,12 +1119,12 @@ const MillProfile = ({ userData }) => {
                 <LockClosedIcon className="h-6 w-6 text-green-600" />
                 <h3 className="text-xl font-semibold text-green-700">Change Password</h3>
               </div>
-              
+
               <div className="space-y-6">
                 <p className="text-sm text-gray-600 bg-green-50 p-4 rounded-lg border border-green-200">
                   Leave password fields empty if you don't want to change your password.
                 </p>
-                
+
                 {[
                   { field: "current", label: "Current Password", placeholder: "Enter current password" },
                   { field: "new", label: "New Password", placeholder: "Enter new password" },
@@ -1156,7 +1225,7 @@ const MillProfile = ({ userData }) => {
           </>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 

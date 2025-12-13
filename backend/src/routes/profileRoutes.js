@@ -58,61 +58,61 @@ const normalizeCoordinate = (value) => {
 
 // Test route
 router.get('/test', (_req, res) => {
-  console.log('📸 Profile test route hit!');
-  res.json({ message: 'Profile routes are working!' });
+    console.log('📸 Profile test route hit!');
+    res.json({ message: 'Profile routes are working!' });
 });
 
 // Upload profile photo
 router.post('/upload-photo', async (req, res) => {
-  try {
-    console.log('📸 Upload photo request received');
-    console.log('Request body keys:', Object.keys(req.body));
-    
-    const { userId, photoData, filename, fileSize, mimeType } = req.body;
+    try {
+        console.log('📸 Upload photo request received');
+        console.log('Request body keys:', Object.keys(req.body));
 
-    console.log('Upload data:', {
-      userId,
-      filename,
-      fileSize,
-      mimeType,
-      hasPhotoData: !!photoData,
-      photoDataLength: photoData ? photoData.length : 0
-    });
+        const { userId, photoData, filename, fileSize, mimeType } = req.body;
 
-    if (!userId || !photoData || !filename || !fileSize || !mimeType) {
-      console.log('❌ Missing required fields');
-      return res.status(400).json({ 
-        message: 'Missing required fields: userId, photoData, filename, fileSize, mimeType' 
-      });
-    }
+        console.log('Upload data:', {
+            userId,
+            filename,
+            fileSize,
+            mimeType,
+            hasPhotoData: !!photoData,
+            photoDataLength: photoData ? photoData.length : 0
+        });
 
-    // Validate file size (max 5MB)
-    if (fileSize > 5 * 1024 * 1024) {
-      return res.status(400).json({ 
-        message: 'File size too large. Maximum allowed size is 5MB.' 
-      });
-    }
+        if (!userId || !photoData || !filename || !fileSize || !mimeType) {
+            console.log('❌ Missing required fields');
+            return res.status(400).json({
+                message: 'Missing required fields: userId, photoData, filename, fileSize, mimeType'
+            });
+        }
 
-    // Validate mime type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(mimeType.toLowerCase())) {
-      return res.status(400).json({ 
-        message: 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.' 
-      });
-    }
+        // Validate file size (max 5MB)
+        if (fileSize > 5 * 1024 * 1024) {
+            return res.status(400).json({
+                message: 'File size too large. Maximum allowed size is 5MB.'
+            });
+        }
 
-    // Check if user exists
-    const [userCheck] = await pool.execute(
-      'SELECT id FROM users WHERE id = ?',
-      [userId]
-    );
+        // Validate mime type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(mimeType.toLowerCase())) {
+            return res.status(400).json({
+                message: 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'
+            });
+        }
 
-    if (userCheck.length === 0) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+        // Check if user exists
+        const [userCheck] = await pool.execute(
+            'SELECT id FROM users WHERE id = ?',
+            [userId]
+        );
 
-    // Insert or update profile photo
-    await pool.execute(`
+        if (userCheck.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Insert or update profile photo
+        await pool.execute(`
       INSERT INTO user_profile_photos (user_id, photo_data, filename, file_size, mime_type)
       VALUES (?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
@@ -123,98 +123,98 @@ router.post('/upload-photo', async (req, res) => {
         updated_at = CURRENT_TIMESTAMP
     `, [userId, photoData, filename, fileSize, mimeType]);
 
-    console.log(`✅ Profile photo uploaded/updated for user ${userId}`);
-    
-    res.status(200).json({ 
-      message: 'Profile photo uploaded successfully',
-      filename: filename
-    });
+        console.log(`✅ Profile photo uploaded/updated for user ${userId}`);
 
-  } catch (error) {
-    console.error('Error uploading profile photo:', error);
-    res.status(500).json({ 
-      message: 'Failed to upload profile photo', 
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    });
-  }
+        res.status(200).json({
+            message: 'Profile photo uploaded successfully',
+            filename: filename
+        });
+
+    } catch (error) {
+        console.error('Error uploading profile photo:', error);
+        res.status(500).json({
+            message: 'Failed to upload profile photo',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
 });
 
 // Get profile photo
 router.get('/photo/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
+    try {
+        const { userId } = req.params;
 
-    if (!userId) {
-      return res.status(400).json({ message: 'User ID is required' });
+        if (!userId) {
+            return res.status(400).json({ message: 'User ID is required' });
+        }
+
+        // Get profile photo from database
+        const [photoResult] = await pool.execute(
+            'SELECT photo_data, filename, mime_type, uploaded_at FROM user_profile_photos WHERE user_id = ?',
+            [userId]
+        );
+
+        if (photoResult.length === 0) {
+            return res.status(404).json({ message: 'Profile photo not found' });
+        }
+
+        const photo = photoResult[0];
+
+        res.status(200).json({
+            message: 'Profile photo retrieved successfully',
+            photoData: photo.photo_data,
+            filename: photo.filename,
+            mimeType: photo.mime_type,
+            uploadedAt: photo.uploaded_at
+        });
+
+    } catch (error) {
+        console.error('Error retrieving profile photo:', error);
+        res.status(500).json({
+            message: 'Failed to retrieve profile photo',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
     }
-
-    // Get profile photo from database
-    const [photoResult] = await pool.execute(
-      'SELECT photo_data, filename, mime_type, uploaded_at FROM user_profile_photos WHERE user_id = ?',
-      [userId]
-    );
-
-    if (photoResult.length === 0) {
-      return res.status(404).json({ message: 'Profile photo not found' });
-    }
-
-    const photo = photoResult[0];
-
-    res.status(200).json({
-      message: 'Profile photo retrieved successfully',
-      photoData: photo.photo_data,
-      filename: photo.filename,
-      mimeType: photo.mime_type,
-      uploadedAt: photo.uploaded_at
-    });
-
-  } catch (error) {
-    console.error('Error retrieving profile photo:', error);
-    res.status(500).json({ 
-      message: 'Failed to retrieve profile photo', 
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    });
-  }
 });
 
 // Delete profile photo
 router.delete('/photo/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
+    try {
+        const { userId } = req.params;
 
-    if (!userId) {
-      return res.status(400).json({ message: 'User ID is required' });
+        if (!userId) {
+            return res.status(400).json({ message: 'User ID is required' });
+        }
+
+        // Check if photo exists
+        const [photoCheck] = await pool.execute(
+            'SELECT id FROM user_profile_photos WHERE user_id = ?',
+            [userId]
+        );
+
+        if (photoCheck.length === 0) {
+            return res.status(404).json({ message: 'Profile photo not found' });
+        }
+
+        // Delete profile photo
+        await pool.execute(
+            'DELETE FROM user_profile_photos WHERE user_id = ?',
+            [userId]
+        );
+
+        console.log(`✅ Profile photo deleted for user ${userId}`);
+
+        res.status(200).json({
+            message: 'Profile photo deleted successfully'
+        });
+
+    } catch (error) {
+        console.error('Error deleting profile photo:', error);
+        res.status(500).json({
+            message: 'Failed to delete profile photo',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
     }
-
-    // Check if photo exists
-    const [photoCheck] = await pool.execute(
-      'SELECT id FROM user_profile_photos WHERE user_id = ?',
-      [userId]
-    );
-
-    if (photoCheck.length === 0) {
-      return res.status(404).json({ message: 'Profile photo not found' });
-    }
-
-    // Delete profile photo
-    await pool.execute(
-      'DELETE FROM user_profile_photos WHERE user_id = ?',
-      [userId]
-    );
-
-    console.log(`✅ Profile photo deleted for user ${userId}`);
-    
-    res.status(200).json({ 
-      message: 'Profile photo deleted successfully'
-    });
-
-  } catch (error) {
-    console.error('Error deleting profile photo:', error);
-    res.status(500).json({ 
-      message: 'Failed to delete profile photo', 
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    });
-  }
 });
 
 // Update user profile data - Enhanced with all fields
@@ -241,7 +241,63 @@ router.put('/update/:userId', async (req, res) => {
             registrationDate
         } = req.body;
 
-        const sanitizedBusinessTypeRaw = normalizeValue(businessType);
+        // Check for active (approved and not expired) license
+        let isLocked = false;
+        try {
+            const [activeLicenses] = await pool.execute(`
+                SELECT approved_date, created_at 
+                FROM mill_licenses 
+                WHERE user_id = ? AND status = 'approved'
+                ORDER BY COALESCE(approved_date, created_at) DESC LIMIT 1
+            `, [userId]);
+
+            if (activeLicenses.length > 0) {
+                const license = activeLicenses[0];
+                const approvalDate = new Date(license.approved_date || license.created_at);
+                const expiryDate = new Date(approvalDate);
+                expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+                // If expiry date is in the future, license is active and fields are locked
+                if (expiryDate > new Date()) {
+                    isLocked = true;
+                    console.log(`🔒 Fields are LOCKED for user ${userId} due to active license`);
+                }
+            }
+        } catch (err) {
+            console.error('Error checking license status in update:', err);
+        }
+
+        // Prepare values for update
+        let finalNic = nic;
+        let finalMillLocation = millLocation;
+        let finalMillDistrict = millDistrict;
+        let finalMillLat = millLatitude;
+        let finalMillLng = millLongitude;
+        let finalRegistrationDate = registrationDate;
+        let finalBusinessType = businessType;
+
+        // If locked, fetch current values from DB and force them to override request body
+        if (isLocked) {
+            const [currentUser] = await pool.execute(
+                'SELECT nic, mill_location, mill_district, mill_latitude, mill_longitude, registration_date, business_type FROM users WHERE id = ?',
+                [userId]
+            );
+
+            if (currentUser.length > 0) {
+                const cur = currentUser[0];
+                finalNic = cur.nic;
+                finalMillLocation = cur.mill_location;
+                finalMillDistrict = cur.mill_district;
+                finalMillLat = cur.mill_latitude;
+                finalMillLng = cur.mill_longitude;
+                // If registration date exists in DB, keep it locked. If it's NULL, maybe allow setting it?
+                // Assuming strict lock for consistency.
+                finalRegistrationDate = cur.registration_date;
+                finalBusinessType = cur.business_type;
+            }
+        }
+
+        const sanitizedBusinessTypeRaw = normalizeValue(finalBusinessType);
         const sanitizedBusinessType = sanitizedBusinessTypeRaw
             ? ['private', 'government'].includes(sanitizedBusinessTypeRaw.toLowerCase())
                 ? sanitizedBusinessTypeRaw.toLowerCase()
@@ -251,7 +307,7 @@ router.put('/update/:userId', async (req, res) => {
         const normalizedValues = {
             firstName: normalizeValue(firstName),
             lastName: normalizeValue(lastName),
-            nic: normalizeValue(nic),
+            nic: normalizeValue(finalNic),
             email: normalizeValue(email),
             phone: normalizeValue(phone),
             address: normalizeValue(address),
@@ -261,17 +317,16 @@ router.put('/update/:userId', async (req, res) => {
             businessName: normalizeValue(businessName),
             businessType: sanitizedBusinessType,
             millCapacity: normalizeValue(millCapacity),
-            millLocation: normalizeValue(millLocation),
-            millDistrict: normalizeValue(millDistrict),
-            millLatitude: normalizeCoordinate(millLatitude),
-            millLongitude: normalizeCoordinate(millLongitude),
-            registrationDate: normalizeDate(registrationDate)
+            millLocation: normalizeValue(finalMillLocation),
+            millDistrict: normalizeValue(finalMillDistrict),
+            millLatitude: normalizeCoordinate(finalMillLat),
+            millLongitude: normalizeCoordinate(finalMillLng),
+            registrationDate: normalizeDate(finalRegistrationDate)
         };
 
         console.log(`📝 Updating complete profile for user ${userId}`);
-        console.log('📝 Received data:', { firstName, lastName, nic, email, phone, address, city, district, postalCode, businessName, businessType, millCapacity, millLocation, millDistrict, registrationDate });
 
-        // Update user profile with all fields (only the fields that are sent from frontend)
+        // Update user profile with all fields
         const [result] = await pool.execute(`
             UPDATE users
             SET first_name = ?, last_name = ?, nic = ?, email = ?, phone = ?,
@@ -304,7 +359,7 @@ router.put('/update/:userId', async (req, res) => {
         }
 
         console.log(`✅ Complete profile updated successfully for user ${userId}`);
-        
+
         res.status(200).json({
             message: 'Profile updated successfully',
             user: {
@@ -424,8 +479,8 @@ router.get('/completeness/:userId', async (req, res) => {
             mill_capacity: user.mill_capacity,
             mill_location: user.mill_location,
             mill_latitude: user.mill_latitude,
-                millLatitude: user.mill_latitude,
-                millLongitude: user.mill_longitude,
+            millLatitude: user.mill_latitude,
+            millLongitude: user.mill_longitude,
             mill_longitude: user.mill_longitude,
             registration_date: user.registration_date
         }, null, 2));
@@ -443,7 +498,7 @@ router.get('/completeness/:userId', async (req, res) => {
             { field: user.district, name: 'District' },
             { field: user.postal_code, name: 'Postal Code' }
         ];
-        
+
         // Business Information Fields (50%)
         const businessFields = [
             { field: user.business_name, name: 'Business Name' },
@@ -455,7 +510,7 @@ router.get('/completeness/:userId', async (req, res) => {
             { field: user.mill_district, name: 'Mill District' },
             { field: user.registration_date, name: 'Registration Date' }
         ];
-        
+
         // Calculate filled fields for each category
         const filledPersonalFields = personalFields.filter(item => {
             let isValid = false;
@@ -481,7 +536,7 @@ router.get('/completeness/:userId', async (req, res) => {
             console.log(`📊 ${item.name}: ${item.field} (type: ${typeof item.field}) -> ${isValid ? 'FILLED' : 'EMPTY'}`);
             return isValid;
         });
-        
+
         // Calculate weighted completeness
         const personalCompleteness = (filledPersonalFields.length / personalFields.length) * 50;
         const businessCompleteness = (filledBusinessFields.length / businessFields.length) * 50;
@@ -598,7 +653,7 @@ router.get('/completeness/:userId', async (req, res) => {
 router.get('/clear-test-user-fields', async (_req, res) => {
     try {
         console.log('🧹 Clearing address fields for test user...');
-        
+
         await pool.execute(`
             UPDATE users 
             SET address = NULL, city = NULL, district = NULL, postal_code = NULL,
@@ -609,7 +664,7 @@ router.get('/clear-test-user-fields', async (_req, res) => {
 
         console.log('✅ Test user fields cleared');
         res.json({ message: 'Test user address and business fields cleared', timestamp: new Date().toISOString() });
-        
+
     } catch (error) {
         console.error('❌ Error clearing test user fields:', error);
         res.status(500).json({ message: 'Failed to clear fields', error: error.message });
@@ -666,7 +721,7 @@ router.get('/debug/:userId', async (req, res) => {
             { field: user.district, name: 'District' },
             { field: user.postal_code, name: 'Postal Code' }
         ];
-        
+
         // Business Information Fields (50%)
         const businessFields = [
             { field: user.business_name, name: 'Business Name' },
@@ -678,7 +733,7 @@ router.get('/debug/:userId', async (req, res) => {
             { field: user.mill_district, name: 'Mill District' },
             { field: user.registration_date, name: 'Registration Date' }
         ];
-        
+
         // Calculate filled fields for each category
         const filledPersonalFields = personalFields.filter(item => {
             const isValid = item.field && item.field.toString().trim() !== '';
@@ -690,7 +745,7 @@ router.get('/debug/:userId', async (req, res) => {
             console.log(`🔍 ${item.name}: "${item.field}" -> ${isValid ? 'FILLED' : 'EMPTY'}`);
             return isValid;
         });
-        
+
         // Calculate weighted completeness
         const personalCompleteness = (filledPersonalFields.length / personalFields.length) * 50;
         const businessCompleteness = (filledBusinessFields.length / businessFields.length) * 50;
@@ -748,9 +803,9 @@ router.get('/debug/:userId', async (req, res) => {
 
     } catch (error) {
         console.error('🔍 Debug error:', error);
-        res.status(500).json({ 
-            message: 'Debug failed', 
-            error: error.message 
+        res.status(500).json({
+            message: 'Debug failed',
+            error: error.message
         });
     }
 });

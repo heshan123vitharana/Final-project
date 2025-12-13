@@ -511,15 +511,15 @@ const CollectionCenters = () => {
 
   return (
     <section id="collection-centers" className="relative min-h-screen py-20">
-      {/* Professional Background */}
-  <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-emerald-900 to-green-900 overflow-hidden pointer-events-none"></div>
-  <div className="absolute inset-0 bg-gradient-to-tr from-emerald-600/20 via-transparent to-green-500/15 pointer-events-none"></div>
-      
+      {/* Background (Matching LivePaddyPrices) */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-emerald-900 to-green-900 overflow-hidden pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-emerald-600/20 via-transparent to-green-500/15 pointer-events-none"></div>
+
       {/* Floating Elements */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-green-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
 
-  <div className="relative z-10 max-w-7xl mx-auto px-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-6">
         {/* Header Section */}
         <div className={`text-center mb-16 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
           <h1 className="text-4xl md:text-5xl font-light text-white mb-6 leading-tight tracking-tight">
@@ -528,13 +528,12 @@ const CollectionCenters = () => {
           <p className="text-emerald-100 text-lg max-w-2xl mx-auto">
             Discover our {centers.length} collection centers across Sri Lanka with advanced search and filtering
           </p>
-          {/* Hidden: Live licenses synced badge */}
         </div>
 
-        {/* Enhanced Search and Filter Section */}
-  <div className={`relative z-20 bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 p-8 mb-12 shadow-2xl transform transition-all duration-1000 delay-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-          
-          {/* Search Bar with Real-time Search */}
+        {/* Enhanced Search and Filter Section (Dark Glassmorphism) */}
+        <div className={`relative z-20 bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 p-8 mb-12 shadow-2xl transform transition-all duration-1000 delay-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+
+          {/* Search Bar */}
           <div className="mb-8">
             <div className="relative max-w-2xl mx-auto">
               <input
@@ -542,7 +541,7 @@ const CollectionCenters = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by center name, district, province, manager, or services..."
-                className="w-full px-6 py-4 pl-14 text-lg bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-2xl focus:border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300"
+                className="w-full px-6 py-4 pl-14 text-lg bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-2xl focus:border-emerald-400 focus:outline-none focus:ring-4 focus:ring-emerald-400/20 transition-all duration-300 text-slate-800 placeholder-slate-500"
               />
               <div className="absolute left-5 top-1/2 transform -translate-y-1/2">
                 <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -552,7 +551,7 @@ const CollectionCenters = () => {
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-5 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -562,7 +561,7 @@ const CollectionCenters = () => {
             </div>
           </div>
 
-          {/* Enhanced Filter Options */}
+          {/* Filter Options */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
             {/* District Filter */}
             <div className="relative" ref={districtRef}>
@@ -570,7 +569,7 @@ const CollectionCenters = () => {
               <select
                 value={selectedDistrict}
                 onChange={(e) => setSelectedDistrict(e.target.value)}
-                className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300 text-sm"
+                className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300 text-sm text-slate-800"
               >
                 <option value="">All Districts</option>
                 {districts.map(district => (
@@ -578,21 +577,14 @@ const CollectionCenters = () => {
                 ))}
               </select>
 
-              <div className="mt-2 flex items-center gap-2">
-                  {/* Removed '+ Add District' button as requested */}
-                {selectedDistrict && (
-                  <span className="text-xs text-emerald-200">Selected: {selectedDistrict}</span>
-                )}
-              </div>
-
               {showDistrictDropdown && (
-                <div className="absolute z-50 mt-2 w-full max-h-64 overflow-auto bg-white text-gray-800 rounded-xl shadow-xl border border-emerald-200 pointer-events-auto">
+                <div className="absolute z-50 mt-2 w-full max-h-64 overflow-auto bg-white text-slate-800 rounded-xl shadow-xl border border-emerald-200 pointer-events-auto">
                   {districts.map((d) => (
                     <button
                       key={d}
                       type="button"
                       onClick={() => { setSelectedDistrict(d); setShowDistrictDropdown(false); }}
-                      className={`w-full text-left px-4 py-2 hover:bg-emerald-50 ${selectedDistrict === d ? 'bg-emerald-100 font-semibold' : ''}`}
+                      className={`w-full text-left px-4 py-2 hover:bg-emerald-50 ${selectedDistrict === d ? 'bg-emerald-100 font-semibold text-emerald-800' : ''}`}
                     >
                       {d}
                     </button>
@@ -616,7 +608,7 @@ const CollectionCenters = () => {
               <select
                 value={selectedProvince}
                 onChange={(e) => setSelectedProvince(e.target.value)}
-                className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300 text-sm"
+                className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300 text-sm text-slate-800"
               >
                 <option value="">All Provinces</option>
                 {provinces.map(province => (
@@ -631,7 +623,7 @@ const CollectionCenters = () => {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300 text-sm"
+                className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300 text-sm text-slate-800"
               >
                 <option value="">All Status</option>
                 {statusTypes.map(status => (
@@ -646,7 +638,7 @@ const CollectionCenters = () => {
               <select
                 value={selectedCapacity}
                 onChange={(e) => setSelectedCapacity(e.target.value)}
-                className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300 text-sm"
+                className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300 text-sm text-slate-800"
               >
                 <option value="">All Capacities</option>
                 {capacityTypes.map(capacity => (
@@ -661,7 +653,7 @@ const CollectionCenters = () => {
               <select
                 value={selectedService}
                 onChange={(e) => setSelectedService(e.target.value)}
-                className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300 text-sm"
+                className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300 text-sm text-slate-800"
               >
                 <option value="">All Services</option>
                 {allServices.map(service => (
@@ -676,7 +668,7 @@ const CollectionCenters = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300 text-sm"
+                className="w-full px-3 py-2 bg-white/90 backdrop-blur-sm border-2 border-emerald-300 rounded-xl focus:border-emerald-400 focus:outline-none transition-all duration-300 text-sm text-slate-800"
               >
                 <option value="name">Name</option>
                 <option value="district">District</option>
@@ -692,20 +684,19 @@ const CollectionCenters = () => {
             <div className="flex items-center space-x-4">
               <button
                 onClick={clearAllFilters}
-                className="px-6 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-400/30 rounded-xl transition-all duration-300 hover:scale-105"
+                className="px-6 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-100 border border-red-400/30 rounded-xl transition-all duration-300 hover:scale-105 font-medium text-sm"
               >
                 🗑️ Clear Filters
               </button>
-              
+
               <button
                 onClick={handleViewAllCenters}
-                className="px-6 py-3 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 rounded-xl transition-all duration-300 hover:scale-105"
+                className="px-6 py-3 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-100 border border-emerald-400/30 rounded-xl transition-all duration-300 hover:scale-105 font-medium text-sm"
               >
                 👁️ View All Centers
               </button>
 
-              {/* Show All toggle in filters as requested */}
-              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-emerald-100 text-sm">
+              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-emerald-100 text-sm cursor-pointer hover:bg-white/20">
                 <input type="checkbox" checked={showAllCenters} onChange={(e) => setShowAllCenters(e.target.checked)} className="accent-emerald-500" />
                 Show all centers
               </label>
@@ -732,7 +723,7 @@ const CollectionCenters = () => {
             </div>
 
             {/* Results Counter */}
-            <div className="text-emerald-200 font-semibold">
+            <div className="text-emerald-200 font-semibold text-sm">
               {filteredCenters.length} of {centers.length} centers
             </div>
           </div>
@@ -751,7 +742,7 @@ const CollectionCenters = () => {
               <p className="text-emerald-200 mb-6">Try adjusting your search criteria or filters</p>
               <button
                 onClick={clearAllFilters}
-                className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all duration-300 hover:scale-105"
+                className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all duration-300 hover:scale-105"
               >
                 Reset Search
               </button>
@@ -759,138 +750,158 @@ const CollectionCenters = () => {
           ) : (
             <>
               {/* Centers Grid/List */}
-              <div className={`${viewMode === 'grid' 
-                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8' 
+              <div className={`${viewMode === 'grid'
+                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'
                 : 'space-y-6'
-              } mb-12`}>
+                } mb-12`}>
                 {filteredCenters.map((center, index) => {
                   const services = Array.isArray(center.services) ? center.services : [];
-                  const maxServices = viewMode === 'list' ? 6 : 4;
+                  const maxServices = 4;
                   const overflowServices = Math.max(services.length - maxServices, 0);
 
                   return (
-                    <div 
-                      key={center.renderKey || center.id || index} 
-                      className={`group ${viewMode === 'list' ? 'flex' : ''} bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl border border-white/20 shadow-lg hover:shadow-2xl hover:border-white/30 transition-all duration-300 hover:-translate-y-1 transform`}
+                    <div
+                      key={center.renderKey || center.id || index}
+                      className={`group ${viewMode === 'list' ? 'flex flex-row items-stretch' : 'flex flex-col'} bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-xl hover:shadow-2xl hover:border-emerald-400/50 transition-all duration-300 hover:-translate-y-1 overflow-hidden relative`}
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
-                      {/* Center Content */}
-                      <div className={`${viewMode === 'list' ? 'flex-1' : ''} p-6`}>
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-300 transition-colors">
-                            {center.name}
-                          </h3>
-                          <div className="flex items-center space-x-2 text-sm text-emerald-200 mb-2">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            <span>{center.district}, {center.province}</span>
+                      {/* Top Accent Line */}
+                      <div className={`absolute top-0 left-0 right-0 h-1 ${center.status === 'Active' ? 'bg-gradient-to-r from-emerald-500 to-green-400' : 'bg-gray-600'} opacity-80`} />
+
+                      <div className={`p-5 flex-1 flex flex-col ${viewMode === 'list' ? 'w-2/3' : ''}`}>
+                        {/* Header: Name & Rating */}
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="text-lg font-bold text-white leading-tight mb-1 group-hover:text-emerald-400 transition-colors">
+                              {center.name}
+                            </h3>
+                            <div className="flex items-center text-sm text-emerald-200/80">
+                              <svg className="w-4 h-4 mr-1.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <span>{center.district}, {center.province}</span>
+                            </div>
                           </div>
-                            <p className="text-xs text-emerald-100/70 leading-relaxed">{center.address}</p>
-                        </div>
-                        
-                        {/* Status & Rating */}
-                        <div className="flex flex-col items-end space-y-2">
-                          <span className={`${getStatusColor(center.status)} bg-opacity-20 text-white px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBorderColor(center.status)}`}>
-                            {center.status}
-                          </span>
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${center.source === 'live' ? 'bg-emerald-500/20 text-emerald-100 border border-emerald-400/40' : 'bg-white/10 text-emerald-200 border border-white/10'}`}>
-                            {center.source === 'live' ? 'Live License' : 'Reference Data'}
-                          </span>
-                          <div className="flex items-center space-x-1 bg-black/20 px-2 py-1 rounded-full">
-                            <svg className={`w-4 h-4 ${typeof center.rating === 'number' ? 'text-yellow-400' : 'text-emerald-200'} fill-current`} viewBox="0 0 24 24">
+
+                          {/* Rating Badge */}
+                          <div className="flex items-center space-x-1 bg-black/40 px-2 py-1 rounded-lg border border-white/5 backdrop-blur-sm">
+                            <svg className={`w-3.5 h-3.5 ${typeof center.rating === 'number' ? 'text-yellow-400' : 'text-gray-500'} fill-current`} viewBox="0 0 24 24">
                               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                             </svg>
-                            <span className="text-sm font-semibold text-white">{typeof center.rating === 'number' ? center.rating.toFixed(1) : '—'}</span>
+                            <span className="text-xs font-bold text-white">{typeof center.rating === 'number' ? center.rating.toFixed(1) : '—'}</span>
                           </div>
+                        </div>
+
+                        {/* Status Badges Row */}
+                        <div className="flex flex-wrap gap-2 mb-5">
+                          <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${center.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                              center.status === 'Inactive' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                            }`}>
+                            {center.status}
+                          </span>
+                          <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${center.source === 'live' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                            }`}>
+                            {center.source === 'live' ? 'Live System' : 'Reference Data'}
+                          </span>
+                        </div>
+
+                        {/* Key Metrics Grid */}
+                        <div className="grid grid-cols-2 gap-3 mb-5 p-3 bg-white/5 rounded-xl border border-white/5">
+                          {/* Capacity */}
+                          <div className="col-span-2 sm:col-span-1">
+                            <p className="text-[10px] uppercase text-emerald-500/70 font-semibold mb-0.5">Capacity</p>
+                            <p className="text-sm font-medium text-white flex items-center">
+                              <svg className="w-3.5 h-3.5 mr-1.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                              </svg>
+                              {center.capacity} <span className="opacity-60 text-xs ml-1">({center.capacityMT})</span>
+                            </p>
+                          </div>
+                          {/* Operating Hours */}
+                          <div className="col-span-2 sm:col-span-1">
+                            <p className="text-[10px] uppercase text-emerald-500/70 font-semibold mb-0.5">Hours</p>
+                            <p className="text-sm font-medium text-white flex items-center">
+                              <svg className="w-3.5 h-3.5 mr-1.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {center.operatingHours}
+                            </p>
+                          </div>
+                          {/* Manager */}
+                          <div className="col-span-2 pt-2 border-t border-white/10 mt-1">
+                            <div className="flex items-center text-xs text-emerald-200/70">
+                              <svg className="w-3.5 h-3.5 mr-1.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              Manager: <span className="text-white font-medium ml-1">{center.manager}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Services */}
+                        <div className="mb-4 flex-1">
+                          <div className="flex flex-wrap gap-1.5">
+                            {services.length > 0 ? (
+                              services.slice(0, maxServices).map((service, idx) => (
+                                <span key={idx} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-300 border border-emerald-500/10 rounded-md text-[10px] font-medium">
+                                  {service}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-gray-400 italic">No services listed</span>
+                            )}
+                            {overflowServices > 0 && (
+                              <span className="px-2 py-0.5 bg-white/10 text-gray-300 rounded-md text-[10px] font-medium border border-white/10">
+                                +{overflowServices}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Footer Meta */}
+                        <div className="flex items-center justify-between text-[10px] text-gray-400 border-t border-white/10 pt-3 mt-auto">
+                          <span>Est. {center.established || '—'}</span>
+                          <span>Lic: <span className="text-gray-300 font-mono">{center.licenseNumber !== 'N/A' ? center.licenseNumber : 'N/A'}</span></span>
                         </div>
                       </div>
 
-                      {/* Center Details */}
-                      <div className="border-t border-white/20 my-4 pt-4">
-                        <h4 className="text-sm font-semibold text-emerald-300 uppercase tracking-wider mb-3">Center Details</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-xs text-emerald-300/70">Capacity</p>
-                            <p className="font-semibold text-white">{center.capacity} ({center.capacityMT})</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-emerald-300/70">Manager</p>
-                            <p className="font-semibold text-white">{center.manager}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-emerald-300/70">Operating Hours</p>
-                            <p className="font-semibold text-white">{center.operatingHours}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-emerald-300/70">Established</p>
-                            <p className="font-semibold text-white">{center.established}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-emerald-300/70">License</p>
-                            <p className="font-semibold text-white">{center.licenseNumber && center.licenseNumber !== 'N/A' ? center.licenseNumber : 'Not assigned'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-emerald-300/70">{center.source === 'live' ? 'Approved On' : 'Last Update'}</p>
-                            <p className="font-semibold text-white">{center.source === 'live' ? (formatTimestamp(center.approvedDate) || '—') : (center.established || '—')}</p>
-                          </div>
-                        </div>
+                      {/* Actions Column/Row */}
+                      <div className={`${viewMode === 'list' ? 'w-1/3 border-l border-white/10 p-5 flex flex-col justify-center gap-3 bg-black/20' : 'p-4 bg-black/20 border-t border-white/10 grid grid-cols-3 gap-3'}`}>
+                        <a
+                          href={`tel:${center.phone.replace(/\s+/g, '')}`}
+                          className="flex flex-col items-center justify-center p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all duration-300 group/btn border border-emerald-500/20 hover:border-emerald-500"
+                          title="Call"
+                        >
+                          <svg className="w-5 h-5 mb-1 group-hover/btn:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                          <span className="text-[10px] font-semibold">Call</span>
+                        </a>
+                        <a
+                          href={`mailto:${center.email}`}
+                          className="flex flex-col items-center justify-center p-2 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all duration-300 group/btn border border-indigo-500/20 hover:border-indigo-500"
+                          title="Email"
+                        >
+                          <svg className="w-5 h-5 mb-1 group-hover/btn:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-[10px] font-semibold">Email</span>
+                        </a>
+                        <a
+                          href={`https://www.google.com/maps?q=${encodeURIComponent(center.address)}${center.coordinates ? `@${center.coordinates.lat},${center.coordinates.lng},15z` : ''}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex flex-col items-center justify-center p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-600 hover:text-white transition-all duration-300 group/btn border border-blue-500/20 hover:border-blue-500"
+                          title="Directions"
+                        >
+                          <svg className="w-5 h-5 mb-1 group-hover/btn:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l6-3m-6 3V7m0 10l-6-3m6 3l6-3" />
+                          </svg>
+                          <span className="text-[10px] font-semibold">Map</span>
+                        </a>
                       </div>
-
-                      {/* Services */}
-                      <div className="my-4">
-                        <h4 className="text-sm font-semibold text-emerald-300 uppercase tracking-wider mb-3">Services</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {services.slice(0, maxServices).map((service, idx) => (
-                            <span key={idx} className="px-2 py-1 bg-emerald-500/20 text-emerald-100 rounded-lg text-xs font-medium">
-                              {service}
-                            </span>
-                          ))}
-                          {overflowServices > 0 && (
-                            <span className="px-2 py-1 bg-black/20 text-gray-300 rounded-lg text-xs font-medium">
-                              +{overflowServices} more
-                            </span>
-                          )}
-                          {services.length === 0 && (
-                            <span className="px-2 py-1 bg-black/20 text-gray-300 rounded-lg text-xs font-medium">
-                              Services not listed
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="border-t border-white/20 pt-4 mt-4">
-                        <div className="grid grid-cols-3 gap-2">
-                          <a
-                            href={`tel:${center.phone.replace(/\s+/g, '')}`}
-                            className="flex items-center justify-center gap-2 px-3 py-2 text-center bg-emerald-500/80 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                            Call
-                          </a>
-                          <a
-                            href={`mailto:${center.email}`}
-                            className="flex items-center justify-center gap-2 px-3 py-2 text-center bg-indigo-500/80 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
-                          >
-                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                            Email
-                          </a>
-                          <a
-                            href={`https://www.google.com/maps?q=${encodeURIComponent(center.address)}${center.coordinates ? `@${center.coordinates.lat},${center.coordinates.lng},15z` : ''}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-2 px-3 py-2 text-center bg-blue-500/80 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l6-3m-6 3V7m0 10l-6-3m6 3l6-3"></path></svg>
-                            Directions
-                          </a>
-                        </div>
-                      </div>
-                    </div>
                     </div>
                   );
                 })}
@@ -911,8 +922,6 @@ const CollectionCenters = () => {
           )}
         </div>
       </div>
-
-  {/* Add Center feature removed as requested */}
     </section>
   );
 };

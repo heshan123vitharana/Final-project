@@ -1145,4 +1145,58 @@ router.get('/download-image/:applicationId', async (req, res) => {
     }
 });
 
+// Check if user has an active (approved and not expired) license
+router.get('/status/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        console.log(`🔍 Checking license status for user ID: ${userId}`);
+
+        // Get the latest approved license for this user
+        const [licenses] = await pool.execute(`
+            SELECT id, status, approved_date, created_at, license_number
+            FROM mill_licenses
+            WHERE user_id = ? AND status = 'approved'
+            ORDER BY COALESCE(approved_date, created_at) DESC
+            LIMIT 1
+        `, [userId]);
+
+        if (licenses.length === 0) {
+            // No approved license found
+            return res.status(200).json({
+                hasActiveLicense: false,
+                status: 'no_license',
+                message: 'No approved license found'
+            });
+        }
+
+        const license = licenses[0];
+        const approvalDate = new Date(license.approved_date || license.created_at);
+
+        // Calculate expiry date (1 year from approval)
+        const expiryDate = new Date(approvalDate);
+        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+        const today = new Date();
+        const isExpired = expiryDate < today;
+
+        console.log(`📋 License found: ${license.license_number}, Expires: ${expiryDate.toISOString()}, Expired: ${isExpired}`);
+
+        res.status(200).json({
+            hasActiveLicense: !isExpired,
+            status: isExpired ? 'expired' : 'approved',
+            expiryDate: expiryDate.toISOString(),
+            licenseNumber: license.license_number,
+            approvedDate: approvalDate.toISOString()
+        });
+
+    } catch (error) {
+        console.error('Error checking license status:', error);
+        res.status(500).json({
+            hasActiveLicense: false,
+            message: 'Failed to check license status',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
 module.exports = router;
