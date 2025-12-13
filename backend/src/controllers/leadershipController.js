@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
@@ -108,16 +108,16 @@ const addLeadership = async (req, res) => {
   console.log('Request File:', req.file);
   try {
     await ensureUploadDir();
-    
-    const { 
-      name, 
-      position, 
-      bio, 
-      email, 
-      linkedin, 
-      twitter, 
-      order_index, 
-      is_active 
+
+    const {
+      name,
+      position,
+      bio,
+      email,
+      linkedin,
+      twitter,
+      order_index,
+      is_active
     } = req.body;
 
     if (!name || !position) {
@@ -177,15 +177,15 @@ const updateLeadership = async (req, res) => {
   console.log('is_active value:', req.body.is_active, 'Type:', typeof req.body.is_active);
   try {
     const { id } = req.params;
-    const { 
-      name, 
-      position, 
-      bio, 
-      email, 
-      linkedin, 
-      twitter, 
-      order_index, 
-      is_active 
+    const {
+      name,
+      position,
+      bio,
+      email,
+      linkedin,
+      twitter,
+      order_index,
+      is_active
     } = req.body;
 
     // Check if leadership member exists
@@ -347,6 +347,43 @@ const reorderLeadership = async (req, res) => {
   }
 };
 
+// Batch update order for drag-and-drop reordering
+const batchUpdateOrder = async (req, res) => {
+  try {
+    const { updates } = req.body;
+
+    if (!updates || !Array.isArray(updates)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Updates array is required'
+      });
+    }
+
+    console.log('🔄 Leadership API: Batch updating order for', updates.length, 'members');
+
+    // Update each leader's order_index
+    for (const update of updates) {
+      await req.db.execute(
+        'UPDATE leadership SET order_index = ? WHERE id = ?',
+        [update.order_index, update.id]
+      );
+    }
+
+    res.json({
+      success: true,
+      message: 'Order updated successfully',
+      updated: updates.length
+    });
+  } catch (error) {
+    console.error('❌ Error batch updating order:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update order',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllLeadership,
   getLeadershipById,
@@ -354,5 +391,6 @@ module.exports = {
   updateLeadership,
   deleteLeadership,
   reorderLeadership,
+  batchUpdateOrder,
   upload
 };

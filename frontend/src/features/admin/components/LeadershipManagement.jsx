@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit, Trash, Save, X, User, Upload, ArrowUpDown } from 'lucide-react';
+import { Plus, Edit, Trash, Save, X, User, Upload, GripVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const LeadershipManagement = () => {
@@ -8,6 +8,8 @@ const LeadershipManagement = () => {
   const [error, setError] = useState(null);
   const [editingLeader, setEditingLeader] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [dragOverItem, setDragOverItem] = useState(null);
 
   const fetchLeaders = useCallback(async () => {
     setIsLoading(true);
@@ -140,26 +142,59 @@ const LeadershipManagement = () => {
     }));
   };
 
-  const handleAutoReorder = async () => {
-    if (!window.confirm('This will automatically reassign order numbers (1, 2, 3...) to all leaders based on their current order. Continue?')) {
-      return;
-    }
-
+  const handleReorder = async (newLeaders) => {
     try {
-      const response = await fetch('http://localhost:5000/api/leadership/reorder', {
+      // Update order_index for all leaders based on their new position
+      const updates = newLeaders.map((leader, index) => ({
+        id: leader.id,
+        order_index: index + 1
+      }));
+
+      // Send batch update to backend
+      const response = await fetch('http://localhost:5000/api/leadership/batch-update-order', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ updates }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to reorder leaders.');
+        throw new Error('Failed to update order.');
       }
 
-      const data = await response.json();
-      toast.success(`Successfully reordered ${data.updated} leaders!`);
+      toast.success('Order updated successfully!');
       fetchLeaders();
     } catch (err) {
       toast.error(err.message);
     }
+  };
+
+  const handleDragStart = (e, leader) => {
+    setDraggedItem(leader);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, leader) => {
+    e.preventDefault();
+    setDragOverItem(leader);
+  };
+
+  const handleDragEnd = () => {
+    if (draggedItem && dragOverItem && draggedItem.id !== dragOverItem.id) {
+      const sortedLeaders = [...leaders].sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+      const draggedIndex = sortedLeaders.findIndex(l => l.id === draggedItem.id);
+      const dragOverIndex = sortedLeaders.findIndex(l => l.id === dragOverItem.id);
+
+      const newLeaders = [...sortedLeaders];
+      const [removed] = newLeaders.splice(draggedIndex, 1);
+      newLeaders.splice(dragOverIndex, 0, removed);
+
+      setLeaders(newLeaders);
+      handleReorder(newLeaders);
+    }
+    setDraggedItem(null);
+    setDragOverItem(null);
   };
 
   if (isLoading) {
@@ -175,23 +210,13 @@ const LeadershipManagement = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Manage Leadership Team</h1>
         {!editingLeader && (
-          <div className="flex space-x-3">
-            <button
-              onClick={handleAutoReorder}
-              className="flex items-center bg-purple-600 text-white px-4 py-2 rounded-lg shadow hover:bg-purple-700 transition-colors"
-              title="Automatically fix duplicate order numbers"
-            >
-              <ArrowUpDown size={20} className="mr-2" />
-              Auto-Reorder
-            </button>
-            <button
-              onClick={handleCreate}
-              className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition-colors"
-            >
-              <Plus size={20} className="mr-2" />
-              Add Member
-            </button>
-          </div>
+          <button
+            onClick={handleCreate}
+            className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition-colors"
+          >
+            <Plus size={20} className="mr-2" />
+            Add Member
+          </button>
         )}
       </div>
 
@@ -205,21 +230,41 @@ const LeadershipManagement = () => {
           isCreating={isCreating}
         />
       ) : (
-        <LeaderList leaders={leaders} onEdit={handleEdit} onDelete={handleDelete} />
+        <LeaderList
+          leaders={leaders}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          draggedItem={draggedItem}
+          dragOverItem={dragOverItem}
+        />
       )}
     </div>
   );
 };
 
-const LeaderList = ({ leaders, onEdit, onDelete }) => (
+const LeaderList = ({ leaders, onEdit, onDelete, onDragStart, onDragOver, onDragEnd, draggedItem, dragOverItem }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
     {leaders
       .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
       .map(leader => (
         <div
           key={leader.id}
-          className="group relative bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-green-300"
+          draggable
+          onDragStart={(e) => onDragStart(e, leader)}
+          onDragOver={(e) => onDragOver(e, leader)}
+          onDragEnd={onDragEnd}
+          className={`group relative bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-green-300 cursor-move ${draggedItem?.id === leader.id ? 'opacity-50' : ''
+            } ${dragOverItem?.id === leader.id ? 'border-green-500 border-2' : ''
+            }`}
         >
+          {/* Drag Handle */}
+          <div className="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <GripVertical className="w-5 h-5 text-gray-400" />
+          </div>
+
           {/* Order Badge - Modern Design */}
           <div className="absolute top-4 right-4 z-10">
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1">
