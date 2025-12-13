@@ -25,7 +25,7 @@ import pmbLogo from '../../../assets/logo-p.png'
 import { handleLogoutSuccess } from '../../../utils/validation'
 
 const AdminDashboard = ({ onLogout, userData }) => {
-  const [activeSection, setActiveSection] = useState('license-requests')
+  const [activeSection, setActiveSection] = useState('stock-dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [tooltip, setTooltip] = useState(null)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
