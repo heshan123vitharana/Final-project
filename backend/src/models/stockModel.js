@@ -264,14 +264,27 @@ class StockModel {
   static parseCapacity(value) {
     if (!value) return 0;
 
+    // If already a number, return it
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : 0;
+    }
+
     const asString = String(value).trim();
     if (!asString) return 0;
 
-    const match = asString.replace(',', '').match(/\d+(\.\d+)?/);
+    // Remove common units and separators
+    const cleaned = asString
+      .toLowerCase()
+      .replace(/kg|mt|tons?|quintals?/gi, '') // Remove units
+      .replace(/,/g, '') // Remove commas
+      .trim();
+
+    // Extract the first number found
+    const match = cleaned.match(/(\d+\.?\d*)/);
     if (!match) return 0;
 
-    const parsed = parseFloat(match[0]);
-    return Number.isFinite(parsed) ? parsed : 0;
+    const parsed = parseFloat(match[1]);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
   }
 
   static async getAggregatedStockOverview() {
@@ -368,7 +381,7 @@ class StockModel {
         }
         districtTotals.total += quantity;
 
-        const utilization = capacity > 0 ? Math.round((quantity / capacity) * 100) : 0;
+        const utilization = capacity > 0 ? Math.round((quantity / capacity) * 10000) / 100 : 0;
 
         overview.stockByMill.push({
           mill: row.business_name || `Mill ${row.mill_id}`,
@@ -383,13 +396,13 @@ class StockModel {
         ...entry,
         current: Math.round(entry.current * 100) / 100,
         capacity: Math.round(entry.capacity * 100) / 100,
-        percentage: entry.capacity > 0 ? Math.round((entry.current / entry.capacity) * 100) : 0
+        percentage: entry.capacity > 0 ? Math.round((entry.current / entry.capacity) * 10000) / 100 : 0
       }));
 
       overview.summary.totalStock = Math.round(overview.summary.totalStock * 100) / 100;
       overview.summary.totalCapacity = Math.round(overview.summary.totalCapacity * 100) / 100;
       overview.summary.utilizationRate = overview.summary.totalCapacity > 0
-        ? Math.round((overview.summary.totalStock / overview.summary.totalCapacity) * 100)
+        ? Math.round((overview.summary.totalStock / overview.summary.totalCapacity) * 10000) / 100
         : 0;
 
       overview.stockByDistrict = Array.from(districtMap.values())
@@ -749,7 +762,7 @@ class StockModel {
           overview.summary.activeMills += 1;
         }
 
-        const utilization = capacity > 0 ? Math.round((quantity / capacity) * 100) : 0;
+        const utilization = capacity > 0 ? Math.round((quantity / capacity) * 10000) / 100 : 0;
 
         overview.stockByMill.push({
           mill: row.business_name || `Mill ${row.mill_id}`,
@@ -765,13 +778,13 @@ class StockModel {
         ...entry,
         current: Math.round(entry.current * 100) / 100,
         capacity: Math.round(entry.capacity * 100) / 100,
-        percentage: entry.capacity > 0 ? Math.round((entry.current / entry.capacity) * 100) : 0
+        percentage: entry.capacity > 0 ? Math.round((entry.current / entry.capacity) * 10000) / 100 : 0
       }));
 
       overview.summary.totalStock = Math.round(overview.summary.totalStock * 100) / 100;
       overview.summary.totalCapacity = Math.round(overview.summary.totalCapacity * 100) / 100;
       overview.summary.utilizationRate = overview.summary.totalCapacity > 0
-        ? Math.round((overview.summary.totalStock / overview.summary.totalCapacity) * 100)
+        ? Math.round((overview.summary.totalStock / overview.summary.totalCapacity) * 10000) / 100
         : 0;
 
       // Sort mills by stock desc

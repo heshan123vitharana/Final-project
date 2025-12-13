@@ -1,0 +1,20 @@
+=== Mills in Ampara ===
+[
+  {
+    "id": 45,
+    "business_name": "Heshan",
+    "mill_capacity": "100000",
+    "business_type": "private",
+    "district": "Ampara"
+  }
+]
+
+=== Stock Summary ===
+[
+  {
+    "mill_id": 45,
+    "paddy_type": "Nadu - White",
+    "paddy_condition": "Dry",
+    "total_quantity": "150.00"
+  }
+]
