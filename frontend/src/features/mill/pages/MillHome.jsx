@@ -311,27 +311,27 @@ const MillHome = ({ userData }) => {
     fetchProfileCompleteness();
   }, [fetchProfileCompleteness]);
 
-    useEffect(() => {
-      const interval = setInterval(() => {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchReportHistory();
+    }, REPORT_REFRESH_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [fetchReportHistory]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
         fetchReportHistory();
-      }, REPORT_REFRESH_INTERVAL_MS);
+      }
+    };
 
-      return () => clearInterval(interval);
-    }, [fetchReportHistory]);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    useEffect(() => {
-      const handleVisibilityChange = () => {
-        if (!document.hidden) {
-          fetchReportHistory();
-        }
-      };
-
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-
-      return () => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      };
-    }, [fetchReportHistory]);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchReportHistory]);
 
   useEffect(() => {
     if (!licenseData) {
@@ -359,7 +359,7 @@ const MillHome = ({ userData }) => {
 
     try {
       setLoadingLicense(true);
-  const response = await fetch(`${apiBaseUrl}/api/licenses/applications/${userId}`);
+      const response = await fetch(`${apiBaseUrl}/api/licenses/applications/${userId}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -392,7 +392,7 @@ const MillHome = ({ userData }) => {
       toast.error('User data not available. Please refresh the page.');
       return;
     }
-    
+
     try {
       setLoadingCertificate(true);
 
@@ -413,7 +413,7 @@ const MillHome = ({ userData }) => {
       };
 
       const pdfBytes = await generatePermitCertificate(permitData);
-      
+
       if (pdfBytes) {
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const url = window.URL.createObjectURL(blob);
@@ -442,7 +442,7 @@ const MillHome = ({ userData }) => {
       toast.error('User data not available. Please refresh the page.');
       return;
     }
-    
+
     try {
       setLoadingCertificate(true);
 
@@ -463,7 +463,7 @@ const MillHome = ({ userData }) => {
       };
 
       const pdfBytes = await generatePermitCertificate(permitData);
-      
+
       if (pdfBytes) {
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const url = window.URL.createObjectURL(blob);
@@ -602,7 +602,7 @@ const MillHome = ({ userData }) => {
       timeStyle: 'short'
     });
   };
-  
+
   const formatDateLabel = (value) => {
     if (!value) {
       return null;
@@ -999,17 +999,15 @@ const MillHome = ({ userData }) => {
                 <div className="inline-flex rounded-lg border border-green-600 overflow-hidden">
                   <button
                     onClick={() => setSelectedType('dry')}
-                    className={`px-4 py-2 text-sm font-semibold transition-colors ${
-                      selectedType === 'dry' ? 'bg-green-600 text-white' : 'bg-white text-green-700'
-                    }`}
+                    className={`px-4 py-2 text-sm font-semibold transition-colors ${selectedType === 'dry' ? 'bg-green-600 text-white' : 'bg-white text-green-700'
+                      }`}
                   >
                     Dry Paddy
                   </button>
                   <button
                     onClick={() => setSelectedType('wet')}
-                    className={`px-4 py-2 text-sm font-semibold transition-colors ${
-                      selectedType === 'wet' ? 'bg-green-600 text-white' : 'bg-white text-green-700'
-                    }`}
+                    className={`px-4 py-2 text-sm font-semibold transition-colors ${selectedType === 'wet' ? 'bg-green-600 text-white' : 'bg-white text-green-700'
+                      }`}
                   >
                     Wet Paddy
                   </button>
@@ -1098,124 +1096,33 @@ const MillHome = ({ userData }) => {
         {/* Stock Reporting Section */}
         <div className="max-w-6xl mx-auto px-4 pb-12">
           <section className="bg-white rounded-2xl shadow-sm border border-green-100 px-6 py-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-2xl space-y-2">
-                <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                  <Send className="text-green-600" size={20} />
-                  Share Stock Update with Admin
-                </h2>
-                <p className="text-sm text-gray-600">
-                  Send a snapshot of your latest stock levels to the central administration team. This keeps the district-wide dashboard up to date and helps the PMB respond quickly to stock needs.
-                </p>
-                <ul className="text-sm text-gray-500 space-y-1 list-disc list-inside">
-                  <li>Summary includes total entries, quantity, value, and variety breakdown.</li>
-                  <li>Admin can acknowledge or request follow-up directly from your submission.</li>
-                  <li>Use the note to highlight urgent updates or issues the PMB should know about.</li>
-                </ul>
-              </div>
-              <div className="flex flex-col gap-3 min-w-[230px]">
-                <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Current Total Stock</p>
-                      <p className="text-2xl font-bold text-green-900 mt-1">
-                        {currentStockTotal.toFixed(2)} <span className="text-sm font-semibold text-green-700">MT</span>
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {loadingReports ? (
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={fetchReportHistory}
-                          className="text-xs text-green-700 font-semibold hover:underline"
-                        >
-                          Refresh log
-                        </button>
-                      )}
-                    </div>
+            <div className="flex flex-col gap-3 items-center justify-center">
+              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 min-w-[230px]">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Current Total Stock</p>
+                    <p className="text-2xl font-bold text-green-900 mt-1">
+                      {currentStockTotal.toFixed(2)} <span className="text-sm font-semibold text-green-700">MT</span>
+                    </p>
                   </div>
-                  {reportError && (
-                    <p className="mt-2 text-xs text-red-600">{reportError}</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={openReportModal}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700"
-                >
-                  <Send size={16} className="-ml-1" />
-                  Send Stock Report
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide mb-3">Recent submissions</h3>
-              {loadingReports ? (
-                <div className="flex items-center justify-center py-6">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
-                  <span className="ml-3 text-sm text-gray-600">Loading report history...</span>
-                </div>
-              ) : reportHistory.length === 0 ? (
-                <div className="border border-dashed border-green-200 rounded-xl p-5 text-center">
-                  <p className="text-sm text-gray-600">No stock reports submitted yet. Send your first report to keep the admin team informed.</p>
-                </div>
-              ) : (
-                <div className="grid gap-3">
-                  {reportHistory.map((report) => {
-                    const statusStyles = getReportStatusStyles(report.status);
-                    const reportSummary = report.summary?.totals || report.totals;
-
-                    return (
-                      <article
-                        key={report.id}
-                        className="rounded-xl border border-green-100 bg-white px-4 py-4 shadow-sm"
+                  <div className="flex items-center gap-2">
+                    {loadingReports ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={fetchReportHistory}
+                        className="text-xs text-green-700 font-semibold hover:underline"
                       >
-                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                          <div className="space-y-1">
-                            <p className="text-sm font-semibold text-gray-900">
-                              {formatReportType(report.report_type)}
-                              <span className="ml-2 text-xs font-medium text-gray-500">
-                                {formatReportPeriod(report)}
-                              </span>
-                            </p>
-                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                              <span className="inline-flex items-center gap-1">
-                                <span className="font-semibold text-gray-700">Quantity:</span>
-                                {reportSummary?.quantityKg?.toFixed ? reportSummary.quantityKg.toFixed(2) : Number(reportSummary?.quantityKg || 0).toFixed(2)} MT
-                              </span>
-                              <span className="inline-flex items-center gap-1">
-                                <span className="font-semibold text-gray-700">Entries:</span>
-                                {reportSummary?.entries ?? 0}
-                              </span>
-                              <span className="inline-flex items-center gap-1">
-                                <span className="font-semibold text-gray-700">Submitted:</span>
-                                {formatDateTime(report.created_at)}
-                              </span>
-                            </div>
-                            {report.notes && (
-                              <p className="text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
-                                <span className="font-semibold text-gray-700 mr-2">Note:</span>
-                                {report.notes}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusStyles.className}`}>
-                              {statusStyles.label}
-                            </span>
-                            {report.updated_at && (
-                              <span className="text-[11px] text-gray-400">Updated {formatDateTime(report.updated_at)}</span>
-                            )}
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
+                        Refresh log
+                      </button>
+                    )}
+                  </div>
                 </div>
-              )}
+                {reportError && (
+                  <p className="mt-2 text-xs text-red-600">{reportError}</p>
+                )}
+              </div>
             </div>
           </section>
         </div>
@@ -1344,169 +1251,169 @@ const MillHome = ({ userData }) => {
         )}
 
         {/* License Details Modal */}
-      {showLicenseDetailsModal && licenseData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                  <Award className="text-green-600" size={24} />
-                  License Details
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  Application submitted on {new Date(licenseData.created_at).toLocaleDateString('en-GB')}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowLicenseDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Status</span>
-                {(() => {
-                  const StatusIcon = getStatusDisplay(licenseData.status).icon;
-                  const statusInfo = getStatusDisplay(licenseData.status);
-                  return (
-                    <span className={`mt-2 inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium ${statusInfo.bg} ${statusInfo.color}`}>
-                      <StatusIcon size={16} />
-                      <span>{statusInfo.text}</span>
-                    </span>
-                  );
-                })()}
-              </div>
-
-              <div className="bg-gray-50 rounded-lg p-4">
-                <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Application Number</span>
-                <span className="mt-2 block text-sm font-mono text-gray-800">{licenseData.application_number}</span>
-              </div>
-
-              {licenseData.status === 'approved' && licenseData.license_number && (
-                <div className="bg-green-50 rounded-lg p-4">
-                  <span className="block text-xs font-medium text-green-700 uppercase tracking-wide">License Number</span>
-                  <span className="mt-2 block text-lg font-mono text-green-800 font-semibold">{licenseData.license_number}</span>
+        {showLicenseDetailsModal && licenseData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <Award className="text-green-600" size={24} />
+                    License Details
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Application submitted on {new Date(licenseData.created_at).toLocaleDateString('en-GB')}
+                  </p>
                 </div>
-              )}
-
-              <div className="bg-gray-50 rounded-lg p-4">
-                <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide">License Type</span>
-                <span className="mt-2 block text-sm text-gray-800">{licenseData.license_type || 'Standard Mill License'}</span>
+                <button
+                  onClick={() => setShowLicenseDetailsModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={24} />
+                </button>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Applied Date</span>
-                <span className="mt-2 block text-sm text-gray-800">{new Date(licenseData.created_at).toLocaleDateString('en-GB')}</span>
-              </div>
-
-              {licenseData.approved_date && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Approved Date</span>
-                  <span className="mt-2 block text-sm text-gray-800">{new Date(licenseData.approved_date).toLocaleDateString('en-GB')}</span>
+                  <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Status</span>
+                  {(() => {
+                    const StatusIcon = getStatusDisplay(licenseData.status).icon;
+                    const statusInfo = getStatusDisplay(licenseData.status);
+                    return (
+                      <span className={`mt-2 inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium ${statusInfo.bg} ${statusInfo.color}`}>
+                        <StatusIcon size={16} />
+                        <span>{statusInfo.text}</span>
+                      </span>
+                    );
+                  })()}
                 </div>
-              )}
 
-              {licenseData.status === 'approved' && (
-                <div className="bg-emerald-50 rounded-lg p-4 md:col-span-2">
-                  <span className="block text-xs font-medium text-emerald-700 uppercase tracking-wide">License Validity</span>
-                  <div className="mt-2 flex flex-col gap-1 text-sm text-emerald-800 sm:flex-row sm:items-center sm:justify-between">
-                    <span>
-                      Valid from{' '}
-                      <strong>{formatDateLabel(licenseValidity?.startDate || licenseData.approved_date) || 'Not available'}</strong>
-                    </span>
-                    <span>
-                      Valid until{' '}
-                      <strong>{licenseValidity?.endDate ? formatDateLabel(licenseValidity.endDate) : 'Not available'}</strong>
-                    </span>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Application Number</span>
+                  <span className="mt-2 block text-sm font-mono text-gray-800">{licenseData.application_number}</span>
+                </div>
+
+                {licenseData.status === 'approved' && licenseData.license_number && (
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <span className="block text-xs font-medium text-green-700 uppercase tracking-wide">License Number</span>
+                    <span className="mt-2 block text-lg font-mono text-green-800 font-semibold">{licenseData.license_number}</span>
                   </div>
-                  {licenseValidity?.daysLabel && (
-                    <p className={`mt-2 text-sm font-semibold ${licenseValidity.isExpired ? 'text-red-600' : 'text-green-600'}`}>
-                      {licenseValidity.daysLabel}
-                    </p>
-                  )}
-                  {licenseValidity?.isExpired && (
-                    <p className="mt-1 text-sm text-amber-700">Submit a renewal request from the Mill Registration page to restore your license.</p>
-                  )}
-                </div>
-              )}
+                )}
 
-              {licenseData.rejected_date && (
-                <div className="bg-red-50 rounded-lg p-4 md:col-span-2">
-                  <span className="block text-xs font-medium text-red-700 uppercase tracking-wide">Rejected Date</span>
-                  <span className="mt-2 block text-sm text-red-700">{new Date(licenseData.rejected_date).toLocaleDateString('en-GB')}</span>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide">License Type</span>
+                  <span className="mt-2 block text-sm text-gray-800">{licenseData.license_type || 'Standard Mill License'}</span>
                 </div>
-              )}
 
-              {licenseData.rejection_reason && (
-                <div className="bg-red-50 rounded-lg p-4 md:col-span-2">
-                  <span className="block text-xs font-medium text-red-700 uppercase tracking-wide">Rejection Reason</span>
-                  <p className="mt-2 text-sm text-red-800 whitespace-pre-line">{licenseData.rejection_reason}</p>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Applied Date</span>
+                  <span className="mt-2 block text-sm text-gray-800">{new Date(licenseData.created_at).toLocaleDateString('en-GB')}</span>
                 </div>
-              )}
-            </div>
 
-            {licenseData.status === 'approved' && (
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-5">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className={`text-base font-semibold ${licenseValidity?.isExpired ? 'text-red-700' : 'text-green-800'}`}>
-                      {licenseValidity?.isExpired ? 'Your license has expired' : 'Your license is active'}
-                    </p>
-                    <p className={`text-sm mt-1 ${licenseValidity?.isExpired ? 'text-red-600' : 'text-green-600'}`}>
-                      {licenseValidity?.isExpired
-                        ? 'Submit a renewal request from the Mill Registration page to continue operations.'
-                        : 'Access your certificate whenever you need it.'}
-                    </p>
+                {licenseData.approved_date && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide">Approved Date</span>
+                    <span className="mt-2 block text-sm text-gray-800">{new Date(licenseData.approved_date).toLocaleDateString('en-GB')}</span>
                   </div>
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <button
-                      onClick={() => viewCertificate(licenseData)}
-                      disabled={loadingCertificate}
-                      className={`inline-flex items-center justify-center px-4 py-2 rounded-lg text-white transition-colors ${loadingCertificate ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
-                    >
-                      {loadingCertificate ? (
-                        <>
-                          <Clock size={16} className="mr-2 animate-spin" />
-                          Loading...
-                        </>
-                      ) : (
-                        <>
-                          <FileText size={16} className="mr-2" />
-                          View Certificate
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => downloadCertificate(licenseData)}
-                      disabled={loadingCertificate}
-                      className={`inline-flex items-center justify-center px-4 py-2 rounded-lg border transition-colors ${loadingCertificate ? 'border-gray-300 text-gray-400 cursor-not-allowed' : 'border-green-600 text-green-700 hover:bg-green-50'}`}
-                    >
-                      <Download size={16} className="mr-2" />
-                      {loadingCertificate ? 'Preparing...' : 'Download PDF'}
-                    </button>
+                )}
+
+                {licenseData.status === 'approved' && (
+                  <div className="bg-emerald-50 rounded-lg p-4 md:col-span-2">
+                    <span className="block text-xs font-medium text-emerald-700 uppercase tracking-wide">License Validity</span>
+                    <div className="mt-2 flex flex-col gap-1 text-sm text-emerald-800 sm:flex-row sm:items-center sm:justify-between">
+                      <span>
+                        Valid from{' '}
+                        <strong>{formatDateLabel(licenseValidity?.startDate || licenseData.approved_date) || 'Not available'}</strong>
+                      </span>
+                      <span>
+                        Valid until{' '}
+                        <strong>{licenseValidity?.endDate ? formatDateLabel(licenseValidity.endDate) : 'Not available'}</strong>
+                      </span>
+                    </div>
+                    {licenseValidity?.daysLabel && (
+                      <p className={`mt-2 text-sm font-semibold ${licenseValidity.isExpired ? 'text-red-600' : 'text-green-600'}`}>
+                        {licenseValidity.daysLabel}
+                      </p>
+                    )}
                     {licenseValidity?.isExpired && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowLicenseDetailsModal(false);
-                          navigate('/mill/register');
-                        }}
-                        className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-amber-500 text-amber-700 transition-colors hover:bg-amber-50"
-                      >
-                        Renew License
-                      </button>
+                      <p className="mt-1 text-sm text-amber-700">Submit a renewal request from the Mill Registration page to restore your license.</p>
                     )}
                   </div>
-                </div>
+                )}
+
+                {licenseData.rejected_date && (
+                  <div className="bg-red-50 rounded-lg p-4 md:col-span-2">
+                    <span className="block text-xs font-medium text-red-700 uppercase tracking-wide">Rejected Date</span>
+                    <span className="mt-2 block text-sm text-red-700">{new Date(licenseData.rejected_date).toLocaleDateString('en-GB')}</span>
+                  </div>
+                )}
+
+                {licenseData.rejection_reason && (
+                  <div className="bg-red-50 rounded-lg p-4 md:col-span-2">
+                    <span className="block text-xs font-medium text-red-700 uppercase tracking-wide">Rejection Reason</span>
+                    <p className="mt-2 text-sm text-red-800 whitespace-pre-line">{licenseData.rejection_reason}</p>
+                  </div>
+                )}
               </div>
-            )}
+
+              {licenseData.status === 'approved' && (
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-5">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className={`text-base font-semibold ${licenseValidity?.isExpired ? 'text-red-700' : 'text-green-800'}`}>
+                        {licenseValidity?.isExpired ? 'Your license has expired' : 'Your license is active'}
+                      </p>
+                      <p className={`text-sm mt-1 ${licenseValidity?.isExpired ? 'text-red-600' : 'text-green-600'}`}>
+                        {licenseValidity?.isExpired
+                          ? 'Submit a renewal request from the Mill Registration page to continue operations.'
+                          : 'Access your certificate whenever you need it.'}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button
+                        onClick={() => viewCertificate(licenseData)}
+                        disabled={loadingCertificate}
+                        className={`inline-flex items-center justify-center px-4 py-2 rounded-lg text-white transition-colors ${loadingCertificate ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
+                      >
+                        {loadingCertificate ? (
+                          <>
+                            <Clock size={16} className="mr-2 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            <FileText size={16} className="mr-2" />
+                            View Certificate
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => downloadCertificate(licenseData)}
+                        disabled={loadingCertificate}
+                        className={`inline-flex items-center justify-center px-4 py-2 rounded-lg border transition-colors ${loadingCertificate ? 'border-gray-300 text-gray-400 cursor-not-allowed' : 'border-green-600 text-green-700 hover:bg-green-50'}`}
+                      >
+                        <Download size={16} className="mr-2" />
+                        {loadingCertificate ? 'Preparing...' : 'Download PDF'}
+                      </button>
+                      {licenseValidity?.isExpired && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowLicenseDetailsModal(false);
+                            navigate('/mill/register');
+                          }}
+                          className="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-amber-500 text-amber-700 transition-colors hover:bg-amber-50"
+                        >
+                          Renew License
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
     );
   } catch (error) {
     console.error("MillHome rendering error:", error);
