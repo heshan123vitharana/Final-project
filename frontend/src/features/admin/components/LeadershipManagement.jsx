@@ -32,10 +32,10 @@ const LeadershipManagement = () => {
 
   const handleCreate = () => {
     // Calculate the next unique order number based on existing leaders
-    const maxOrder = leaders.length > 0 
-      ? Math.max(...leaders.map(leader => leader.order_index || 0)) 
+    const maxOrder = leaders.length > 0
+      ? Math.max(...leaders.map(leader => leader.order_index || 0))
       : 0;
-    
+
     setEditingLeader({
       name: '',
       role: '',
@@ -64,8 +64,8 @@ const LeadershipManagement = () => {
 
     // Validate that order_index is unique (excluding current leader if editing)
     const duplicateOrder = leaders.find(
-      leader => 
-        leader.order_index === editingLeader.order_index && 
+      leader =>
+        leader.order_index === editingLeader.order_index &&
         leader.id !== editingLeader.id
     );
 
@@ -212,59 +212,101 @@ const LeadershipManagement = () => {
 };
 
 const LeaderList = ({ leaders, onEdit, onDelete }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
     {leaders
       .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
       .map(leader => (
-      <div key={leader.id} className="bg-white p-4 rounded-lg shadow-md flex flex-col relative">
-        {/* Order Badge */}
-        <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-          Order: {leader.order_index || 0}
-        </div>
-        
-        <div className="flex-grow flex items-center mt-2">
-          <div className="w-24 h-24 rounded-full overflow-hidden mr-4 flex-shrink-0 bg-gray-200">
-            {leader.image_url ? (
-              <img
-                src={`http://localhost:5000${leader.image_url}`}
-                alt={leader.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <User className="w-12 h-12 text-gray-400" />
+        <div
+          key={leader.id}
+          className="group relative bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-green-300"
+        >
+          {/* Order Badge - Modern Design */}
+          <div className="absolute top-4 right-4 z-10">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1">
+              <span className="text-[10px] opacity-75">Order:</span>
+              <span>{leader.order_index || 0}</span>
+            </div>
+          </div>
+
+          {/* Card Content */}
+          <div className="p-6">
+            {/* Profile Image - Larger and Centered */}
+            <div className="flex justify-center mb-4">
+              <div className="relative">
+                <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-green-100 group-hover:ring-green-300 transition-all duration-300 bg-gradient-to-br from-gray-100 to-gray-200">
+                  {leader.image_url ? (
+                    <img
+                      src={`http://localhost:5000${leader.image_url}`}
+                      alt={leader.name}
+                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-green-100">
+                      <User className="w-16 h-16 text-green-400" />
+                    </div>
+                  )}
+                </div>
+                {/* Status Indicator */}
+                <div className={`absolute bottom-2 right-2 w-5 h-5 rounded-full border-4 border-white shadow-md ${leader.is_active ? 'bg-green-500' : 'bg-gray-400'
+                  }`} />
               </div>
-            )}
+            </div>
+
+            {/* Member Info - Centered */}
+            <div className="text-center space-y-2">
+              <h3 className="font-bold text-xl text-gray-900 group-hover:text-green-700 transition-colors">
+                {leader.name}
+              </h3>
+              <p className="text-green-600 font-semibold text-sm uppercase tracking-wide">
+                {leader.role}
+              </p>
+              <p className="text-sm text-gray-600 flex items-center justify-center gap-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                {leader.email}
+              </p>
+
+              {/* Status Badge */}
+              <div className="flex justify-center pt-2">
+                <span
+                  className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${leader.is_active
+                    ? 'bg-green-100 text-green-800 ring-1 ring-green-200'
+                    : 'bg-gray-100 text-gray-800 ring-1 ring-gray-200'
+                    }`}
+                >
+                  <span className={`w-2 h-2 rounded-full mr-1.5 ${leader.is_active ? 'bg-green-500' : 'bg-gray-500'
+                    }`} />
+                  {leader.is_active ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="flex-grow">
-            <h3 className="font-bold text-lg text-gray-900">{leader.name}</h3>
-            <p className="text-gray-600">{leader.role}</p>
-            <p className="text-sm text-gray-500">{leader.email}</p>
-            <span
-              className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                leader.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}
-            >
-              {leader.is_active ? 'Active' : 'Inactive'}
-            </span>
+
+          {/* Action Buttons - Modern Floating Design */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => onEdit(leader)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <Edit size={16} />
+                <span className="text-sm font-medium">Edit</span>
+              </button>
+              <button
+                onClick={() => onDelete(leader.id)}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg shadow-lg hover:bg-red-700 hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <Trash size={16} />
+                <span className="text-sm font-medium">Delete</span>
+              </button>
+            </div>
           </div>
+
+          {/* Decorative Element */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 via-green-500 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
-        <div className="flex justify-end mt-4 space-x-2">
-          <button
-            onClick={() => onEdit(leader)}
-            className="p-2 text-blue-600 hover:bg-blue-100 rounded-full"
-          >
-            <Edit size={18} />
-          </button>
-          <button
-            onClick={() => onDelete(leader.id)}
-            className="p-2 text-red-600 hover:bg-red-100 rounded-full"
-          >
-            <Trash size={18} />
-          </button>
-        </div>
-      </div>
-    ))}
+      ))}
   </div>
 );
 
