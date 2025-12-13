@@ -18,7 +18,7 @@ const getTypeColor = (type) => {
   return type.toLowerCase() === 'government' ? '#2563eb' : '#16a34a'
 }
 
-const MillMap = () => {
+const MillMap = ({ apiUrl = 'http://localhost:5000/api/admin/approved-mills' }) => {
   const [mills, setMills] = useState([])
   const [selectedMillId, setSelectedMillId] = useState(null)
   const [filterType, setFilterType] = useState('all')
@@ -60,10 +60,17 @@ const MillMap = () => {
       if (filterDistrict !== 'all') params.append('district', filterDistrict)
 
       const query = params.toString()
+      const token = localStorage.getItem('token')
+
       const response = await fetch(
         query
-          ? `http://localhost:5000/api/admin/approved-mills?${query}`
-          : 'http://localhost:5000/api/admin/approved-mills'
+          ? `${apiUrl}?${query}`
+          : apiUrl,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
       )
       if (!response.ok) {
         if (response.status === 404) {
@@ -286,11 +293,10 @@ const MillMap = () => {
                 key={mill.id}
                 type="button"
                 onClick={() => setSelectedMillId(mill.id)}
-                className={`w-full rounded-lg border px-3 py-3 text-left transition-colors ${
-                  selectedMillId === mill.id
-                    ? 'border-green-500 bg-green-50'
-                    : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
-                }`}
+                className={`w-full rounded-lg border px-3 py-3 text-left transition-colors ${selectedMillId === mill.id
+                  ? 'border-green-500 bg-green-50'
+                  : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
+                  }`}
               >
                 <div className="flex items-start gap-3">
                   <Factory

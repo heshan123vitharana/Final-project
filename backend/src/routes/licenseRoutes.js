@@ -85,7 +85,9 @@ router.post('/apply', async (req, res) => {
             paymentReceipt,
             brDocument,
             licenseType,
-            comments
+            comments,
+            latitude,
+            longitude
         } = req.body;
 
         console.log('Application data:', {
@@ -93,6 +95,8 @@ router.post('/apply', async (req, res) => {
             licenseType,
             hasPaymentReceipt: !!paymentReceipt,
             hasBrDocument: !!brDocument,
+            latitude: latitude || 'Not provided',
+            longitude: longitude || 'Not provided',
             comments: comments?.substring(0, 50) + '...'
         });
 
@@ -252,6 +256,22 @@ router.post('/apply', async (req, res) => {
         `, [userId, applicationNumber, licenseType, paymentReceiptData, brDocumentData, comments]);
 
         console.log(`✅ License application submitted for user ${userId}, application: ${applicationNumber}`);
+
+        // If coordinates provided, update user profile
+        if (latitude && longitude) {
+            try {
+                // Determine mill_location string if not already set or override?
+                // For now just update lat/long
+                await pool.execute(
+                    'UPDATE users SET mill_latitude = ?, mill_longitude = ? WHERE id = ?',
+                    [latitude, longitude, userId]
+                );
+                console.log(`📍 Updated user ${userId} location to [${latitude}, ${longitude}]`);
+            } catch (locError) {
+                console.error('Failed to update user location:', locError);
+                // Non-fatal error, proceed with application
+            }
+        }
 
         res.status(201).json({
             message: 'License application submitted successfully',

@@ -14,8 +14,10 @@ import {
     Calendar,
     BarChart2,
     Download,
-    Send
+    Send,
+    Map as MapIcon
 } from 'lucide-react';
+import MillMap from '../../admin/components/MillMap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import pmbLogo from '../../../assets/logo-p.png';
@@ -295,6 +297,13 @@ const RegionalDashboard = () => {
                             <BarChart2 size={20} />
                             {sidebarOpen && <span>Stock Overview</span>}
                         </button>
+                        <button
+                            onClick={() => handleTabChange('map')}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'map' ? 'bg-white/20 text-white' : 'text-emerald-100 hover:bg-white/10'}`}
+                        >
+                            <MapIcon size={20} />
+                            {sidebarOpen && <span>Map View</span>}
+                        </button>
                     </nav>
 
                     <div className="p-4">
@@ -314,7 +323,7 @@ const RegionalDashboard = () => {
                 <header className="bg-white shadow-sm px-8 py-4 sticky top-0 z-30 flex justify-between items-center">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-800">
-                            {activeTab === 'prices' ? 'Price Management' : 'Regional Stock Overview'}
+                            {activeTab === 'prices' ? 'Price Management' : activeTab === 'stock' ? 'Regional Stock Overview' : 'Regional Mill Map'}
                         </h2>
                         <p className="text-gray-500 text-sm">
                             {activeTab === 'prices'
@@ -515,6 +524,14 @@ const RegionalDashboard = () => {
                                 <div className="text-center py-20 text-gray-500">Failed to load stock overview.</div>
                             )}
                         </>
+                    )}
+
+                    {/* --- MAP TAB --- */}
+                    {activeTab === 'map' && (
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-1">
+                            {/* Pass the Regional Officer API endpoint for mills */}
+                            <MillMap apiUrl="http://localhost:5000/api/regional-officers/active-mills" />
+                        </div>
                     )}
                 </main>
             </div>

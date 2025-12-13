@@ -152,7 +152,7 @@ app.use((err, _req, res, _next) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`✅ Server accessible at http://localhost:${PORT}`);
     console.log(`✅ Categories API available at http://localhost:${PORT}/api/categories`);

@@ -128,6 +128,21 @@ const regionalOfficerController = {
 
     // --- Regional Price Management ---
 
+
+    getDistrictStock: async (req, res) => {
+        try {
+            const { district } = req.user;
+            const StockModel = require('../models/stockModel');
+
+            const overview = await StockModel.getDistrictStockOverview(district);
+
+            res.json(overview);
+        } catch (error) {
+            console.error('Get District Stock Error:', error);
+            res.status(500).json({ message: 'Failed to fetch stock overview' });
+        }
+    },
+
     // Get prices for the officer's district
     getRegionalPrices: async (req, res) => {
         try {
@@ -350,6 +365,97 @@ const regionalOfficerController = {
         } catch (error) {
             console.error('Submit Regional Report Error:', error);
             res.status(500).json({ message: 'Failed to submit report', error: error.message });
+        }
+    },
+
+    // Get Active Mills with Location for Map
+    getMillsWithLocation: async (req, res) => {
+        try {
+            const db = require('../config/database');
+
+            // TEMPORARY: Use token district directly for debugging
+            const district = req.user.district;
+
+            console.log('DEBUG: getMillsWithLocation called for user (ID):', req.user.id);
+            console.log('DEBUG: District from token:', district);
+
+            // Query to get mills in the same district that have an APPROVED license
+            // We join users with mill_licenses on user_id
+            // We select the latest approved license per user to ensure they are currently licensed
+            const query = `
+                SELECT 
+                    u.id, 
+                    u.business_name, 
+                    u.business_type,
+                    COALESCE(NULLIF(u.mill_district, ''), u.district) as district,
+                    u.mill_latitude as latitude, 
+                    u.mill_longitude as longitude, 
+                    u.address, 
+                    u.city, 
+                    u.mill_capacity,
+                    u.mill_location,
+                    ml.license_number,
+                    ml.approved_date
+                FROM users u
+                JOIN mill_licenses ml ON u.id = ml.user_id
+                WHERE LOWER(COALESCE(NULLIF(u.mill_district, ''), u.district)) = LOWER(?) 
+                AND ml.status = 'approved'
+                AND u.mill_latitude IS NOT NULL 
+                AND u.mill_longitude IS NOT NULL
+                AND ml.created_at = (
+                    SELECT MAX(created_at) 
+                    FROM mill_licenses ml2 
+                    WHERE ml2.user_id = u.id AND ml2.status = 'approved'
+                )
+            `;
+
+            console.log('DEBUG: Executing query with district:', district);
+            const [mills] = await db.execute(query, [district]);
+            console.log('DEBUG: Query returned', mills.length, 'mills');
+            if (mills.length > 0) {
+                console.log('DEBUG: First mill:', mills[0]);
+            }
+
+            const mappedMills = mills
+                .map(row => {
+                    const rawLat = row.latitude; // Aliased in SQL
+                    const rawLng = row.longitude; // Aliased in SQL
+
+                    const latitude = typeof rawLat === 'string' ? Number.parseFloat(rawLat) : rawLat;
+                    const longitude = typeof rawLng === 'string' ? Number.parseFloat(rawLng) : rawLng;
+
+                    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                        return null;
+                    }
+
+                    return {
+                        id: row.id,
+                        name: row.business_name,
+                        businessType: row.business_type,
+                        district: row.district,
+                        millLocation: row.mill_location,
+                        millCapacity: row.mill_capacity,
+                        phone: row.phone,
+                        email: row.email,
+                        address: row.address,
+                        city: row.city,
+                        latitude,
+                        longitude,
+                        licenseNumber: row.license_number,
+                        approvedDate: row.approved_date
+                    };
+                })
+                .filter(Boolean);
+
+            res.json({
+                message: 'Active mills retrieved successfully',
+                count: mappedMills.length,
+                mills: mappedMills
+            });
+
+        } catch (error) {
+            console.error('Get Mills With Location Error:', error);
+            res.status(500).json({ message: 'Failed to fetch mill locations' });
         }
     }
 };
