@@ -61,7 +61,8 @@ if (useSQLite) {
     database: process.env.DB_NAME || 'paddy_management',
     connectionLimit: 10,
     waitForConnections: true,
-    queueLimit: 0
+    queueLimit: 0,
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: true } : undefined
   };
 
   console.log('🔧 MySQL Database config loaded:', {
