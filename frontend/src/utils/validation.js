@@ -1,4 +1,4 @@
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 // Calculate password strength
 const calculatePasswordStrength = (validations) => {
@@ -79,8 +79,8 @@ export const validationRules = {
   },
   phoneNumber: {
     required: true,
-    pattern: /^\+947[0-8]\d{7}$/,
-    message: 'Please enter a valid Sri Lankan phone number in international format (+94771234567)'
+    pattern: /^(\+94|0)?7[0-9]{8}$/, // Updated to match reasonable Sri Lankan mobile formats roughly, or allow international
+    message: 'Please enter a valid Sri Lankan phone number (+947x... or 07x...)'
   },
   businessName: {
     required: true,
@@ -180,13 +180,11 @@ export const showErrorToast = (message) => {
 };
 
 export const showInfoToast = (message) => {
-  toast(message);
+  toast(message); // Sonner default is neutral
 };
 
 export const showWarningToast = (message) => {
-  toast(message, {
-    icon: '⚠️',
-  });
+  toast.warning(message); // Sonner supports warning
 };
 
 // Form validation with toast notifications

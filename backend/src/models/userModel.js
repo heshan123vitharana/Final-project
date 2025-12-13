@@ -35,22 +35,27 @@ const createUser = async (user) => {
     console.log('✅ User created successfully:', { userId, email });
 
     // Create default profile photo for the new user
-    try {
-      console.log('🖼️ Generating default profile photo for user:', userId);
-      const defaultPhotoBase64 = getDefaultProfilePhotoBase64(200);
-      console.log('🖼️ Photo generated, length:', defaultPhotoBase64.length);
 
-      const result = await db.execute(
-        `INSERT INTO user_profile_photos (user_id, photo_data, filename, file_size, mime_type)
-         VALUES (?, ?, ?, ?, ?)`,
-        [userId, defaultPhotoBase64, 'default_avatar.png', defaultPhotoBase64.length, 'image/png']
-      );
-      console.log('✅ Default profile photo assigned to user:', userId, 'Result:', result[0]);
-    } catch (photoError) {
-      console.error('❌ Error creating default profile photo:', photoError.message);
-      console.error('❌ Full error:', photoError);
-      // Don't fail the user creation if photo assignment fails
-    }
+
+    // Create default profile photo for the new user (Fire and forget - don't await)
+    // This reduces the registration response time
+    (async () => {
+      try {
+        console.log('🖼️ Generating default profile photo for user:', userId);
+        const defaultPhotoBase64 = getDefaultProfilePhotoBase64(200);
+
+        await db.execute(
+          `INSERT INTO user_profile_photos (user_id, photo_data, filename, file_size, mime_type)
+           VALUES (?, ?, ?, ?, ?)`,
+          [userId, defaultPhotoBase64, 'default_avatar.png', defaultPhotoBase64.length, 'image/png']
+        );
+        console.log('✅ Default profile photo assigned to user:', userId);
+      } catch (photoError) {
+        console.error('❌ Error creating default profile photo:', photoError.message);
+      }
+    })();
+
+    return { insertId: userId };
 
     return { insertId: userId };
   } catch (error) {

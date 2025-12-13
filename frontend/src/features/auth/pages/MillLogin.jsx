@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword }) => {
   const [formData, setFormData] = useState({
@@ -32,23 +32,44 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
   const validateForm = () => {
     const newErrors = {};
 
-    // Email validation
-    if (!formData.email && !formData.nic) {
-      newErrors.email = 'Email or NIC is required';
-    } else if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+    // NIC validation - REQUIRED
+    if (!formData.nic || formData.nic.trim() === '') {
+      newErrors.nic = 'NIC is required';
+    } else {
+      const nicRegex = /^([0-9]{9}[vVxX]|[0-9]{12})$/;
+      if (!nicRegex.test(formData.nic)) {
+        newErrors.nic = 'Invalid NIC format. Use 9 digits + V/X (e.g., 123456789V) or 12 digits (e.g., 199012345678)';
+      }
     }
 
-    // NIC validation
-    if (formData.nic && !/^([0-9]{9}[vVxX]|[0-9]{12})$/.test(formData.nic)) {
-      newErrors.nic = 'Invalid NIC format (e.g., 123456789V or 199012345678)';
+    // Email validation - REQUIRED
+    if (!formData.email || formData.email.trim() === '') {
+      newErrors.email = 'Email is required';
+    } else {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email address (e.g., user@example.com)';
+      } else if (formData.email.length > 191) {
+        newErrors.email = 'Email address is too long (maximum 191 characters)';
+      }
     }
 
-    // Password validation
+    // Password validation - REQUIRED with comprehensive rules
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+    } else {
+      const pwd = formData.password;
+      const pwdErrors = [];
+
+      if (pwd.length < 8) pwdErrors.push('at least 8 characters');
+      if (!/[A-Z]/.test(pwd)) pwdErrors.push('one uppercase letter');
+      if (!/[a-z]/.test(pwd)) pwdErrors.push('one lowercase letter');
+      if (!/[0-9]/.test(pwd)) pwdErrors.push('one number');
+      if (!/[!@#$%^&*(),.?\":{}|<>]/.test(pwd)) pwdErrors.push('one special character');
+
+      if (pwdErrors.length > 0) {
+        newErrors.password = `Password must contain: ${pwdErrors.join(', ')}`;
+      }
     }
 
     setErrors(newErrors);
@@ -61,8 +82,8 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
     // Validate form first
     if (!validateForm()) {
       toast.error('Please fix the errors before submitting', {
+        description: 'Check the highlighted fields and try again',
         duration: 4000,
-        icon: '⚠️'
       });
       return;
     }
@@ -86,13 +107,9 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
 
       if (response.ok) {
         const result = await response.json();
-        toast.success('🎉 Login successful! Welcome back!', {
+        toast.success('Login successful!', {
+          description: 'Welcome back to your dashboard',
           duration: 3000,
-          style: {
-            background: '#10b981',
-            color: '#fff',
-            fontWeight: 'bold'
-          }
         });
         if (result.role === 'admin') {
           sessionStorage.setItem('adminData', JSON.stringify(result));
@@ -102,42 +119,36 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
         }
       } else {
         const result = await response.json();
-        // Enhanced error messages
+
+        // Enhanced error messages with descriptions
         if (result.message.includes('Invalid credentials') || result.message.includes('password')) {
-          toast.error('❌ Invalid email or password. Please try again.', {
+          toast.error('Invalid credentials', {
+            description: 'The email or password you entered is incorrect. Please try again.',
             duration: 4000,
-            style: {
-              background: '#ef4444',
-              color: '#fff'
-            }
           });
         } else if (result.message.includes('not found')) {
-          toast.error('❌ No account found with this email address.', {
+          toast.error('Account not found', {
+            description: 'No account exists with this email address. Please check and try again.',
             duration: 4000,
-            style: {
-              background: '#ef4444',
-              color: '#fff'
-            }
+          });
+        } else if (result.message.includes('locked')) {
+          toast.error('Account locked', {
+            description: result.message,
+            duration: 5000,
           });
         } else {
-          toast.error('❌ ' + result.message || 'Login failed. Please try again.', {
+          toast.error('Login failed', {
+            description: result.message || 'An error occurred. Please try again.',
             duration: 4000,
-            style: {
-              background: '#ef4444',
-              color: '#fff'
-            }
           });
         }
       }
 
     } catch (error) {
       console.error('Login Error:', error);
-      toast.error('❌ An unexpected error occurred. Please try again later.', {
+      toast.error('Connection error', {
+        description: 'Unable to connect to the server. Please check your internet connection and try again.',
         duration: 4000,
-        style: {
-          background: '#ef4444',
-          color: '#fff'
-        }
       });
     } finally {
       setIsSubmitting(false);
@@ -193,7 +204,7 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
             {/* NIC */}
             <div className="space-y-1">
               <label htmlFor="nic" className="block text-xs font-semibold text-gray-700 tracking-wide">
-                National Identity Card (NIC)
+                National Identity Card (NIC) *
               </label>
               <input
                 id="nic"

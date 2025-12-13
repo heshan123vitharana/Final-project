@@ -15,73 +15,175 @@ const toEnumBusinessType = (value) => {
   return null;
 };
 
+// Enhanced input sanitization helper
+const sanitizeInput = (input) => {
+  if (!input) return '';
+  // Allow + for phone numbers, remove potential HTML tags
+  return String(input).trim().replace(/[<>]/g, '');
+};
+
+// ... (lines 24-150 remain unchanged, this tool doesn't support skipping lines effectively in replace_file_content for non-contiguous changes, so I will target specific blocks if needed, but here I am effectively checking if I can do it in one go or need multi_replace. The instruction says "Update sanitization... and update phone validation". These are far apart. I should use multi_replace for accuracy or two separate calls. I will use multi_replace.)
+
+// Enhanced email validation with comprehensive regex
+const validateEmail = (email) => {
+  if (!email) return { valid: false, message: 'Email is required' };
+
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    return { valid: false, message: 'Please enter a valid email address (e.g., user@example.com)' };
+  }
+
+  // Additional checks
+  if (email.length > 191) {
+    return { valid: false, message: 'Email address is too long (maximum 191 characters)' };
+  }
+
+  return { valid: true };
+};
+
+// Enhanced NIC validation for Sri Lankan NICs
+const validateNIC = (nic) => {
+  if (!nic) return { valid: true }; // NIC is optional
+
+  const nicRegex = /^([0-9]{9}[vVxX]|[0-9]{12})$/;
+  if (!nicRegex.test(nic)) {
+    return {
+      valid: false,
+      message: 'Invalid NIC format. Use either 9 digits followed by V/X (e.g., 123456789V) or 12 digits (e.g., 199012345678)'
+    };
+  }
+
+  return { valid: true };
+};
+
+// Enhanced password validation
+const validatePassword = (password, confirmPassword) => {
+  const errors = [];
+
+  if (!password) {
+    errors.push('Password is required');
+    return { valid: false, errors };
+  }
+
+  const pwd = String(password);
+
+  if (pwd.length < 8) {
+    errors.push('at least 8 characters');
+  }
+  if (!/[A-Z]/.test(pwd)) {
+    errors.push('one uppercase letter (A-Z)');
+  }
+  if (!/[a-z]/.test(pwd)) {
+    errors.push('one lowercase letter (a-z)');
+  }
+  if (!/[0-9]/.test(pwd)) {
+    errors.push('one number (0-9)');
+  }
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) {
+    errors.push('one special character (!@#$%^&*)');
+  }
+
+  if (errors.length > 0) {
+    return {
+      valid: false,
+      errors,
+      message: `Password must contain: ${errors.join(', ')}`
+    };
+  }
+
+  if (password !== confirmPassword) {
+    return { valid: false, errors: ['Passwords do not match'], message: 'Passwords do not match' };
+  }
+
+  return { valid: true };
+};
+
 const validateRegistration = (body) => {
   const errors = [];
 
-  const required = [
-    'first_name',
-    'last_name',
-    'business_name',
-    'business_type',
-    'phone',
-    'nic',
-    'email',
-    'password',
-    'confirm_password',
+  // Sanitize all inputs
+  const sanitized = {
+    first_name: sanitizeInput(body.first_name),
+    last_name: sanitizeInput(body.last_name),
+    business_name: sanitizeInput(body.business_name),
+    business_type: sanitizeInput(body.business_type),
+    phone: sanitizeInput(body.phone),
+    nic: sanitizeInput(body.nic),
+    email: sanitizeInput(body.email),
+    password: body.password, // Don't sanitize password
+    confirm_password: body.confirm_password,
+  };
+
+  // Required field validation with user-friendly messages
+  const requiredFields = [
+    { field: 'first_name', label: 'First name' },
+    { field: 'last_name', label: 'Last name' },
+    { field: 'business_name', label: 'Business name' },
+    { field: 'business_type', label: 'Business type' },
+    { field: 'phone', label: 'Phone number' },
+    { field: 'email', label: 'Email address' },
+    { field: 'password', label: 'Password' },
+    { field: 'confirm_password', label: 'Password confirmation' },
   ];
 
-  required.forEach((f) => {
-    if (!body[f] || String(body[f]).trim() === '') {
-      errors.push(`${f} is required`);
+  requiredFields.forEach(({ field, label }) => {
+    if (!sanitized[field] || sanitized[field] === '') {
+      errors.push(`${label} is required`);
     }
   });
 
-  // business type
-  const bt = toEnumBusinessType(body.business_type);
-  if (!bt) errors.push('business_type must be "private" or "government"');
-
-  // simple email check
-  if (body.email && !/^\S+@\S+\.\S+$/.test(body.email)) {
-    errors.push('email is invalid');
+  // Business type validation
+  const bt = toEnumBusinessType(sanitized.business_type);
+  if (!bt) {
+    errors.push('Business type must be either "Private" or "Government"');
   }
 
-  // NIC validation
-  if (body.nic && !/^([0-9]{9}[x|X|v|V]|[0-9]{12})$/.test(body.nic)) {
-    errors.push('nic is invalid (must be 9 digits+V/X or 12 digits)');
+  // Email validation
+  const emailValidation = validateEmail(sanitized.email);
+  if (!emailValidation.valid) {
+    errors.push(emailValidation.message);
   }
 
-  // Enhanced password rules
-  if (body.password) {
-    const password = String(body.password);
-    if (password.length < 8) {
-      errors.push('password must be at least 8 characters');
-    }
-    if (!/[A-Z]/.test(password)) {
-      errors.push('password must contain at least one uppercase letter');
-    }
-    if (!/[a-z]/.test(password)) {
-      errors.push('password must contain at least one lowercase letter');
-    }
-    if (!/[0-9]/.test(password)) {
-      errors.push('password must contain at least one number');
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      errors.push('password must contain at least one special character');
+  // NIC validation (optional field)
+  if (sanitized.nic) {
+    const nicValidation = validateNIC(sanitized.nic);
+    if (!nicValidation.valid) {
+      errors.push(nicValidation.message);
     }
   }
 
-  if (body.password !== body.confirm_password) {
-    errors.push('password and confirm_password do not match');
+  // Phone validation - Support international format starting with +
+  // Acceps: +94771234567, 0771234567
+  const phoneRegex = /^(\+\d{1,3}[- ]?)?\d{9,12}$/;
+
+  // Remove spaces and dashes for checking
+  const cleanPhone = sanitized.phone ? sanitized.phone.replace(/[\s-]/g, '') : '';
+
+  if (sanitized.phone && !phoneRegex.test(cleanPhone)) {
+    console.log('[AUTH] Phone validation failed for:', sanitized.phone);
+    errors.push('Phone number must be valid (e.g., +94771234567 or 0771234567)');
   }
 
-  return { errors, normalizedBusinessType: bt };
+  // Password validation
+  const passwordValidation = validatePassword(sanitized.password, sanitized.confirm_password);
+  if (!passwordValidation.valid) {
+    errors.push(passwordValidation.message);
+  }
+
+  return { errors, normalizedBusinessType: bt, sanitized };
 };
 
 const register = async (req, res) => {
   try {
     console.log('📝 AUTH CONTROLLER: register() called with:', req.body.email);
-    const { errors, normalizedBusinessType } = validateRegistration(req.body);
-    if (errors.length) return res.status(400).json({ errors });
+    const { errors, normalizedBusinessType, sanitized } = validateRegistration(req.body);
+
+    if (errors.length) {
+      console.log('❌ REGISTRATION VALIDATION FAILED:');
+      console.log('   Errors:', errors);
+      console.log('   Request body:', JSON.stringify(req.body, null, 2));
+      return res.status(400).json({ errors });
+    }
 
     const {
       first_name,
@@ -91,7 +193,7 @@ const register = async (req, res) => {
       nic,
       email,
       password,
-    } = req.body;
+    } = sanitized;
 
     const existing = await userModel.findByEmail(email);
     if (existing) {
@@ -102,18 +204,18 @@ const register = async (req, res) => {
 
     console.log('📝 AUTH CONTROLLER: About to call userModel.createUser()');
     await userModel.createUser({
-      first_name: String(first_name).trim(),
-      last_name: String(last_name).trim(),
-      business_name: String(business_name).trim(),
+      first_name,
+      last_name,
+      business_name,
       business_type: normalizedBusinessType,
-      phone: String(phone).trim(),
-      nic: String(nic).trim(),
-      email: String(email).toLowerCase().trim(),
+      phone,
+      nic,
+      email,
       passwordHash,
     });
 
     // Fetch the newly created user
-    const newUser = await userModel.findByEmail(String(email).toLowerCase().trim());
+    const newUser = await userModel.findByEmail(email);
     return res.status(201).json({
       message: 'User registered successfully',
       user: {
@@ -141,6 +243,7 @@ const login = async (req, res) => {
     }
 
     // 1. Check for Admin user first (only if email is provided)
+    // Admins can ONLY log in with email, not NIC
     if (email) {
       console.log(`[AUTH] Attempting login for: ${email}`);
       const admin = await adminModel.findActiveByEmail(String(email).toLowerCase().trim());
@@ -177,18 +280,44 @@ const login = async (req, res) => {
       }
     }
 
-    // 2. If not an admin, check for a Mill user
-    let user;
-    if (email) {
-      user = await userModel.findByEmail(String(email).toLowerCase().trim());
-    }
-    if (!user && nic) {
-      user = await userModel.findByNic(String(nic).trim());
+    // 2. Mill user login - requires BOTH email AND NIC
+    if (!email || !nic) {
+      return res.status(400).json({ message: 'Email, NIC, and password are required for mill login' });
     }
 
+    console.log(`[AUTH] Attempting mill login with email: ${email} and NIC: ${nic}`);
+
+    // Find user by email
+    const user = await userModel.findByEmail(String(email).toLowerCase().trim());
+
     if (!user) {
+      console.log('[AUTH] No mill user found with provided email');
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    // Verify that the NIC matches the user's NIC
+    console.log('[AUTH] ===== NIC VERIFICATION DEBUG =====');
+    console.log('[AUTH] User object keys:', Object.keys(user));
+    console.log('[AUTH] User NIC from DB (raw):', user.nic);
+    console.log('[AUTH] User NIC type:', typeof user.nic);
+    console.log('[AUTH] Input NIC (raw):', nic);
+
+    const normalizedInputNic = String(nic).trim().toUpperCase();
+    const normalizedUserNic = user.nic ? String(user.nic).trim().toUpperCase() : '';
+
+    console.log('[AUTH] Normalized Input NIC:', normalizedInputNic);
+    console.log('[AUTH] Normalized User NIC:', normalizedUserNic);
+    console.log('[AUTH] NICs match:', normalizedInputNic === normalizedUserNic);
+    console.log('[AUTH] ===================================');
+
+    if (normalizedInputNic !== normalizedUserNic) {
+      console.log(`[AUTH] ❌ NIC MISMATCH DETECTED!`);
+      console.log(`[AUTH] Expected: "${normalizedUserNic}"`);
+      console.log(`[AUTH] Received: "${normalizedInputNic}"`);
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    console.log('[AUTH] ✅ Email and NIC verified. Checking password...');
 
     // Check for lockout
     if (user.lockout_until && new Date(user.lockout_until) > new Date()) {
@@ -219,7 +348,7 @@ const login = async (req, res) => {
         sub: user.id,
         email: user.email,
         username: user.username,
-        Nic: user.Nic,
+        nic: user.nic,
         business_type: user.business_type,
         role: 'mill',
       },
@@ -250,6 +379,7 @@ const login = async (req, res) => {
         business_type: fullUser.business_type,
         phone: fullUser.phone,
         email: fullUser.email,
+        nic: fullUser.nic,
         address: fullUser.address,
         city: fullUser.city,
         district: fullUser.district,

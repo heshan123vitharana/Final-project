@@ -1,5 +1,5 @@
 import React from 'react';
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from 'sonner';
 
 const ToastProvider = ({ children }) => {
   return (
@@ -7,31 +7,19 @@ const ToastProvider = ({ children }) => {
       {children}
       <Toaster
         position="top-center"
-        reverseOrder={false}
-        gutter={8}
-        containerClassName=""
-        containerStyle={{
-          zIndex: 9999
-        }}
+        expand={true}
+        richColors
+        closeButton
+        duration={4000}
         toastOptions={{
-          duration: 1300,
           style: {
-            borderRadius: '8px',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            borderRadius: '12px',
+            padding: '16px',
+            fontSize: '14px',
             fontFamily: 'Inter, system-ui, sans-serif',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
           },
-          success: {
-            style: {
-              background: '#10b981',
-              color: 'white',
-            },
-          },
-          error: {
-            style: {
-              background: '#ef4444',
-              color: 'white',
-            },
-          },
+          className: 'toast-custom',
         }}
       />
     </>
