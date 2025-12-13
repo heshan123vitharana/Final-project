@@ -95,7 +95,7 @@ const MillUpdateStock = ({ userData }) => {
     try {
       setLoadingPrices(true);
 
-      let url = `http://localhost:5000/api/prices?status=Active&sortBy=updated_at&sortOrder=DESC`;
+      let url = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/prices?status=Active&sortBy=updated_at&sortOrder=DESC`;
 
       if (district && district !== 'All Districts') {
         url += `&district=${encodeURIComponent(district)}`;
@@ -135,7 +135,7 @@ const MillUpdateStock = ({ userData }) => {
       try {
         const userId = user?.id || effectiveUserData?.id || userData?.id;
         if (userId) {
-          const res = await fetch(`http://localhost:5000/api/licenses/profile-check/${userId}`);
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/licenses/profile-check/${userId}`);
           if (res.ok) {
             const data = await res.json();
             if (data && data.id) {
@@ -266,7 +266,7 @@ const MillUpdateStock = ({ userData }) => {
         notes: formData.notes
       };
 
-      const response = await fetch('http://localhost:5000/api/stock', {
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/stock', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

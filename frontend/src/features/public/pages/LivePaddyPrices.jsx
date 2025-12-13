@@ -55,7 +55,7 @@ const LivePaddyPrices = () => {
     const fetchPricesData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:5000/api/prices');
+        const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/prices');
         
         if (response.ok) {
           const data = await response.json();
@@ -258,7 +258,7 @@ const LivePaddyPrices = () => {
     console.log('🔄 LivePaddyPrices: Manual refresh triggered');
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/prices');
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/prices');
       if (response.ok) {
         const data = await response.json();
         const processedData = data.data || data;

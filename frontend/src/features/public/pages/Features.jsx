@@ -14,7 +14,7 @@ const Features = () => {
   const fetchServicesData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/services-excellence');
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/services-excellence');
 
       if (!response.ok) {
         throw new Error('Failed to fetch services data');

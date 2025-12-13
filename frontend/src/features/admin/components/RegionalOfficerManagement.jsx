@@ -38,7 +38,7 @@ const RegionalOfficerManagement = () => {
 
     const fetchOfficers = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/regional-officers');
+            const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/regional-officers');
             if (!response.ok) throw new Error('Failed to fetch officers');
             const data = await response.json();
             setOfficers(data);
@@ -53,8 +53,8 @@ const RegionalOfficerManagement = () => {
         e.preventDefault();
         try {
             const url = editingOfficer
-                ? `http://localhost:5000/api/regional-officers/${editingOfficer.id}`
-                : 'http://localhost:5000/api/regional-officers/create';
+                ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/regional-officers/${editingOfficer.id}`
+                : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/regional-officers/create';
 
             const method = editingOfficer ? 'PUT' : 'POST';
 
@@ -80,7 +80,7 @@ const RegionalOfficerManagement = () => {
         if (!window.confirm('Are you sure you want to delete this officer?')) return;
 
         try {
-            const response = await fetch(`http://localhost:5000/api/regional-officers/${id}`, {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/regional-officers/${id}`, {
                 method: 'DELETE'
             });
 

@@ -54,7 +54,7 @@ const ServicesExcellenceManager = () => {
   const fetchItems = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:5000/api/services-excellence')
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/services-excellence')
 
       if (!response.ok) {
         throw new Error('Failed to fetch items')
@@ -84,7 +84,7 @@ const ServicesExcellenceManager = () => {
         }
       })
 
-      const response = await fetch('http://localhost:5000/api/services-excellence', {
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/services-excellence', {
         method: 'POST',
         body: submitData
       })
@@ -117,7 +117,7 @@ const ServicesExcellenceManager = () => {
         }
       })
 
-      const response = await fetch(`http://localhost:5000/api/services-excellence/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/services-excellence/${id}`, {
         method: 'PUT',
         body: submitData
       })
@@ -143,7 +143,7 @@ const ServicesExcellenceManager = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/services-excellence/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/services-excellence/${id}`, {
         method: 'DELETE'
       })
 
@@ -162,7 +162,7 @@ const ServicesExcellenceManager = () => {
   // Toggle active status
   const toggleActiveStatus = async (id, currentStatus) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/services-excellence/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/services-excellence/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -186,7 +186,7 @@ const ServicesExcellenceManager = () => {
   // Update priority/order
   const updatePriority = async (id, newPriority) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/services-excellence/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/services-excellence/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

@@ -29,7 +29,7 @@ const MillPaddyPrice = () => {
       setStatsLoading(true);
       
       // Fetch ALL prices from database (no filtering, no limits)
-      const response = await fetch('http://localhost:5000/api/prices');
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/prices');
       
       if (!response.ok) {
         throw new Error('Failed to fetch all prices');
@@ -82,7 +82,7 @@ const MillPaddyPrice = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('http://localhost:5000/api/prices');
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/prices');
       
       if (!response.ok) {
         throw new Error('Failed to fetch prices');

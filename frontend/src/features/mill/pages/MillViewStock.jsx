@@ -48,7 +48,7 @@ const MillViewStock = ({ userData }) => {
 
       const results = await Promise.all(
         endpoints.map(endpoint =>
-          fetch(`http://localhost:5000${endpoint.url}`, {
+          fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${endpoint.url}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           }).then(res => res.json())
         )
@@ -95,7 +95,7 @@ const MillViewStock = ({ userData }) => {
     
     try {
       const token = userData?.token;
-      const response = await fetch(`http://localhost:5000/api/stock/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/stock/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

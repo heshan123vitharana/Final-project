@@ -66,7 +66,7 @@ const RegionalDashboard = () => {
     const fetchPrices = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/regional-officers/prices', {
+            const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/regional-officers/prices', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -87,7 +87,7 @@ const RegionalDashboard = () => {
         setLoadingStock(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/regional-officers/stock-overview', {
+            const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/regional-officers/stock-overview', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -127,8 +127,8 @@ const RegionalDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             const url = currentPrice
-                ? `http://localhost:5000/api/regional-officers/prices/${currentPrice.id}`
-                : 'http://localhost:5000/api/regional-officers/prices';
+                ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/regional-officers/prices/${currentPrice.id}`
+                : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/regional-officers/prices';
 
             const method = currentPrice ? 'PUT' : 'POST';
 
@@ -159,7 +159,7 @@ const RegionalDashboard = () => {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5000/api/regional-officers/prices/${id}`, {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/regional-officers/prices/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -233,7 +233,7 @@ const RegionalDashboard = () => {
                 stockByMill: stockOverview.stockByMill
             };
 
-            const response = await fetch('http://localhost:5000/api/regional-officers/report', {
+            const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/regional-officers/report', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -538,7 +538,7 @@ const RegionalDashboard = () => {
                     {activeTab === 'map' && (
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-1">
                             {/* Pass the Regional Officer API endpoint for mills */}
-                            <MillMap apiUrl="http://localhost:5000/api/regional-officers/active-mills" />
+                            <MillMap apiUrl=(import.meta.env.VITE_API_BASE_URL || "http://localhost:5000") + "/api/regional-officers/active-mills" />
                         </div>
                     )}
                 </main>

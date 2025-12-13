@@ -143,7 +143,7 @@ const PriceManagement = () => {
   const fetchPrices = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:5000/api/prices')
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/prices')
       if (response.ok) {
         const data = await response.json()
         // API response received
@@ -204,7 +204,7 @@ const PriceManagement = () => {
 
   const updatePriceInBackend = async (id, newPrice) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/prices/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/prices/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -227,7 +227,7 @@ const PriceManagement = () => {
     try {
       console.log('🔧 Sending price data to backend:', priceData);
       
-      const response = await fetch('http://localhost:5000/api/prices', {
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/prices', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

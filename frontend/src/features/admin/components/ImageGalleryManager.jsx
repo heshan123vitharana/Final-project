@@ -105,7 +105,7 @@ const ImageGalleryManager = () => {
   // Fetch categories
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/categories?active=true')
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/categories?active=true')
       if (response.ok) {
         const data = await response.json()
         setCategories(data.data || [])
@@ -119,7 +119,7 @@ const ImageGalleryManager = () => {
   const fetchCategoriesWithCounts = useCallback(async () => {
     try {
       setCategoryLoading(true)
-      const response = await fetch('http://localhost:5000/api/categories/with-counts')
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/categories/with-counts')
       
       if (!response.ok) {
         throw new Error('Failed to fetch categories')
@@ -140,7 +140,7 @@ const ImageGalleryManager = () => {
     console.log('🔍 Fetching images...')
     try {
       setGalleryLoading(true)
-      let url = 'http://localhost:5000/api/gallery'
+      let url = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/gallery'
       if (selectedCategoryFilter) {
         url += `?category_id=${selectedCategoryFilter}`
       }
@@ -166,7 +166,7 @@ const ImageGalleryManager = () => {
   const fetchServices = useCallback(async () => {
     try {
       setServicesLoading(true)
-      const response = await fetch('http://localhost:5000/api/services-excellence')
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/services-excellence')
 
       if (!response.ok) {
         throw new Error('Failed to fetch items')
@@ -218,7 +218,7 @@ const ImageGalleryManager = () => {
           formData.append('image', file);
           formData.append('title', file.name || 'Untitled Image');
 
-          const response = await fetch('http://localhost:5000/api/gallery', {
+          const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/gallery', {
             method: 'POST',
             body: formData
           });
@@ -256,7 +256,7 @@ const ImageGalleryManager = () => {
     if (!confirm('Are you sure you want to delete this image?')) return
 
     try {
-      const response = await fetch(`http://localhost:5000/api/gallery/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/gallery/${id}`, {
         method: 'DELETE'
       })
 
@@ -278,7 +278,7 @@ const ImageGalleryManager = () => {
     if (!editingImage?.id) return
 
     try {
-      const response = await fetch(`http://localhost:5000/api/gallery/${editingImage.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/gallery/${editingImage.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -369,8 +369,8 @@ const ImageGalleryManager = () => {
       }
 
       const url = editingService 
-        ? `http://localhost:5000/api/services-excellence/${editingService.id}`
-        : 'http://localhost:5000/api/services-excellence'
+        ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/services-excellence/${editingService.id}`
+        : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/services-excellence'
       
       const method = editingService ? 'PUT' : 'POST'
 
@@ -413,7 +413,7 @@ const ImageGalleryManager = () => {
     if (!confirm('Are you sure you want to delete this item?')) return
 
     try {
-      const url = `http://localhost:5000/api/services-excellence/${service.id}?source_table=${service.source_table || 'services'}`
+      const url = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/services-excellence/${service.id}?source_table=${service.source_table || 'services'}`
       
       const response = await fetch(url, {
         method: 'DELETE'
@@ -496,8 +496,8 @@ const ImageGalleryManager = () => {
     try {
       const method = editingCategory ? 'PUT' : 'POST'
       const url = editingCategory 
-        ? `http://localhost:5000/api/categories/${editingCategory.id}`
-        : 'http://localhost:5000/api/categories'
+        ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/categories/${editingCategory.id}`
+        : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/categories'
 
       const response = await fetch(url, {
         method,
@@ -532,7 +532,7 @@ const ImageGalleryManager = () => {
     if (!confirm('Are you sure you want to delete this category?')) return
 
     try {
-      const response = await fetch(`http://localhost:5000/api/categories/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/categories/${id}`, {
         method: 'DELETE'
       })
 

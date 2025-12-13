@@ -472,7 +472,7 @@ const MillRegistration = () => {
 
         // Fetch profile data from API using profile-check endpoint
         try {
-          const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${userId}`);
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/licenses/profile-check/${userId}`);
           if (response.ok) {
             const apiData = await response.json();
             setProfileData(apiData.user || {});
@@ -493,7 +493,7 @@ const MillRegistration = () => {
 
         // Load license history from API
         try {
-          const historyResponse = await fetch(`http://localhost:5000/api/licenses/applications/${userId}`);
+          const historyResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/licenses/applications/${userId}`);
           if (historyResponse.ok) {
             const historyData = await historyResponse.json();
             const applications = historyData.applications || [];
@@ -547,7 +547,7 @@ const MillRegistration = () => {
             };
 
             const userId = getCurrentUserId();
-            const response = await fetch(`http://localhost:5000/api/licenses/profile-check/${userId}`);
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/licenses/profile-check/${userId}`);
             if (response.ok) {
               const apiData = await response.json();
               setProfileData(apiData.user || {});
@@ -563,7 +563,7 @@ const MillRegistration = () => {
             }
 
             // Also refresh license status
-            const historyResponse = await fetch(`http://localhost:5000/api/licenses/applications/${userId}`);
+            const historyResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/licenses/applications/${userId}`);
             if (historyResponse.ok) {
               const historyData = await historyResponse.json();
               const applications = historyData.applications || [];
@@ -641,7 +641,7 @@ const MillRegistration = () => {
       };
 
       // Make API call to submit license application
-      const response = await fetch('http://localhost:5000/api/licenses/apply', {
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/licenses/apply', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

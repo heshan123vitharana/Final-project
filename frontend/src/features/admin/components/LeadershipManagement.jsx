@@ -14,7 +14,7 @@ const LeadershipManagement = () => {
   const fetchLeaders = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/leadership');
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/leadership');
       if (!response.ok) {
         throw new Error('Failed to fetch leadership data.');
       }
@@ -86,8 +86,8 @@ const LeadershipManagement = () => {
     });
 
     const url = isCreating
-      ? 'http://localhost:5000/api/leadership'
-      : `http://localhost:5000/api/leadership/${editingLeader.id}`;
+      ? (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/leadership'
+      : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/leadership/${editingLeader.id}`;
     const method = isCreating ? 'POST' : 'PUT';
 
     try {
@@ -113,7 +113,7 @@ const LeadershipManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this member?')) {
       try {
-        const response = await fetch(`http://localhost:5000/api/leadership/${id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/leadership/${id}`, {
           method: 'DELETE',
         });
         if (!response.ok) {
@@ -151,7 +151,7 @@ const LeadershipManagement = () => {
       }));
 
       // Send batch update to backend
-      const response = await fetch('http://localhost:5000/api/leadership/batch-update-order', {
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/leadership/batch-update-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -281,7 +281,7 @@ const LeaderList = ({ leaders, onEdit, onDelete, onDragStart, onDragOver, onDrag
                 <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-green-100 group-hover:ring-green-300 transition-all duration-300 bg-gradient-to-br from-gray-100 to-gray-200">
                   {leader.image_url ? (
                     <img
-                      src={`http://localhost:5000${leader.image_url}`}
+                      src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${leader.image_url}`}
                       alt={leader.name}
                       className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
                     />
@@ -436,7 +436,7 @@ const EditForm = ({ leader, onSave, onCancel, onInputChange, onFileChange, isCre
           </label>
           {leader.image_file && <span className="ml-3">{leader.image_file.name}</span>}
           {!isCreating && leader.image_url && (
-            <img src={`http://localhost:5000${leader.image_url}`} alt="Current" className="w-12 h-12 rounded-full ml-4 object-cover" />
+            <img src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${leader.image_url}`} alt="Current" className="w-12 h-12 rounded-full ml-4 object-cover" />
           )}
         </div>
       </div>

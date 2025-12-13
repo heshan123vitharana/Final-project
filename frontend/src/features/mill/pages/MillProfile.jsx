@@ -121,7 +121,7 @@ const MillProfile = ({ userData }) => {
 
   const loadProfilePhoto = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/profile/photo/${userId}`);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/profile/photo/${userId}`);
       if (response.ok) {
         const data = await response.json();
         return data.photoData;
@@ -135,7 +135,7 @@ const MillProfile = ({ userData }) => {
   // Check if mill has an active (approved and not expired) license
   const fetchLicenseStatus = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/license/status/${userId}`);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/license/status/${userId}`);
       if (response.ok) {
         const data = await response.json();
         // Returns { hasActiveLicense: true/false, status: 'approved'/'expired'/etc, expiryDate: '...' }
@@ -346,7 +346,7 @@ const MillProfile = ({ userData }) => {
     try {
       const userId = getCurrentUserId();
 
-      const response = await fetch('http://localhost:5000/api/profile/upload-photo', {
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/profile/upload-photo', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -481,7 +481,7 @@ const MillProfile = ({ userData }) => {
         registrationDate: formData.registrationDate
       };
 
-      const response = await fetch(`http://localhost:5000/api/profile/update/${getCurrentUserId()}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/profile/update/${getCurrentUserId()}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

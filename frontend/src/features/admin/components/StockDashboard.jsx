@@ -41,7 +41,7 @@ const StockDashboard = () => {
   const [filterDistrict, setFilterDistrict] = useState('All')
   const [filterBusinessType, setFilterBusinessType] = useState('All')
   
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + ''
   const adminApiKey = import.meta.env.VITE_ADMIN_API_KEY
   const eventSourceRef = useRef(null)
 

@@ -18,7 +18,7 @@ const CategoryManager = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/categories/with-counts');
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/categories/with-counts');
       
       if (!response.ok) {
         throw new Error('Failed to fetch categories');
@@ -68,8 +68,8 @@ const CategoryManager = () => {
 
     try {
       const url = editingCategory 
-        ? `http://localhost:5000/api/categories/${editingCategory.id}`
-        : 'http://localhost:5000/api/categories';
+        ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/categories/${editingCategory.id}`
+        : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/categories';
       
       const method = editingCategory ? 'PUT' : 'POST';
       
@@ -105,7 +105,7 @@ const CategoryManager = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/categories/${categoryId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/categories/${categoryId}`, {
         method: 'DELETE'
       });
 

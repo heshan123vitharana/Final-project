@@ -198,7 +198,7 @@ const LeadershipModal = ({ isOpen, onClose, leader, onSave, existingLeaders = []
             {leader && leader.image_url && (
               <div className="mt-2">
                 <img
-                  src={`http://localhost:5000${leader.image_url}`}
+                  src={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${leader.image_url}`}
                   alt="Current"
                   className="w-16 h-16 rounded-full object-cover"
                 />

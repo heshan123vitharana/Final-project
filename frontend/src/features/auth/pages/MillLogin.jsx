@@ -90,7 +90,7 @@ const MillLogin = ({ onLoginSuccess, onGoToSignUp, onExit, onGoToForgotPassword 
 
     setIsSubmitting(true);
     try {
-      const url = 'http://localhost:5000/api/auth/login';
+      const url = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/auth/login';
       const payload = {
         email: formData.email,
         nic: formData.nic,

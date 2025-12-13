@@ -194,7 +194,7 @@ const Reports = () => {
         region: regionLabel
       })
 
-      const response = await fetch(`http://localhost:5000/api/admin/reports?${params.toString()}`)
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/reports?${params.toString()}`)
 
       if (!response.ok) {
         throw new Error(`Failed to fetch report data: ${response.statusText}`)
@@ -257,7 +257,7 @@ const Reports = () => {
   const handleGenerateStockReport = async (stockReportType) => {
     setLoading(true);
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '';
       const adminApiKey = import.meta.env.VITE_ADMIN_API_KEY;
       const regionLabel = normalizeRegionLabel(selectedRegion);
 
@@ -413,7 +413,7 @@ const Reports = () => {
   const handleGenerateRegionalSubmissions = async () => {
     setLoading(true);
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '';
       // Normalize selectedRegion to match 'region' query param expected by backend if any (though backend uses 'district')
       const regionLabel = normalizeRegionLabel(selectedRegion);
       let url = `${apiBaseUrl}/api/admin/regional-reports`;

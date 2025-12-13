@@ -41,7 +41,9 @@ app.use((req, res, next) => {
         'http://127.0.0.1:5173',
         'http://localhost:4173',
         'http://127.0.0.1:4173',
-        // Add production domain when available
+        'http://127.0.0.1:4173',
+        // Add production domain from environment variable
+        process.env.FRONTEND_URL,
     ];
 
     // Set CORS headers based on origin

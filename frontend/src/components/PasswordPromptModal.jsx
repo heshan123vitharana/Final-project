@@ -24,7 +24,7 @@ const PasswordPromptModal = ({ isOpen, onClose, onSuccess }) => {
                 throw new Error('Admin session invalid - Email not found');
             }
 
-            const response = await fetch('http://localhost:5000/api/admin/verify-password', {
+            const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/admin/verify-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

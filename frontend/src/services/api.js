@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 
 // Define the base URL for the API.
 // In a real application, this should come from an environment variable.
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api';
 
 /**
  * A helper function to handle fetch requests and responses.

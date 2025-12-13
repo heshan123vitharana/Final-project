@@ -27,7 +27,7 @@ const ForgotPassword = ({ onBackToLogin, onExit }) => {
 
     setIsSubmitting(true)
     try {
-      const url = 'http://localhost:5000/api/auth/forgot-password';
+      const url = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/auth/forgot-password';
       const payload = {
         email: formData.email,
       };

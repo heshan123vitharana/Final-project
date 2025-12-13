@@ -41,7 +41,7 @@ const MillSidebar = ({ onBackToHome }) => {
   // Load profile photo from database
   const loadProfilePhoto = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/profile/photo/${userId}`);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/profile/photo/${userId}`);
       if (response.ok) {
         const data = await response.json();
         return data.photoData;

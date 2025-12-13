@@ -18,7 +18,7 @@ const getTypeColor = (type) => {
   return type.toLowerCase() === 'government' ? '#2563eb' : '#16a34a'
 }
 
-const MillMap = ({ apiUrl = 'http://localhost:5000/api/admin/approved-mills' }) => {
+const MillMap = ({ apiUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/admin/approved-mills' }) => {
   const [mills, setMills] = useState([])
   const [selectedMillId, setSelectedMillId] = useState(null)
   const [filterType, setFilterType] = useState('all')

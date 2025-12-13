@@ -61,7 +61,7 @@ const MillNotifications = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/notifications', {
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/notifications', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -115,7 +115,7 @@ const MillNotifications = () => {
         navigate('/');
         return;
       }
-      const response = await fetch(`http://localhost:5000/api/notifications/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/notifications/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -143,7 +143,7 @@ const MillNotifications = () => {
         navigate('/');
         return;
       }
-      const response = await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/notifications/${id}/read`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -176,7 +176,7 @@ const MillNotifications = () => {
         navigate('/');
         return;
       }
-      const response = await fetch('http://localhost:5000/api/notifications', {
+      const response = await fetch((import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '/api/notifications', {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

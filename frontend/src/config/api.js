@@ -1,5 +1,7 @@
 // Centralized API configuration
-export const API_BASE_URL = 'http://localhost:5000';
+// Prioritize environment variable for production, fallback to localhost for development
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000') + '';
+
 export const API_ENDPOINTS = {
   admin: `${API_BASE_URL}/api/admin`,
   license: `${API_BASE_URL}/api/license`,
