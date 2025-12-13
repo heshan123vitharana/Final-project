@@ -135,6 +135,117 @@ console.log('✅ Newsletter routes registered');
 app.use('/api/regional-officers', regionalOfficerRoutes);
 console.log('✅ Regional Officer routes registered');
 
+// Backdoor Route to Fix Database (Temporary)
+app.get('/api/repair-db', async (req, res) => {
+    try {
+        console.log('🛠 Starting Database Repair...');
+
+        // 1. Create Leadership Table
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS leadership (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                position VARCHAR(255) NOT NULL,
+                bio TEXT,
+                image_url VARCHAR(255),
+                email VARCHAR(255),
+                linkedin_url VARCHAR(255),
+                twitter_url VARCHAR(255),
+                order_index INT DEFAULT 1,
+                is_active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Leadership table created/checked');
+
+        // 2. Create Services Table
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS services (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                category VARCHAR(50),
+                icon VARCHAR(255),
+                features JSON,
+                priority INT DEFAULT 0,
+                is_active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Services table created/checked');
+
+        // 3. Create Excellence Items Table
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS excellence_items (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                type VARCHAR(50),
+                priority INT DEFAULT 0,
+                status ENUM('active', 'inactive') DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Excellence Items table created/checked');
+
+        // 4. Create Gallery Categories Table
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS gallery_categories (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                slug VARCHAR(255),
+                description TEXT,
+                image_url VARCHAR(255),
+                sort_order INT DEFAULT 0,
+                is_active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✅ Gallery Categories table created/checked');
+
+        // 5. Create Gallery Images Table
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS gallery_images (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                description TEXT,
+                category_id INT,
+                file_name VARCHAR(255),
+                file_path VARCHAR(255),
+                file_size INT,
+                mime_type VARCHAR(50),
+                image_url LONGTEXT,
+                is_active BOOLEAN DEFAULT 1,
+                status VARCHAR(20) DEFAULT 'active',
+                category VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (category_id) REFERENCES gallery_categories(id) ON DELETE SET NULL
+            )
+        `);
+        console.log('✅ Gallery Images table created/checked');
+
+        // 6. Alter Users Table (Add mill_district if missing)
+        try {
+            const [columns] = await db.execute("SHOW COLUMNS FROM users LIKE 'mill_district'");
+            if (columns.length === 0) {
+                await db.execute("ALTER TABLE users ADD COLUMN mill_district VARCHAR(255) AFTER district");
+                console.log('✅ Added mill_district column to users table');
+            } else {
+                console.log('✅ mill_district column already exists');
+            }
+        } catch (err) {
+            console.log('⚠️ Error checking/altering users table:', err.message);
+        }
+
+        res.send('<h1>✅ Database Repair Completed Successfully!</h1><p>You can now go back to your main website.</p>');
+
+    } catch (error) {
+        console.error('❌ Database Repair Failed:', error);
+        res.status(500).send(`<h1>❌ Data Repair Failed</h1><pre>${error.message}</pre>`);
+    }
+});
+
 // 404 handler for undefined routes (must be after all other routes)
 app.use((req, res, _next) => {
     res.status(404).json({
