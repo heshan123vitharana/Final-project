@@ -359,8 +359,8 @@ const RegionalDashboard = () => {
                                             <p className="text-2xl font-bold text-gray-900 mt-1">{latestPrice ? `LKR ${latestPrice.price_per_kg}` : 'N/A'}</p>
                                             {latestPrice && (
                                                 <span className={`inline-block mt-2 px-2 py-1 rounded-full text-xs font-medium ${latestPrice.paddy_condition === 'Dry'
-                                                        ? 'bg-amber-100 text-amber-700'
-                                                        : 'bg-blue-100 text-blue-700'
+                                                    ? 'bg-amber-100 text-amber-700'
+                                                    : 'bg-blue-100 text-blue-700'
                                                     }`}>
                                                     {latestPrice.paddy_condition}
                                                 </span>
@@ -538,7 +538,7 @@ const RegionalDashboard = () => {
                     {activeTab === 'map' && (
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-1">
                             {/* Pass the Regional Officer API endpoint for mills */}
-                            <MillMap apiUrl=(import.meta.env.VITE_API_BASE_URL || "http://localhost:5000") + "/api/regional-officers/active-mills" />
+                            <MillMap apiUrl={(import.meta.env.VITE_API_BASE_URL || "http://localhost:5000") + "/api/regional-officers/active-mills"} />
                         </div>
                     )}
                 </main>
