@@ -161,25 +161,51 @@ const MillProfile = ({ userData }) => {
       };
 
       const currentUserData = getCurrentUserData();
+      let initialData = {};
+      let userId = currentUserData.id;
+
+      // Try to get fresh data from API if we have a user ID
+      if (userId) {
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/profile/user/${userId}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.user) {
+              console.log('Using fresh profile data from API');
+              // Merge fresh API data over session data
+              Object.assign(currentUserData, data.user);
+
+              // Update session storage with fresh data to keep it in sync
+              try {
+                const currentSession = JSON.parse(sessionStorage.getItem('millOwnerData') || '{}');
+                const updatedSession = { ...currentSession, ...data.user };
+                sessionStorage.setItem('millOwnerData', JSON.stringify(updatedSession));
+              } catch (e) {
+                console.warn('Failed to update session storage with fresh data');
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching fresh profile data:', error);
+        }
+      }
 
       // ALWAYS start with current user data to ensure profile reflects logged-in user
-      let initialData = {};
-
-      if (currentUserData && currentUserData.id) {
+      if (userId) {
         initialData = {
-          firstName: currentUserData.first_name || "",
-          lastName: currentUserData.last_name || "",
+          firstName: currentUserData.first_name || currentUserData.firstName || "",
+          lastName: currentUserData.last_name || currentUserData.lastName || "",
           nic: currentUserData.nic || "",
           email: currentUserData.email || "",
           phoneNumber: currentUserData.phone || "",
           address: currentUserData.address || "",
           city: currentUserData.city || "",
           district: currentUserData.district || "",
-          postalCode: currentUserData.postal_code || "",
-          businessName: currentUserData.business_name || "",
-          businessType: currentUserData.business_type || "private",
-          millCapacity: currentUserData.mill_capacity || "",
-          millLocation: currentUserData.mill_location || "",
+          postalCode: currentUserData.postal_code || currentUserData.postalCode || "",
+          businessName: currentUserData.business_name || currentUserData.businessName || "",
+          businessType: currentUserData.business_type || currentUserData.businessType || "private",
+          millCapacity: currentUserData.mill_capacity || currentUserData.millCapacity || "",
+          millLocation: currentUserData.mill_location || currentUserData.millLocation || "",
           // Always map millDistrict from mill_district (snake_case) in backend
           millDistrict: currentUserData.mill_district || currentUserData.millDistrict || "",
           millLatitude: currentUserData.mill_latitude ?? currentUserData.millLatitude ?? "",
@@ -192,7 +218,7 @@ const MillProfile = ({ userData }) => {
         };
 
         // Check license status from backend API (more reliable than userData)
-        const userId = getCurrentUserId();
+        userId = getCurrentUserId(); // Ensure we have the ID via helper if needed, but userId var is already set
         const hasActiveLicense = await fetchLicenseStatus(userId);
         setIsApprovedMill(hasActiveLicense);
 
@@ -204,20 +230,18 @@ const MillProfile = ({ userData }) => {
             if (savedData && typeof savedData === 'object' && 'profilePhoto' in savedData) {
               delete savedData.profilePhoto;
             }
+
+            // Only use savedProfile for fields that might be client-side only drafts, 
+            // but for core fields, prefer the fresh API/User data we just got.
+            // However, the original logic prioritized savedData for some fields.
+            // Let's keep original logic but populate initialData strongly first.
+
             initialData = {
               ...savedData,
-              // Always use current user's identity data
-              firstName: currentUserData.first_name || savedData.firstName || "",
-              lastName: currentUserData.last_name || savedData.lastName || "",
-              nic: currentUserData.nic || savedData.nic || "",
-              email: currentUserData.email || savedData.email || "",
-              businessName: currentUserData.business_name || savedData.businessName || "",
-              businessType: currentUserData.business_type || savedData.businessType || "private",
-              millLatitude: currentUserData.mill_latitude ?? savedData.millLatitude ?? "",
-              millLongitude: currentUserData.mill_longitude ?? savedData.millLongitude ?? "",
-              registrationDate: currentUserData.registration_date ?
-                new Date(currentUserData.registration_date).toISOString().split('T')[0] :
-                (currentUserData.created_at ? new Date(currentUserData.created_at).toISOString().split('T')[0] : savedData.registrationDate || ""),
+              ...initialData, // OVERRIDE saved data with fresh API data for core fields to fix "Not set" issues
+              // But wait, if user was editing and saved to session but not DB?
+              // The requirement is to fix "Not set" issue. The issue is DB has data, frontend doesn't show it.
+              // So API data should win for the display fields.
             };
           } catch (error) {
             console.error('Error parsing saved profile data:', error);
