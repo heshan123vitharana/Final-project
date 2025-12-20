@@ -41,13 +41,20 @@ app.use((req, res, next) => {
         'http://127.0.0.1:5173',
         'http://localhost:4173',
         'http://127.0.0.1:4173',
-        'http://127.0.0.1:4173',
         // Add production domain from environment variable
         process.env.FRONTEND_URL,
     ];
 
+    // Check if origin is allowed
+    let isAllowed = allowedOrigins.includes(origin);
+
+    // Also allow any Vercel deployment URL (for preview deployments)
+    if (origin && origin.endsWith('.vercel.app')) {
+        isAllowed = true;
+    }
+
     // Set CORS headers based on origin
-    if (allowedOrigins.includes(origin) || !origin) {
+    if (isAllowed || !origin) {
         res.setHeader('Access-Control-Allow-Origin', origin || '*');
     }
 
