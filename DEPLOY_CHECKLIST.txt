@@ -1,0 +1,153 @@
+================================================================================
+                    DEPLOYMENT QUICK START CHECKLIST
+================================================================================
+
+PROJECT: Paddy Management System
+STACK: React (Vite) + Node.js (Express) + MySQL (TiDB)
+
+================================================================================
+                         RECOMMENDED APPROACH
+================================================================================
+
+OPTION 1: Vercel + Railway + TiDB (Best for Students)
+------------------------------------------------------
+✓ Frontend: Vercel (FREE)
+✓ Backend: Railway ($5/month credit from Student Pack)
+✓ Database: TiDB Cloud (FREE tier - already set up!)
+
+TOTAL COST: $0 for first month, then ~$5/month
+
+================================================================================
+                         STEP-BY-STEP DEPLOYMENT
+================================================================================
+
+PHASE 1: DATABASE (TiDB Cloud)
+-------------------------------
+[✓] Already configured!
+[✓] Connection string ready
+[ ] Verify schema is up to date
+[ ] Test connection from local backend
+
+PHASE 2: BACKEND (Railway)
+---------------------------
+[ ] 1. Sign up at https://railway.app/ with GitHub
+[ ] 2. Click "New Project" → "Deploy from GitHub repo"
+[ ] 3. Select your repository
+[ ] 4. Set root directory: backend
+[ ] 5. Add environment variables:
+        - NODE_ENV=production
+        - PORT=3000
+        - DB_HOST=<your-tidb-host>
+        - DB_USER=<your-tidb-user>
+        - DB_PASSWORD=<your-tidb-password>
+        - DB_NAME=paddy_management
+        - DB_PORT=4000
+        - JWT_SECRET=<generate-strong-secret>
+        - FRONTEND_URL=https://your-app.vercel.app
+[ ] 6. Deploy and copy backend URL
+
+PHASE 3: FRONTEND (Vercel)
+---------------------------
+[✓] Already configured!
+[ ] 1. Update environment variable in Vercel:
+        - VITE_API_BASE_URL=<your-railway-backend-url>
+[ ] 2. Redeploy from Vercel dashboard
+[ ] 3. Test the application
+
+PHASE 4: VERIFICATION
+----------------------
+[ ] 1. Test login functionality
+[ ] 2. Test API endpoints
+[ ] 3. Verify database connections
+[ ] 4. Check CORS is working
+[ ] 5. Test file uploads (if applicable)
+[ ] 6. Verify maps are loading
+[ ] 7. Test all user roles (Admin, Regional Officer)
+
+================================================================================
+                         ENVIRONMENT VARIABLES
+================================================================================
+
+BACKEND (.env on Railway):
+--------------------------
+NODE_ENV=production
+PORT=3000
+DB_HOST=gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+DB_USER=<your-user>
+DB_PASSWORD=<your-password>
+DB_NAME=paddy_management
+DB_PORT=4000
+JWT_SECRET=<generate-this>
+JWT_EXPIRES_IN=7d
+FRONTEND_URL=https://your-app.vercel.app
+
+FRONTEND (.env on Vercel):
+--------------------------
+VITE_API_BASE_URL=https://your-app.railway.app
+
+================================================================================
+                         TROUBLESHOOTING
+================================================================================
+
+ISSUE: 404 errors on frontend
+FIX: Ensure vercel.json has rewrites configured
+
+ISSUE: CORS errors
+FIX: Check FRONTEND_URL in backend matches Vercel URL exactly
+
+ISSUE: Database connection fails
+FIX: Verify TiDB credentials and SSL settings
+
+ISSUE: Build fails
+FIX: Check package.json scripts and dependencies
+
+================================================================================
+                         USEFUL COMMANDS
+================================================================================
+
+Test backend locally:
+  cd backend
+  npm start
+
+Test frontend locally:
+  cd frontend
+  npm run dev
+
+Build frontend:
+  cd frontend
+  npm run build
+
+Check backend health:
+  curl https://your-backend.railway.app/api/health
+
+================================================================================
+                         GITHUB STUDENT PACK BENEFITS
+================================================================================
+
+Already Using:
+- Vercel (FREE unlimited deployments)
+- TiDB Cloud (FREE tier)
+
+Recommended to Activate:
+- Railway ($5/month credit)
+- DigitalOcean ($200 credit for 1 year)
+- Namecheap (FREE .me domain for 1 year)
+- SendGrid (Email service)
+
+Apply at: https://education.github.com/pack
+
+================================================================================
+                         NEXT STEPS
+================================================================================
+
+1. Deploy backend to Railway (15 minutes)
+2. Update Vercel environment variables (2 minutes)
+3. Test the application (10 minutes)
+4. Get a free .me domain from Namecheap (optional)
+5. Set up custom domain on Vercel (optional)
+
+================================================================================
+
+For detailed instructions, see: deployment_guide.md
+
+Good luck! 🚀
